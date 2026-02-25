@@ -1,0 +1,108 @@
+public abstract class dev/sanson/spacetimedb/bsatn/Bsatn : kotlinx/serialization/BinaryFormat {
+	public static final field Default Ldev/sanson/spacetimedb/bsatn/Bsatn$Default;
+	public synthetic fun <init> (Lkotlinx/serialization/modules/SerializersModule;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun decodeFromByteArray (Lkotlinx/serialization/DeserializationStrategy;[B)Ljava/lang/Object;
+	public fun encodeToByteArray (Lkotlinx/serialization/SerializationStrategy;Ljava/lang/Object;)[B
+	public fun getSerializersModule ()Lkotlinx/serialization/modules/SerializersModule;
+}
+
+public final class dev/sanson/spacetimedb/bsatn/Bsatn$Default : dev/sanson/spacetimedb/bsatn/Bsatn {
+}
+
+public class dev/sanson/spacetimedb/bsatn/BsatnDecodeException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class dev/sanson/spacetimedb/bsatn/BsatnDecodeException$BufferLength : dev/sanson/spacetimedb/bsatn/BsatnDecodeException {
+	public fun <init> (Ljava/lang/String;II)V
+}
+
+public final class dev/sanson/spacetimedb/bsatn/BsatnDecodeException$InvalidBool : dev/sanson/spacetimedb/bsatn/BsatnDecodeException {
+	public fun <init> (I)V
+}
+
+public final class dev/sanson/spacetimedb/bsatn/BsatnDecodeException$InvalidTag : dev/sanson/spacetimedb/bsatn/BsatnDecodeException {
+	public fun <init> (ILjava/lang/String;)V
+	public synthetic fun <init> (ILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class dev/sanson/spacetimedb/bsatn/BsatnEncodeException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class dev/sanson/spacetimedb/bsatn/I128 : java/lang/Comparable {
+	public static final field Companion Ldev/sanson/spacetimedb/bsatn/I128$Companion;
+	public synthetic fun <init> (JJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun compareTo (Ldev/sanson/spacetimedb/bsatn/I128;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHi-s-VKNKU ()J
+	public final fun getLo-s-VKNKU ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/bsatn/I128$Companion {
+	public final fun getMAX ()Ldev/sanson/spacetimedb/bsatn/I128;
+	public final fun getMIN ()Ldev/sanson/spacetimedb/bsatn/I128;
+	public final fun getZERO ()Ldev/sanson/spacetimedb/bsatn/I128;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/bsatn/I256 : java/lang/Comparable {
+	public static final field Companion Ldev/sanson/spacetimedb/bsatn/I256$Companion;
+	public synthetic fun <init> (JJJJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun compareTo (Ldev/sanson/spacetimedb/bsatn/I256;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getW0-s-VKNKU ()J
+	public final fun getW1-s-VKNKU ()J
+	public final fun getW2-s-VKNKU ()J
+	public final fun getW3-s-VKNKU ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/bsatn/I256$Companion {
+	public final fun getZERO ()Ldev/sanson/spacetimedb/bsatn/I256;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/bsatn/U128 : java/lang/Comparable {
+	public static final field Companion Ldev/sanson/spacetimedb/bsatn/U128$Companion;
+	public synthetic fun <init> (JJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun compareTo (Ldev/sanson/spacetimedb/bsatn/U128;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHi-s-VKNKU ()J
+	public final fun getLo-s-VKNKU ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/bsatn/U128$Companion {
+	public final fun getMAX ()Ldev/sanson/spacetimedb/bsatn/U128;
+	public final fun getZERO ()Ldev/sanson/spacetimedb/bsatn/U128;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/bsatn/U256 : java/lang/Comparable {
+	public static final field Companion Ldev/sanson/spacetimedb/bsatn/U256$Companion;
+	public synthetic fun <init> (JJJJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun compareTo (Ldev/sanson/spacetimedb/bsatn/U256;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getW0-s-VKNKU ()J
+	public final fun getW1-s-VKNKU ()J
+	public final fun getW2-s-VKNKU ()J
+	public final fun getW3-s-VKNKU ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/bsatn/U256$Companion {
+	public final fun getMAX ()Ldev/sanson/spacetimedb/bsatn/U256;
+	public final fun getZERO ()Ldev/sanson/spacetimedb/bsatn/U256;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
