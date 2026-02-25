@@ -168,6 +168,53 @@ class BsatnPrimitiveTest {
         }
     }
 
+    // -- Unsigned integers --
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun `encode UByte`() {
+        val bytes = Bsatn.encodeToByteArray(UByte.serializer(), 255u.toUByte())
+        assertContentEquals(byteArrayOf(0xFF.toByte()), bytes)
+    }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun `roundtrip UShort`() {
+        for (v in listOf(UShort.MIN_VALUE, 1u.toUShort(), UShort.MAX_VALUE)) {
+            val bytes = Bsatn.encodeToByteArray(UShort.serializer(), v)
+            assertEquals(2, bytes.size)
+            assertEquals(v, Bsatn.decodeFromByteArray(UShort.serializer(), bytes))
+        }
+    }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun `roundtrip UInt`() {
+        for (v in listOf(UInt.MIN_VALUE, 1u, UInt.MAX_VALUE)) {
+            val bytes = Bsatn.encodeToByteArray(UInt.serializer(), v)
+            assertEquals(4, bytes.size)
+            assertEquals(v, Bsatn.decodeFromByteArray(UInt.serializer(), bytes))
+        }
+    }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun `roundtrip ULong`() {
+        for (v in listOf(ULong.MIN_VALUE, 1uL, ULong.MAX_VALUE)) {
+            val bytes = Bsatn.encodeToByteArray(ULong.serializer(), v)
+            assertEquals(8, bytes.size)
+            assertEquals(v, Bsatn.decodeFromByteArray(ULong.serializer(), bytes))
+        }
+    }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun `UInt MAX_VALUE encoding matches Rust u32 MAX`() {
+        // Rust u32::MAX = 0xFFFFFFFF → LE: [0xFF, 0xFF, 0xFF, 0xFF]
+        val bytes = Bsatn.encodeToByteArray(UInt.serializer(), UInt.MAX_VALUE)
+        assertContentEquals(byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()), bytes)
+    }
+
     // -- ByteArray --
 
     @Test
