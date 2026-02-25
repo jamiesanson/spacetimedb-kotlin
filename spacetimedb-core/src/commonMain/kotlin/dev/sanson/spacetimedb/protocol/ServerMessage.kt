@@ -242,10 +242,10 @@ internal sealed class ServerMessage {
 
     @Serializable
     data class ProcedureResult(
-        val requestId: UInt,
+        val status: ProcedureStatus,
         val timestamp: Timestamp,
         val totalHostExecutionDuration: TimeDuration,
-        val status: ProcedureStatus,
+        val requestId: UInt,
     ) : ServerMessage()
 }
 

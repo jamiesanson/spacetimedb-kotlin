@@ -219,10 +219,10 @@ class ServerMessageTest {
     @Test
     fun `ProcedureResult has tag 7`() {
         val msg: ServerMessage = ServerMessage.ProcedureResult(
-            requestId = 0u,
+            status = ProcedureStatus.Returned(byteArrayOf()),
             timestamp = Timestamp.UNIX_EPOCH,
             totalHostExecutionDuration = TimeDuration.ZERO,
-            status = ProcedureStatus.Returned(byteArrayOf()),
+            requestId = 0u,
         )
         val bytes = Bsatn.encodeToByteArray(ServerMessage.serializer(), msg)
         assertEquals(7, bytes[0].toInt())
@@ -476,10 +476,10 @@ class ServerMessageTest {
     @Test
     fun `ProcedureResult round-trips through BSATN`() {
         val msg: ServerMessage = ServerMessage.ProcedureResult(
-            requestId = 20u,
+            status = ProcedureStatus.Returned(byteArrayOf(0x42)),
             timestamp = Timestamp.fromEpochMicroseconds(5_000_000),
             totalHostExecutionDuration = TimeDuration(100.microseconds),
-            status = ProcedureStatus.Returned(byteArrayOf(0x42)),
+            requestId = 20u,
         )
         val bytes = Bsatn.encodeToByteArray(ServerMessage.serializer(), msg)
         val decoded = Bsatn.decodeFromByteArray(ServerMessage.serializer(), bytes)
