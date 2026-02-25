@@ -1,11 +1,11 @@
 [versions]
 java-toolchain = "21"
 
-binary-compatibility-validator = "0.17.0"
+binary-compatibility-validator = "0.18.1"
 foojay = "0.8.0"
-kotlin = "2.1.0"
-kotlinx-serialization = "1.8.0"
-poko = "0.18.7"
+kotlin = "2.3.10"
+kotlinx-serialization = "1.10.0"
+poko = "0.21.1"
 
 [libraries]
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
