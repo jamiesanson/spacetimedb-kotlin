@@ -17,7 +17,9 @@ kotlin {
         }
 
         jsMain.dependencies {
-            implementation(libs.okio.nodefilesystem)
+            // okio-nodefilesystem could be added for Node.js filesystem support,
+            // but it breaks browser compilation. Users needing credential persistence
+            // on JS/Node should pass their own FileSystem to CredentialFile.
         }
     }
 }

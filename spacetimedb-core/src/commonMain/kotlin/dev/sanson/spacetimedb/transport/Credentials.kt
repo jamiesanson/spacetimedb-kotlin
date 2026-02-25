@@ -83,12 +83,17 @@ public class CredentialFile(
 
             return CredentialFile(
                 key = key,
-                fileSystem = FileSystem.SYSTEM,
+                fileSystem = systemFileSystem(),
                 baseDir = homeDir,
             )
         }
     }
 }
+
+/**
+ * Returns the platform's system filesystem.
+ */
+internal expect fun systemFileSystem(): FileSystem
 
 /**
  * Returns the user's home directory, or null if it cannot be determined.
