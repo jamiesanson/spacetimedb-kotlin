@@ -36,6 +36,7 @@ public class DbConnection internal constructor(
     private val tableDeserializers: Map<String, KSerializer<out Any>>,
 ) {
     private val subscriptions = mutableMapOf<QuerySetId, SubscriptionHandle>()
+    private val reducerNames = mutableMapOf<UInt, String>()
     private val outgoing = Channel<ClientMessage>(Channel.UNLIMITED)
 
     /** The identity assigned by the server, available after the initial handshake. */
@@ -74,8 +75,10 @@ public class DbConnection internal constructor(
      * @param args BSATN-encoded arguments
      */
     public fun callReducer(reducerName: String, args: ByteArray) {
+        val requestId = nextRequestId()
+        reducerNames[requestId] = reducerName
         val msg = ClientMessage.CallReducer(
-            requestId = nextRequestId(),
+            requestId = requestId,
             flags = dev.sanson.spacetimedb.protocol.CallReducerFlags.Default,
             reducer = reducerName,
             args = args,
@@ -181,7 +184,7 @@ public class DbConnection internal constructor(
         callback?.invoke()
     }
 
-    private fun handleTransactionUpdate(update: TransactionUpdate, event: Event<Nothing>) {
+    private fun handleTransactionUpdate(update: TransactionUpdate, event: Event<*>) {
         for (querySetUpdate in update.querySets) {
             for (tableUpdate in querySetUpdate.tables) {
                 applyTableUpdate(tableUpdate, event)
@@ -190,16 +193,27 @@ public class DbConnection internal constructor(
     }
 
     private fun handleReducerResult(msg: ServerMessage.ReducerResult) {
+        val reducerName = reducerNames.remove(msg.requestId)
         when (val result = msg.result) {
             is ReducerOutcome.Ok -> {
-                val event = Event.Transaction
+                val event = if (reducerName != null) {
+                    Event.Reducer(
+                        ReducerEvent(
+                            timestamp = msg.timestamp,
+                            status = Status.Committed,
+                            reducer = reducerName,
+                        )
+                    )
+                } else {
+                    Event.Transaction
+                }
                 handleTransactionUpdate(result.transactionUpdate, event)
             }
             is ReducerOutcome.OkEmpty -> {
-                // No cache changes
+                // Reducer committed but produced no row changes
             }
             is ReducerOutcome.Err -> {
-                // Reducer returned an error — no cache changes
+                // Reducer returned an error — no cache changes (transaction rolled back)
             }
             is ReducerOutcome.InternalError -> {
                 // Internal error — no cache changes
@@ -234,7 +248,7 @@ public class DbConnection internal constructor(
     @Suppress("UNCHECKED_CAST")
     private fun applyTableUpdate(
         wireUpdate: dev.sanson.spacetimedb.protocol.TableUpdate,
-        event: Event<Nothing>,
+        event: Event<*>,
     ) {
         val tableName = wireUpdate.tableName
         val serializer = tableDeserializers[tableName] ?: return

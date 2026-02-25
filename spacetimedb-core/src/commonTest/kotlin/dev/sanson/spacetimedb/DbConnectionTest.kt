@@ -26,6 +26,7 @@ import kotlinx.serialization.Serializable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -334,7 +335,59 @@ class DbConnectionTest {
         val users = conn.cache.getTable<User>("users")
         assertNotNull(users)
         assertEquals(1, users.count)
+    }
 
+    @Test
+    fun `reducer result passes ReducerEvent to row callbacks`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val receivedEvents = mutableListOf<Event<*>>()
+        conn.callbacks.registerOnInsert<User>("users") { event, _ -> receivedEvents.add(event) }
+
+        // Call reducer to register the request ID mapping
+        conn.callReducer("create_user", byteArrayOf())
+
+        // Capture the request ID from the outgoing message
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallReducer>(outgoing)
+        val requestId = outgoing.requestId
+
+        val alice = User(1u, "alice")
+        fake.sendToClient(
+            ServerMessage.ReducerResult(
+                requestId = requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                result = ReducerOutcome.Ok(
+                    retValue = byteArrayOf(),
+                    transactionUpdate = TransactionUpdate(
+                        querySets = listOf(
+                            QuerySetUpdate(
+                                querySetId = QuerySetId(99u),
+                                tables = listOf(
+                                    WireTableUpdate(
+                                        tableName = "users",
+                                        rows = listOf(
+                                            TableUpdateRows.PersistentTable(
+                                                inserts = bsatnRowList(encodeUser(alice)),
+                                                deletes = bsatnRowList(),
+                                            )
+                                        ),
+                                    )
+                                ),
+                            )
+                        ),
+                    ),
+                ),
+            )
+        )
+
+        assertEquals(1, receivedEvents.size)
+        val event = receivedEvents.first()
+        assertIs<Event.Reducer<*>>(event)
+        assertEquals("create_user", event.event.reducer)
+        assertEquals(Status.Committed, event.event.status)
     }
 
     @Test
