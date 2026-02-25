@@ -54,13 +54,72 @@ public sealed interface AlgebraicType {
     public data object StringType : AlgebraicType
 }
 
+/** True if this is an Identity product type. */
+public val AlgebraicType.isIdentity: Boolean
+    get() = this is AlgebraicType.Product && type.isIdentity
+
+/** True if this is a ConnectionId product type. */
+public val AlgebraicType.isConnectionId: Boolean
+    get() = this is AlgebraicType.Product && type.isConnectionId
+
+/** True if this is a Timestamp product type. */
+public val AlgebraicType.isTimestamp: Boolean
+    get() = this is AlgebraicType.Product && type.isTimestamp
+
+/** True if this is a TimeDuration product type. */
+public val AlgebraicType.isTimeDuration: Boolean
+    get() = this is AlgebraicType.Product && type.isTimeDuration
+
+/** True if this is a ScheduleAt sum type. */
+public val AlgebraicType.isScheduleAt: Boolean
+    get() = this is AlgebraicType.Sum && type.isScheduleAt
+
+/** If this is an Option sum, returns the inner type. */
+public fun AlgebraicType.asOption(): AlgebraicType? =
+    (this as? AlgebraicType.Sum)?.type?.asOption()
+
 /**
  * A sum type: a tagged union of named variants.
  */
 @Serializable
 public data class SumType(
     val variants: List<SumTypeVariant>,
-)
+) {
+    /**
+     * If this is an `Option<T>` sum (variants: `some(T)`, `none(unit)`),
+     * returns the inner type `T`. Otherwise returns null.
+     */
+    public fun asOption(): AlgebraicType? {
+        val (first, second) = variants.takeIf { it.size == 2 }
+            ?.let { it[0] to it[1] }
+            ?: return null
+
+        return if (first.name == "some" && second.name == "none" && second.isUnit) {
+            first.algebraicType
+        } else {
+            null
+        }
+    }
+
+    /**
+     * True if this is a plain C-style enum: all variants carry unit (empty product).
+     */
+    public val isSimpleEnum: Boolean
+        get() = variants.all { it.isUnit }
+
+    /**
+     * True if this is a `ScheduleAt` sum (variants: `Interval(TimeDuration)`, `Time(Timestamp)`).
+     */
+    public val isScheduleAt: Boolean
+        get() {
+            val (first, second) = variants.takeIf { it.size == 2 }
+                ?.let { it[0] to it[1] }
+                ?: return false
+
+            return first.name == "Interval" && first.algebraicType.isTimeDuration
+                && second.name == "Time" && second.algebraicType.isTimestamp
+        }
+}
 
 /**
  * A single variant of a [SumType].
@@ -72,7 +131,14 @@ public data class SumTypeVariant(
     @SerialName("algebraic_type")
     @Serializable(with = AlgebraicTypeSerializer::class)
     val algebraicType: AlgebraicType,
-)
+) {
+    /** True if this variant carries no data (empty product). */
+    public val isUnit: Boolean
+        get() {
+            val product = algebraicType as? AlgebraicType.Product ?: return false
+            return product.type.elements.isEmpty()
+        }
+}
 
 /**
  * A product type: a record of named fields.
@@ -80,7 +146,34 @@ public data class SumTypeVariant(
 @Serializable
 public data class ProductType(
     val elements: List<ProductTypeElement>,
-)
+) {
+    /** True if this is a newtype product matching `{tag: innerType}`. */
+    private fun isNewtype(tag: String, check: (AlgebraicType) -> Boolean): Boolean =
+        elements.singleOrNull()?.let { it.name == tag && check(it.algebraicType) } == true
+
+    /** True if this represents an `Identity` (single field `__identity__: U256`). */
+    public val isIdentity: Boolean
+        get() = isNewtype(IDENTITY_TAG) { it is AlgebraicType.U256 }
+
+    /** True if this represents a `ConnectionId` (single field `__connection_id__: U128`). */
+    public val isConnectionId: Boolean
+        get() = isNewtype(CONNECTION_ID_TAG) { it is AlgebraicType.U128 }
+
+    /** True if this represents a `Timestamp` (single field `__timestamp_micros_since_unix_epoch__: I64`). */
+    public val isTimestamp: Boolean
+        get() = isNewtype(TIMESTAMP_TAG) { it is AlgebraicType.I64 }
+
+    /** True if this represents a `TimeDuration` (single field `__time_duration_micros__: I64`). */
+    public val isTimeDuration: Boolean
+        get() = isNewtype(TIME_DURATION_TAG) { it is AlgebraicType.I64 }
+
+    internal companion object {
+        const val IDENTITY_TAG = "__identity__"
+        const val CONNECTION_ID_TAG = "__connection_id__"
+        const val TIMESTAMP_TAG = "__timestamp_micros_since_unix_epoch__"
+        const val TIME_DURATION_TAG = "__time_duration_micros__"
+    }
+}
 
 /**
  * A single field of a [ProductType].

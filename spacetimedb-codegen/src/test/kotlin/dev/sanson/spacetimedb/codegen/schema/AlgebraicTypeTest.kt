@@ -3,7 +3,11 @@ package dev.sanson.spacetimedb.codegen.schema
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AlgebraicTypeTest {
     private val json = Json { ignoreUnknownKeys = true }
@@ -96,6 +100,123 @@ class AlgebraicTypeTest {
         val inner = type.elementType
         assertIs<AlgebraicType.Ref>(inner)
         assertEquals(5, inner.id)
+    }
+
+    // --- Special type detection tests ---
+
+    @Test
+    fun `detects Identity product type`() {
+        val type = parse("""{"Product": {"elements": [
+            {"name": {"some": "__identity__"}, "algebraic_type": {"U256": []}}
+        ]}}""")
+        assertTrue(type.isIdentity)
+        assertFalse(type.isConnectionId)
+        assertFalse(type.isTimestamp)
+    }
+
+    @Test
+    fun `detects ConnectionId product type`() {
+        val type = parse("""{"Product": {"elements": [
+            {"name": {"some": "__connection_id__"}, "algebraic_type": {"U128": []}}
+        ]}}""")
+        assertTrue(type.isConnectionId)
+        assertFalse(type.isIdentity)
+    }
+
+    @Test
+    fun `detects Timestamp product type`() {
+        val type = parse("""{"Product": {"elements": [
+            {"name": {"some": "__timestamp_micros_since_unix_epoch__"}, "algebraic_type": {"I64": []}}
+        ]}}""")
+        assertTrue(type.isTimestamp)
+        assertFalse(type.isTimeDuration)
+    }
+
+    @Test
+    fun `detects TimeDuration product type`() {
+        val type = parse("""{"Product": {"elements": [
+            {"name": {"some": "__time_duration_micros__"}, "algebraic_type": {"I64": []}}
+        ]}}""")
+        assertTrue(type.isTimeDuration)
+        assertFalse(type.isTimestamp)
+    }
+
+    @Test
+    fun `regular product is not a special type`() {
+        val type = parse("""{"Product": {"elements": [
+            {"name": {"some": "x"}, "algebraic_type": {"I32": []}},
+            {"name": {"some": "y"}, "algebraic_type": {"I32": []}}
+        ]}}""")
+        assertFalse(type.isIdentity)
+        assertFalse(type.isConnectionId)
+        assertFalse(type.isTimestamp)
+        assertFalse(type.isTimeDuration)
+    }
+
+    @Test
+    fun `detects Option sum type`() {
+        val type = parse("""{"Sum": {"variants": [
+            {"name": {"some": "some"}, "algebraic_type": {"String": []}},
+            {"name": {"some": "none"}, "algebraic_type": {"Product": {"elements": []}}}
+        ]}}""")
+        val inner = type.asOption()
+        assertNotNull(inner)
+        assertIs<AlgebraicType.StringType>(inner)
+    }
+
+    @Test
+    fun `non-option sum returns null from asOption`() {
+        val type = parse("""{"Sum": {"variants": [
+            {"name": {"some": "Active"}, "algebraic_type": {"Product": {"elements": []}}},
+            {"name": {"some": "Inactive"}, "algebraic_type": {"Product": {"elements": []}}}
+        ]}}""")
+        assertNull(type.asOption())
+    }
+
+    @Test
+    fun `detects simple enum`() {
+        val type = parse("""{"Sum": {"variants": [
+            {"name": {"some": "Active"}, "algebraic_type": {"Product": {"elements": []}}},
+            {"name": {"some": "Inactive"}, "algebraic_type": {"Product": {"elements": []}}}
+        ]}}""")
+        assertIs<AlgebraicType.Sum>(type)
+        assertTrue(type.type.isSimpleEnum)
+    }
+
+    @Test
+    fun `non-simple enum is not simple`() {
+        val type = parse("""{"Sum": {"variants": [
+            {"name": {"some": "Value"}, "algebraic_type": {"I32": []}},
+            {"name": {"some": "None"}, "algebraic_type": {"Product": {"elements": []}}}
+        ]}}""")
+        assertIs<AlgebraicType.Sum>(type)
+        assertFalse(type.type.isSimpleEnum)
+    }
+
+    @Test
+    fun `detects ScheduleAt sum type`() {
+        val interval = """{"Product": {"elements": [
+            {"name": {"some": "__time_duration_micros__"}, "algebraic_type": {"I64": []}}
+        ]}}"""
+        val timestamp = """{"Product": {"elements": [
+            {"name": {"some": "__timestamp_micros_since_unix_epoch__"}, "algebraic_type": {"I64": []}}
+        ]}}"""
+        val type = parse("""{"Sum": {"variants": [
+            {"name": {"some": "Interval"}, "algebraic_type": $interval},
+            {"name": {"some": "Time"}, "algebraic_type": $timestamp}
+        ]}}""")
+        assertTrue(type.isScheduleAt)
+    }
+
+    @Test
+    fun `primitive types are not special types`() {
+        val type = parse("""{"U32": []}""")
+        assertFalse(type.isIdentity)
+        assertFalse(type.isConnectionId)
+        assertFalse(type.isTimestamp)
+        assertFalse(type.isTimeDuration)
+        assertFalse(type.isScheduleAt)
+        assertNull(type.asOption())
     }
 
     private fun parse(jsonStr: String): AlgebraicType =

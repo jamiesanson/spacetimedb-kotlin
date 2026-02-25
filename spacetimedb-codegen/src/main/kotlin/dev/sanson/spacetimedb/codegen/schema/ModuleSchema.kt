@@ -32,6 +32,10 @@ public class ModuleSchema(private val raw: RawModuleDefV10) {
         .filterIsInstance<RawModuleDefV10Section.ViewsSection>()
         .flatMap { it.views }
 
+    public val lifecycleReducers: List<RawLifeCycleReducerDef> = raw.sections
+        .filterIsInstance<RawModuleDefV10Section.LifeCycleReducersSection>()
+        .flatMap { it.reducers }
+
     public val explicitNames: ExplicitNames? = raw.sections
         .filterIsInstance<RawModuleDefV10Section.ExplicitNamesSection>()
         .singleOrNull()?.names
@@ -70,16 +74,28 @@ public class ModuleSchema(private val raw: RawModuleDefV10) {
         types.find { it.ty == ref }
 
     /**
-     * Returns only tables with public access (for client codegen).
+     * Returns only tables with public access (for client codegen), sorted alphabetically.
      */
     public val publicTables: List<RawTableDef>
-        get() = tables.filter { it.tableAccess == "Public" }
+        get() = tables.filter { it.tableAccess == "Public" }.sortedBy { it.sourceName }
 
     /**
-     * Returns only client-callable reducers (for client codegen).
+     * Returns only client-callable reducers (for client codegen), sorted alphabetically.
+     * Excludes lifecycle reducers (Init, OnConnect, OnDisconnect).
      */
     public val clientCallableReducers: List<RawReducerDef>
-        get() = reducers.filter { it.visibility == "ClientCallable" }
+        get() {
+            val lifecycleNames = lifecycleReducers.map { it.functionName }.toSet()
+            return reducers
+                .filter { it.visibility == "ClientCallable" && it.sourceName !in lifecycleNames }
+                .sortedBy { it.sourceName }
+        }
+
+    /**
+     * Returns named custom types sorted alphabetically.
+     */
+    public val sortedTypes: List<RawTypeDef>
+        get() = types.sortedBy { it.sourceName.sourceName }
 
     public companion object {
         private val json = kotlinx.serialization.json.Json {

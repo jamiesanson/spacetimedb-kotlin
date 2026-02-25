@@ -5,6 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RawModuleDefTest {
     private val fixture: String by lazy {
@@ -175,5 +176,53 @@ class RawModuleDefTest {
         val proc = schema.procedures.first()
         assertNotNull(proc.sourceName)
         assertNotNull(proc.visibility)
+    }
+
+    @Test
+    fun `public tables are sorted alphabetically`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val names = schema.publicTables.map { it.sourceName }
+        assertEquals(names, names.sorted())
+    }
+
+    @Test
+    fun `client-callable reducers are sorted alphabetically`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val names = schema.clientCallableReducers.map { it.sourceName }
+        assertEquals(names, names.sorted())
+    }
+
+    @Test
+    fun `client-callable reducers exclude lifecycle reducers`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val lifecycleNames = schema.lifecycleReducers.map { it.functionName }.toSet()
+        val clientNames = schema.clientCallableReducers.map { it.sourceName }.toSet()
+        assert(lifecycleNames.intersect(clientNames).isEmpty()) {
+            "Lifecycle reducers should not appear in client-callable reducers"
+        }
+    }
+
+    @Test
+    fun `parses lifecycle reducers`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        assert(schema.lifecycleReducers.isNotEmpty()) { "Expected at least one lifecycle reducer" }
+    }
+
+    @Test
+    fun `detects Identity type in table column via fixture`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val table = schema.tables.first { it.sourceName == "logged_out_player" }
+        val productType = schema.tableProductType(table)
+
+        val identityField = productType.elements.first { it.name == "identity" }
+        val resolved = schema.resolveType(identityField.algebraicType)
+        assertTrue(resolved.isIdentity)
+    }
+
+    @Test
+    fun `sorted types are alphabetical`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val names = schema.sortedTypes.map { it.sourceName.sourceName }
+        assertEquals(names, names.sorted())
     }
 }
