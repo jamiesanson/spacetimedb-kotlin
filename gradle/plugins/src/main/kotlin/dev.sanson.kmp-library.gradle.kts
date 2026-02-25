@@ -3,7 +3,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.kotlinx.binary-compatibility-validator")
     id("dev.drewhamilton.poko")
+    `maven-publish`
 }
+
+group = property("dev.sanson.spacetimedb.group") as String
+version = property("dev.sanson.spacetimedb.version") as String
 
 apiValidation {
     @OptIn(kotlinx.validation.ExperimentalBCVApi::class)
