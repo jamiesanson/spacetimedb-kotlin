@@ -1,10 +1,15 @@
 plugins {
     id("dev.sanson.module")
     id("org.jetbrains.kotlin.plugin.serialization")
+    application
 }
 
 kotlin {
     explicitApi()
+}
+
+application {
+    mainClass.set("dev.sanson.spacetimedb.codegen.MainKt")
 }
 
 dependencies {
