@@ -8,6 +8,9 @@ plugins {
 apiValidation {
     @OptIn(kotlinx.validation.ExperimentalBCVApi::class)
     klib {
+        // KLib validation requires host compilers for each native target. CI runs on Ubuntu,
+        // which can't build Apple targets. Since all code is in commonMain, the JVM API dump
+        // is sufficient to catch public API changes.
         enabled = false
     }
 }
