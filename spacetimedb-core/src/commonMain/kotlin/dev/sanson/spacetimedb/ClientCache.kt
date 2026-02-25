@@ -47,6 +47,7 @@ public class ClientCache {
  */
 public class TableCache<Row : Any> {
     private val entries = LinkedHashMap<RowKey, RowEntry<Row>>()
+    private val uniqueIndexes = mutableListOf<UniqueIndex<Row, *>>()
 
     /** Number of distinct rows currently cached. */
     public val count: Int get() = entries.size
@@ -54,6 +55,20 @@ public class TableCache<Row : Any> {
     /** Iterate over all cached rows. */
     public fun iter(): Iterator<Row> =
         entries.values.asSequence().map { it.row }.iterator()
+
+    /**
+     * Register a [UniqueIndex] to be maintained automatically on insert/delete.
+     *
+     * The index is immediately populated with all currently cached rows.
+     * Typically called once during table setup by generated code.
+     */
+    public fun <Col : Any> registerUniqueIndex(index: UniqueIndex<Row, Col>): UniqueIndex<Row, Col> {
+        for (entry in entries.values) {
+            index.add(entry.row)
+        }
+        uniqueIndexes.add(index)
+        return index
+    }
 
     /**
      * Insert a row into the cache.
@@ -74,6 +89,9 @@ public class TableCache<Row : Any> {
             return null
         }
         entries[key] = RowEntry(row, refCount = 1)
+        for (index in uniqueIndexes) {
+            index.add(row)
+        }
         return row
     }
 
@@ -93,14 +111,20 @@ public class TableCache<Row : Any> {
         entry.refCount--
         if (entry.refCount <= 0) {
             entries.remove(key)
+            for (index in uniqueIndexes) {
+                index.remove(entry.row)
+            }
             return entry.row
         }
         return null
     }
 
-    /** Remove all entries. */
+    /** Remove all entries and clear all registered indexes. */
     public fun clear() {
         entries.clear()
+        for (index in uniqueIndexes) {
+            index.clear()
+        }
     }
 }
 

@@ -1,3 +1,23 @@
+public final class dev/sanson/spacetimedb/CallbackId {
+	public static final synthetic fun box-impl (J)Ldev/sanson/spacetimedb/CallbackId;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (JLjava/lang/Object;)Z
+	public static final fun equals-impl0 (JJ)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (J)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (J)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()J
+}
+
+public final class dev/sanson/spacetimedb/ClientCache {
+	public fun <init> ()V
+	public final fun clear ()V
+	public final fun getOrCreateTable (Ljava/lang/String;)Ldev/sanson/spacetimedb/TableCache;
+	public final fun getTable (Ljava/lang/String;)Ldev/sanson/spacetimedb/TableCache;
+	public final fun getTableNames ()Ljava/util/Set;
+}
+
 public final class dev/sanson/spacetimedb/ConnectionId : java/lang/Comparable {
 	public static final field Companion Ldev/sanson/spacetimedb/ConnectionId$Companion;
 	public static final synthetic fun box-impl (Ldev/sanson/spacetimedb/bsatn/U128;)Ldev/sanson/spacetimedb/ConnectionId;
@@ -77,6 +97,18 @@ public final class dev/sanson/spacetimedb/Event$UnsubscribeApplied : dev/sanson/
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/sanson/spacetimedb/EventTable {
+	public fun getCount ()I
+	public fun iter ()Ljava/util/Iterator;
+	public abstract fun onEvent-4UbDo-M (Lkotlin/jvm/functions/Function2;)J
+	public abstract fun removeOnEvent-yFPdGxs (J)V
+}
+
+public final class dev/sanson/spacetimedb/EventTable$DefaultImpls {
+	public static fun getCount (Ldev/sanson/spacetimedb/EventTable;)I
+	public static fun iter (Ldev/sanson/spacetimedb/EventTable;)Ljava/util/Iterator;
 }
 
 public final class dev/sanson/spacetimedb/Identity : java/lang/Comparable {
@@ -255,6 +287,30 @@ public final class dev/sanson/spacetimedb/Status$Panic : dev/sanson/spacetimedb/
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class dev/sanson/spacetimedb/Table {
+	public abstract fun getCount ()I
+	public abstract fun iter ()Ljava/util/Iterator;
+	public abstract fun onDelete-4UbDo-M (Lkotlin/jvm/functions/Function2;)J
+	public abstract fun onInsert-4UbDo-M (Lkotlin/jvm/functions/Function2;)J
+	public abstract fun removeOnDelete-yFPdGxs (J)V
+	public abstract fun removeOnInsert-yFPdGxs (J)V
+}
+
+public final class dev/sanson/spacetimedb/TableCache {
+	public fun <init> ()V
+	public final fun clear ()V
+	public final fun delete ([B)Ljava/lang/Object;
+	public final fun getCount ()I
+	public final fun insert ([BLjava/lang/Object;)Ljava/lang/Object;
+	public final fun iter ()Ljava/util/Iterator;
+	public final fun registerUniqueIndex (Ldev/sanson/spacetimedb/UniqueIndex;)Ldev/sanson/spacetimedb/UniqueIndex;
+}
+
+public abstract interface class dev/sanson/spacetimedb/TableWithPrimaryKey : dev/sanson/spacetimedb/Table {
+	public abstract fun onUpdate-4UbDo-M (Lkotlin/jvm/functions/Function3;)J
+	public abstract fun removeOnUpdate-yFPdGxs (J)V
+}
+
 public final class dev/sanson/spacetimedb/TimeDuration : java/lang/Comparable {
 	public static final field Companion Ldev/sanson/spacetimedb/TimeDuration$Companion;
 	public static final synthetic fun box-impl (J)Ldev/sanson/spacetimedb/TimeDuration;
@@ -301,5 +357,11 @@ public final class dev/sanson/spacetimedb/Timestamp$Companion {
 	public final fun fromEpochMicroseconds-4U8TOcc (J)Lkotlin/time/Instant;
 	public final fun getUNIX_EPOCH-Jr5MCI8 ()Lkotlin/time/Instant;
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/UniqueIndex {
+	public fun <init> (Lkotlin/jvm/functions/Function1;)V
+	public final fun find (Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun getSize ()I
 }
 
