@@ -15,6 +15,14 @@ Implement a Kotlin Multiplatform (KMP) client SDK for SpacetimeDB, targeting JVM
 - **Modules**: `spacetimedb-bsatn`, `spacetimedb-core`, `spacetimedb-codegen` (+ test modules later)
 - **Publishing**: Local only for now
 
+### Public API Conventions
+
+- **No sealed classes in public API.** Use `abstract class` with `private constructor()`. Sealed classes break consumers when variants change.
+- **No data classes in public API.** Use `@Poko` instead — data classes expose `copy()` and `componentN()` which are problematic for binary compatibility.
+- **Parameterless subtypes** of abstract hierarchies should be `data object`s, not classes with no-arg constructors.
+- **Single-parameter wrapper types** should use `@JvmInline value class`. If the wrapped type is already `@Serializable`, no custom serializer is needed.
+- **Prefer kotlin.time types** — use `kotlin.time.Instant` and `kotlin.time.Duration` over raw Long wrappers for time values.
+
 ## Architecture Overview
 
 ```
@@ -87,8 +95,8 @@ The wire format is:
 ### Phase 2: Core Types
 
 - [ ] Core domain types: `Identity`, `ConnectionId`, `Timestamp`, `TimeDuration`, `ScheduleAt`, `Uuid` — all with BSATN `@Serializable`
-- [ ] Error types: `SpacetimeError` sealed class hierarchy
-- [ ] Event types: `Event` sealed class, `ReducerEvent`, `Status` sealed class
+- [ ] Error types: `SpacetimeError` abstract class hierarchy
+- [ ] Event types: `Event` abstract class, `ReducerEvent`, `Status` abstract class
 
 ### Phase 3: Client Cache & Tables
 
