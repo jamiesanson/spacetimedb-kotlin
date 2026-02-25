@@ -6,6 +6,7 @@ import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.path
+import dev.sanson.spacetimedb.codegen.generator.ModuleGenerator
 import dev.sanson.spacetimedb.codegen.generator.ReducerGenerator
 import dev.sanson.spacetimedb.codegen.generator.TableHandleGenerator
 import dev.sanson.spacetimedb.codegen.generator.TypeGenerator
@@ -43,6 +44,7 @@ public class GenerateCommand : CliktCommand(
         val typeGenerator = TypeGenerator(moduleSchema, packageName)
         val tableHandleGenerator = TableHandleGenerator(moduleSchema, packageName)
         val reducerGenerator = ReducerGenerator(moduleSchema, packageName)
+        val moduleGenerator = ModuleGenerator(moduleSchema, packageName)
 
         outDir.createDirectories()
         val outFile = outDir.toFile()
@@ -62,6 +64,10 @@ public class GenerateCommand : CliktCommand(
             // Reducers
             add(reducerGenerator.generateReducerFile())
             add(reducerGenerator.generateRemoteReducersFile())
+
+            // Module-level wiring
+            add(moduleGenerator.generateDeserializerMapFile())
+            add(moduleGenerator.generateBuilderExtensionFile())
         }
 
         for (file in files) {

@@ -1,0 +1,133 @@
+package dev.sanson.spacetimedb.codegen.generator
+
+import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.SourceFile
+import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+
+class ModuleGeneratorTest {
+
+    private val fixture: String by lazy {
+        this::class.java.getResource("/module-test-v10.json")!!.readText()
+    }
+
+    @Test
+    fun `generates deserializer map with entry per public table`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = ModuleGenerator(schema, "com.example")
+
+        val file = gen.generateDeserializerMapFile()
+        val output = file.toString()
+
+        assertContains(output, "fun tableDeserializerMap()")
+        // Should have serializer entries for all public tables
+        assertContains(output, "\"logged_out_player\" to serializer<LoggedOutPlayer>()")
+        assertContains(output, "\"person\" to serializer<Person>()")
+        assertContains(output, "\"player\" to serializer<Player>()")
+        assertContains(output, "\"test_d\" to serializer<TestD>()")
+        assertContains(output, "\"test_f\" to serializer<TestF>()")
+    }
+
+    @Test
+    fun `generates builder extension function`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = ModuleGenerator(schema, "com.example")
+
+        val file = gen.generateBuilderExtensionFile()
+        val output = file.toString()
+
+        assertContains(output, "fun DbConnectionBuilder.withModuleDeserializers()")
+        assertContains(output, "DbConnectionBuilder")
+        assertContains(output, "withTableDeserializers(tableDeserializerMap())")
+    }
+
+    @OptIn(ExperimentalCompilerApi::class)
+    @Test
+    fun `generated module-level code compiles`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val pkg = "com.example"
+        val typeGen = TypeGenerator(schema, pkg)
+        val moduleGen = ModuleGenerator(schema, pkg)
+
+        val sources = mutableListOf<SourceFile>()
+
+        // Row types needed by deserializer map
+        for (file in typeGen.generateTypeFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+        for (table in schema.publicTables) {
+            val productType = schema.tableProductType(table)
+            val file = typeGen.generateTableRowFile(table.sourceName, productType)
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+
+        // Module wiring
+        sources.add(SourceFile.kotlin("TableDeserializerMap.kt", moduleGen.generateDeserializerMapFile().toString()))
+        sources.add(SourceFile.kotlin("BuilderExtensions.kt", moduleGen.generateBuilderExtensionFile().toString()))
+
+        val result = KotlinCompilation().apply {
+            this.sources = sources
+            inheritClassPath = true
+        }.compile()
+
+        assertEquals(
+            KotlinCompilation.ExitCode.OK,
+            result.exitCode,
+            "Generated module-level code failed to compile:\n${result.messages}",
+        )
+    }
+
+    @OptIn(ExperimentalCompilerApi::class)
+    @Test
+    fun `all generated code compiles together end-to-end`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val pkg = "com.example.module"
+        val typeGen = TypeGenerator(schema, pkg)
+        val tableHandleGen = TableHandleGenerator(schema, pkg)
+        val reducerGen = ReducerGenerator(schema, pkg)
+        val moduleGen = ModuleGenerator(schema, pkg)
+
+        val sources = mutableListOf<SourceFile>()
+
+        // Custom types
+        for (file in typeGen.generateTypeFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+
+        // Table row types
+        for (table in schema.publicTables) {
+            val productType = schema.tableProductType(table)
+            val file = typeGen.generateTableRowFile(table.sourceName, productType)
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+
+        // Table handles + RemoteTables
+        for (file in tableHandleGen.generateTableHandleFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+        sources.add(SourceFile.kotlin("RemoteTables.kt", tableHandleGen.generateRemoteTablesFile().toString()))
+
+        // Reducers
+        sources.add(SourceFile.kotlin("Reducer.kt", reducerGen.generateReducerFile().toString()))
+        sources.add(SourceFile.kotlin("RemoteReducers.kt", reducerGen.generateRemoteReducersFile().toString()))
+
+        // Module wiring
+        sources.add(SourceFile.kotlin("TableDeserializerMap.kt", moduleGen.generateDeserializerMapFile().toString()))
+        sources.add(SourceFile.kotlin("BuilderExtensions.kt", moduleGen.generateBuilderExtensionFile().toString()))
+
+        val result = KotlinCompilation().apply {
+            this.sources = sources
+            inheritClassPath = true
+        }.compile()
+
+        assertEquals(
+            KotlinCompilation.ExitCode.OK,
+            result.exitCode,
+            "Full end-to-end generated code failed to compile:\n${result.messages}",
+        )
+    }
+}
