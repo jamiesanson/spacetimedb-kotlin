@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.plugins.binary.compatibility.validator.asDependency())
     api(libs.plugins.foojay.asDependency())
     api(libs.plugins.kotlin.jvm.asDependency())
     api(libs.plugins.kotlin.multiplatform.asDependency())
