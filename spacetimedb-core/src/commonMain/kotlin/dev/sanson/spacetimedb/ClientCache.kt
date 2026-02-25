@@ -125,6 +125,40 @@ public class TableCache<Row : Any> : Iterable<Row> {
             index.clear()
         }
     }
+
+    /**
+     * Apply a [TableUpdate] to this cache, returning the effective diff.
+     *
+     * Processes inserts first (so a row appearing in both inserts and deletes
+     * of the same update cancels out via ref counting), then deletes.
+     *
+     * @return a [TableAppliedDiff] containing rows that were actually added or removed
+     */
+    public fun applyDiff(update: TableUpdate<Row>): TableAppliedDiff<Row> {
+        if (update.isEmpty) return TableAppliedDiff(emptyList(), emptyList())
+
+        val actualInserts = mutableListOf<Row>()
+        val actualDeletes = mutableListOf<Row>()
+
+        for (ins in update.inserts) {
+            val inserted = insert(ins.bsatn, ins.row)
+            if (inserted != null) {
+                actualInserts.add(inserted)
+            }
+        }
+
+        for (del in update.deletes) {
+            val deleted = delete(del.bsatn)
+            if (deleted != null) {
+                actualDeletes.add(deleted)
+                // If this row was also just inserted in the same update,
+                // remove it from inserts (net no-op for callbacks).
+                actualInserts.remove(deleted)
+            }
+        }
+
+        return TableAppliedDiff(inserts = actualInserts, deletes = actualDeletes)
+    }
 }
 
 /**
