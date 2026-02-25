@@ -193,4 +193,61 @@ class ClientCacheTest {
         assertNotNull(cache.insert(byteArrayOf(1), "row"))
         assertEquals("row", cache.delete(byteArrayOf(1)))
     }
+
+    @Test
+    fun `re-insert after full eviction behaves as fresh`() {
+        val cache = TableCache<String>()
+        cache.insert(byteArrayOf(1), "row")
+        cache.delete(byteArrayOf(1))
+        assertEquals(0, cache.count)
+
+        // Row was fully evicted — re-insert should return non-null (new insert)
+        assertNotNull(cache.insert(byteArrayOf(1), "row"))
+        assertEquals(1, cache.count)
+
+        // Single delete should fully remove it (ref_count should be 1 not carried over)
+        assertEquals("row", cache.delete(byteArrayOf(1)))
+        assertEquals(0, cache.count)
+    }
+
+    @Test
+    fun `count is 1 despite ref count greater than 1`() {
+        val cache = TableCache<String>()
+        // Simulate two overlapping subscriptions inserting the same row
+        cache.insert(byteArrayOf(1), "shared")
+        cache.insert(byteArrayOf(1), "shared")
+
+        // Count should reflect distinct rows, not ref count
+        assertEquals(1, cache.count)
+
+        // Iter should yield the row once
+        assertEquals(listOf("shared"), cache.iter().asSequence().toList())
+    }
+
+    @Test
+    fun `update flow via delete then insert with same PK`() {
+        data class User(val id: Int, val name: String)
+
+        val cache = TableCache<User>()
+        val index = cache.registerUniqueIndex(UniqueIndex(getColumn = { it.id }))
+
+        val oldBytes = byteArrayOf(1, 0, 0, 0, 5) // hypothetical BSATN for User(1, "alice")
+        val newBytes = byteArrayOf(1, 0, 0, 0, 6) // hypothetical BSATN for User(1, "bob")
+
+        // Insert original row
+        cache.insert(oldBytes, User(1, "alice"))
+        assertEquals(User(1, "alice"), index.find(1))
+
+        // Simulate update: delete old, insert new (same PK, different data)
+        val deleted = cache.delete(oldBytes)
+        assertEquals(User(1, "alice"), deleted)
+        assertNull(index.find(1))
+
+        val inserted = cache.insert(newBytes, User(1, "bob"))
+        assertEquals(User(1, "bob"), inserted)
+        assertEquals(User(1, "bob"), index.find(1))
+
+        // Cache should still have exactly 1 row
+        assertEquals(1, cache.count)
+    }
 }
