@@ -8,6 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertFailsWith
 
 class BsatnCompositeTest {
 
@@ -157,6 +158,15 @@ class BsatnCompositeTest {
         for (shape in shapes) {
             val bytes = Bsatn.encodeToByteArray(Shape.serializer(), shape)
             assertEquals(shape, Bsatn.decodeFromByteArray(Shape.serializer(), bytes))
+        }
+    }
+
+    @Test
+    fun `invalid sealed class tag throws`() {
+        // Shape only has 2 variants (0, 1) — tag 5 is invalid
+        val bytes = byteArrayOf(0x05, 0x00, 0x00, 0x00, 0x00)
+        assertFailsWith<BsatnDecodeException.InvalidTag> {
+            Bsatn.decodeFromByteArray(Shape.serializer(), bytes)
         }
     }
 

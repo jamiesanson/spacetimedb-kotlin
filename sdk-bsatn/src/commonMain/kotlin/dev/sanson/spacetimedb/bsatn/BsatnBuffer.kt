@@ -63,11 +63,9 @@ internal class BsatnBuffer {
 internal class BsatnReader(private val data: ByteArray) {
     private var position = 0
 
-    private fun checkAvailable(needed: Int) {
+    private fun checkAvailable(needed: Int, forType: String = "data") {
         if (position + needed > data.size) {
-            throw BsatnDecodeException(
-                "Unexpected end of input: need $needed bytes at position $position, but only ${data.size - position} available",
-            )
+            throw BsatnDecodeException.BufferLength(forType, needed, data.size - position)
         }
     }
 
@@ -118,5 +116,19 @@ internal class BsatnReader(private val data: ByteArray) {
 
 /**
  * Exception thrown when BSATN decoding fails.
+ *
+ * Mirrors Rust's `DecodeError` variants for interoperability.
  */
-public class BsatnDecodeException(message: String) : RuntimeException(message)
+public open class BsatnDecodeException(message: String) : RuntimeException(message) {
+    /** Insufficient bytes in the buffer. Mirrors Rust `DecodeError::BufferLength`. */
+    public class BufferLength(forType: String, expected: Int, given: Int) :
+        BsatnDecodeException("Unexpected end of input: need $expected bytes for $forType at current position, but only $given available")
+
+    /** Invalid tag byte for a sum type. Mirrors Rust `DecodeError::InvalidTag`. */
+    public class InvalidTag(tag: Int, sumName: String? = null) :
+        BsatnDecodeException("Invalid tag $tag${sumName?.let { " for $it" } ?: ""}")
+
+    /** Invalid bool byte (not 0 or 1). Mirrors Rust `DecodeError::InvalidBool`. */
+    public class InvalidBool(byte: Int) :
+        BsatnDecodeException("Invalid bool byte: $byte (expected 0 or 1)")
+}

@@ -35,7 +35,7 @@ class BsatnPrimitiveTest {
     fun `invalid bool byte throws`() {
         // Rust rejects any byte other than 0 or 1 as a bool
         for (b in listOf(2, 127, 255)) {
-            assertFailsWith<BsatnDecodeException> {
+            assertFailsWith<BsatnDecodeException.InvalidBool> {
                 Bsatn.decodeFromByteArray(Boolean.serializer(), byteArrayOf(b.toByte()))
             }
         }
@@ -162,7 +162,7 @@ class BsatnPrimitiveTest {
 
     @Test
     fun `decode from truncated input throws`() {
-        assertFailsWith<BsatnDecodeException> {
+        assertFailsWith<BsatnDecodeException.BufferLength> {
             // Need 4 bytes for an int, only provide 2
             Bsatn.decodeFromByteArray(Int.serializer(), byteArrayOf(0x01, 0x02))
         }

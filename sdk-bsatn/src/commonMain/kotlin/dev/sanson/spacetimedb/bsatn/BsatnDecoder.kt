@@ -26,7 +26,7 @@ internal class BsatnDecoder(
         return when (val byte = reader.readByte()) {
             0 -> false
             1 -> true
-            else -> throw BsatnDecodeException("Invalid bool byte: $byte (expected 0 or 1)")
+            else -> throw BsatnDecodeException.InvalidBool(byte)
         }
     }
 
@@ -194,7 +194,7 @@ private class SealedClassDecoder(
         val tag = reader.readByte()
         val polyDesc = sealedDescriptor.getElementDescriptor(1)
         if (tag < 0 || tag >= polyDesc.elementsCount) {
-            throw BsatnDecodeException("Invalid sealed class tag: $tag (max ${polyDesc.elementsCount - 1})")
+            throw BsatnDecodeException.InvalidTag(tag, sealedDescriptor.serialName)
         }
         resolvedSerialName = polyDesc.getElementDescriptor(tag).serialName
     }
