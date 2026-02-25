@@ -18,10 +18,11 @@ internal fun decompressServerMessage(raw: ByteArray): ByteArray {
     val tag = raw[0]
     val payload = raw.copyOfRange(1, raw.size)
 
-    return when (Compression.fromTag(tag)) {
+    return when (val compression = Compression.fromTag(tag)) {
         Compression.None -> payload
         Compression.Brotli -> decompressBrotli(payload)
         Compression.Gzip -> decompressGzip(payload)
+        else -> throw IllegalArgumentException("Unhandled compression: $compression")
     }
 }
 

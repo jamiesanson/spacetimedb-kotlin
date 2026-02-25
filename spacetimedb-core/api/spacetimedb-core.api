@@ -403,17 +403,29 @@ public final class dev/sanson/spacetimedb/UniqueIndex {
 	public final fun getSize ()I
 }
 
-public final class dev/sanson/spacetimedb/protocol/Compression : java/lang/Enum {
-	public static final field Brotli Ldev/sanson/spacetimedb/protocol/Compression;
-	public static final field Companion Ldev/sanson/spacetimedb/protocol/Compression$Companion;
-	public static final field Gzip Ldev/sanson/spacetimedb/protocol/Compression;
-	public static final field None Ldev/sanson/spacetimedb/protocol/Compression;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Ldev/sanson/spacetimedb/protocol/Compression;
-	public static fun values ()[Ldev/sanson/spacetimedb/protocol/Compression;
+public abstract class dev/sanson/spacetimedb/protocol/Compression {
+	public synthetic fun <init> (BLjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
-public final class dev/sanson/spacetimedb/protocol/Compression$Companion {
+public final class dev/sanson/spacetimedb/protocol/Compression$Brotli : dev/sanson/spacetimedb/protocol/Compression {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/protocol/Compression$Brotli;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/protocol/Compression$Gzip : dev/sanson/spacetimedb/protocol/Compression {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/protocol/Compression$Gzip;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/protocol/Compression$None : dev/sanson/spacetimedb/protocol/Compression {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/protocol/Compression$None;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class dev/sanson/spacetimedb/transport/CredentialFile {
