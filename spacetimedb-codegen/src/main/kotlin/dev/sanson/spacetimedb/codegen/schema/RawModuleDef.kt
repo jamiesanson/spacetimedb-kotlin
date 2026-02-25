@@ -2,6 +2,7 @@ package dev.sanson.spacetimedb.codegen.schema
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
@@ -70,25 +71,33 @@ internal object AlgebraicTypeListSerializer : KSerializer<List<AlgebraicType>> {
 
 @Serializable
 public data class RawTableDef(
-    val source_name: String,
-    val product_type_ref: Int,
-    val primary_key: List<Int>,
+    @SerialName("source_name")
+    val sourceName: String,
+    @SerialName("product_type_ref")
+    val productTypeRef: Int,
+    @SerialName("primary_key")
+    val primaryKey: List<Int>,
     val indexes: List<RawIndexDef>,
     val constraints: List<RawConstraintDef>,
     val sequences: List<RawSequenceDef>,
+    @SerialName("table_type")
     @Serializable(with = TaggedUnitSerializer::class)
-    val table_type: String,
+    val tableType: String,
+    @SerialName("table_access")
     @Serializable(with = TaggedUnitSerializer::class)
-    val table_access: String,
-    val is_event: Boolean,
+    val tableAccess: String,
+    @SerialName("is_event")
+    val isEvent: Boolean,
 )
 
 @Serializable
 public data class RawIndexDef(
+    @SerialName("source_name")
     @Serializable(with = OptionStringSerializer::class)
-    val source_name: String?,
+    val sourceName: String?,
+    @SerialName("accessor_name")
     @Serializable(with = OptionStringSerializer::class)
-    val accessor_name: String?,
+    val accessorName: String?,
     @Serializable(with = IndexAlgorithmSerializer::class)
     val algorithm: IndexAlgorithm,
 )
@@ -100,8 +109,9 @@ public data class IndexAlgorithm(
 
 @Serializable
 public data class RawConstraintDef(
+    @SerialName("source_name")
     @Serializable(with = OptionStringSerializer::class)
-    val source_name: String?,
+    val sourceName: String?,
     @Serializable(with = ConstraintDataSerializer::class)
     val data: ConstraintData,
 )
@@ -113,8 +123,9 @@ public data class ConstraintData(
 
 @Serializable
 public data class RawSequenceDef(
+    @SerialName("source_name")
     @Serializable(with = OptionStringSerializer::class)
-    val source_name: String?,
+    val sourceName: String?,
     val column: Int,
     val increment: Int = 1,
 )
@@ -123,59 +134,74 @@ public data class RawSequenceDef(
 
 @Serializable
 public data class RawReducerDef(
-    val source_name: String,
+    @SerialName("source_name")
+    val sourceName: String,
     val params: ProductType,
     @Serializable(with = TaggedUnitSerializer::class)
     val visibility: String,
+    @SerialName("ok_return_type")
     @Serializable(with = AlgebraicTypeSerializer::class)
-    val ok_return_type: AlgebraicType,
+    val okReturnType: AlgebraicType,
+    @SerialName("err_return_type")
     @Serializable(with = AlgebraicTypeSerializer::class)
-    val err_return_type: AlgebraicType,
+    val errReturnType: AlgebraicType,
 )
 
 // --- Procedure ---
 
 @Serializable
 public data class RawProcedureDef(
-    val source_name: String,
+    @SerialName("source_name")
+    val sourceName: String,
     val params: ProductType,
     @Serializable(with = TaggedUnitSerializer::class)
     val visibility: String,
+    @SerialName("return_type")
     @Serializable(with = AlgebraicTypeSerializer::class)
-    val return_type: AlgebraicType,
+    val returnType: AlgebraicType,
 )
 
 // --- View ---
 
 @Serializable
 public data class RawViewDef(
-    val source_name: String,
+    @SerialName("source_name")
+    val sourceName: String,
     val index: Int,
-    val is_public: Boolean,
-    val is_anonymous: Boolean = false,
+    @SerialName("is_public")
+    val isPublic: Boolean,
+    @SerialName("is_anonymous")
+    val isAnonymous: Boolean = false,
     val params: ProductType,
+    @SerialName("return_type")
     @Serializable(with = AlgebraicTypeSerializer::class)
-    val return_type: AlgebraicType,
+    val returnType: AlgebraicType,
 )
 
 // --- Schedule ---
 
 @Serializable
 public data class RawScheduleDef(
+    @SerialName("source_name")
     @Serializable(with = OptionStringSerializer::class)
-    val source_name: String?,
-    val table_name: String,
-    val schedule_at_col: Int,
-    val function_name: String,
+    val sourceName: String?,
+    @SerialName("table_name")
+    val tableName: String,
+    @SerialName("schedule_at_col")
+    val scheduleAtCol: Int,
+    @SerialName("function_name")
+    val functionName: String,
 )
 
 // --- Lifecycle ---
 
 @Serializable
 public data class RawLifeCycleReducerDef(
+    @SerialName("lifecycle_spec")
     @Serializable(with = TaggedUnitSerializer::class)
-    val lifecycle_spec: String,
-    val function_name: String,
+    val lifecycleSpec: String,
+    @SerialName("function_name")
+    val functionName: String,
 )
 
 // --- Explicit names ---
@@ -187,8 +213,8 @@ public data class ExplicitNames(
 
 public data class ExplicitNameEntry(
     val kind: String,
-    val source_name: String,
-    val canonical_name: String,
+    val sourceName: String,
+    val canonicalName: String,
 )
 
 // --- Section serializer ---
@@ -246,15 +272,18 @@ internal object RawModuleDefV10SectionSerializer : KSerializer<RawModuleDefV10Se
 
 @Serializable
 public data class RawTypeDef(
-    val source_name: ScopedTypeName,
+    @SerialName("source_name")
+    val sourceName: ScopedTypeName,
     val ty: Int,
-    val custom_ordering: Boolean,
+    @SerialName("custom_ordering")
+    val customOrdering: Boolean,
 )
 
 @Serializable
 public data class ScopedTypeName(
     val scope: List<String>,
-    val source_name: String,
+    @SerialName("source_name")
+    val sourceName: String,
 )
 
 // --- Helper serializers ---
@@ -355,10 +384,10 @@ internal object ExplicitNameEntrySerializer : KSerializer<ExplicitNameEntry> {
         val inner = value.jsonObject
         return ExplicitNameEntry(
             kind = key,
-            source_name = inner["source_name"]?.let {
+            sourceName = inner["source_name"]?.let {
                 jsonDecoder.json.decodeFromJsonElement(String.serializer(), it)
             } ?: throw SerializationException("Missing source_name in ExplicitNameEntry"),
-            canonical_name = inner["canonical_name"]?.let {
+            canonicalName = inner["canonical_name"]?.let {
                 jsonDecoder.json.decodeFromJsonElement(String.serializer(), it)
             } ?: throw SerializationException("Missing canonical_name in ExplicitNameEntry"),
         )

@@ -26,16 +26,16 @@ class RawModuleDefTest {
     @Test
     fun `parses table with primary key and indexes`() {
         val schema = ModuleSchema.fromJson(fixture)
-        val table = schema.tables.first { it.source_name == "logged_out_player" }
+        val table = schema.tables.first { it.sourceName == "logged_out_player" }
 
-        assertEquals(listOf(0), table.primary_key)
+        assertEquals(listOf(0), table.primaryKey)
         assertEquals(3, table.indexes.size)
-        assertEquals("Public", table.table_access)
-        assertEquals("User", table.table_type)
+        assertEquals("Public", table.tableAccess)
+        assertEquals("User", table.tableType)
 
         val firstIndex = table.indexes.first()
-        assertEquals("logged_out_player_player_id_idx_btree", firstIndex.source_name)
-        assertEquals("player_id", firstIndex.accessor_name)
+        assertEquals("logged_out_player_player_id_idx_btree", firstIndex.sourceName)
+        assertEquals("player_id", firstIndex.accessorName)
         assertEquals("BTree", firstIndex.algorithm.type)
         assertEquals(listOf(1), firstIndex.algorithm.columns)
     }
@@ -43,7 +43,7 @@ class RawModuleDefTest {
     @Test
     fun `parses table constraints`() {
         val schema = ModuleSchema.fromJson(fixture)
-        val table = schema.tables.first { it.source_name == "logged_out_player" }
+        val table = schema.tables.first { it.sourceName == "logged_out_player" }
 
         assertEquals(3, table.constraints.size)
         val constraint = table.constraints.first()
@@ -54,43 +54,43 @@ class RawModuleDefTest {
     @Test
     fun `parses reducer with parameters`() {
         val schema = ModuleSchema.fromJson(fixture)
-        val reducer = schema.reducers.first { it.source_name == "add" }
+        val reducer = schema.reducers.first { it.sourceName == "add" }
 
         assertEquals("ClientCallable", reducer.visibility)
         assertEquals(2, reducer.params.elements.size)
 
         val nameParam = reducer.params.elements[0]
         assertEquals("name", nameParam.name)
-        assertIs<AlgebraicType.StringType>(nameParam.algebraic_type)
+        assertIs<AlgebraicType.StringType>(nameParam.algebraicType)
 
         val ageParam = reducer.params.elements[1]
         assertEquals("age", ageParam.name)
-        assertIs<AlgebraicType.U8>(ageParam.algebraic_type)
+        assertIs<AlgebraicType.U8>(ageParam.algebraicType)
     }
 
     @Test
     fun `parses type definitions with scoped names`() {
         val schema = ModuleSchema.fromJson(fixture)
-        val typeDef = schema.types.first { it.source_name.source_name == "RepeatingTestArg" }
+        val typeDef = schema.types.first { it.sourceName.sourceName == "RepeatingTestArg" }
 
-        assertEquals(emptyList(), typeDef.source_name.scope)
+        assertEquals(emptyList(), typeDef.sourceName.scope)
         assertEquals(6, typeDef.ty)
     }
 
     @Test
     fun `parses scoped type name with namespace`() {
         val schema = ModuleSchema.fromJson(fixture)
-        val namespacedTypes = schema.types.filter { it.source_name.scope.isNotEmpty() }
+        val namespacedTypes = schema.types.filter { it.sourceName.scope.isNotEmpty() }
 
         assert(namespacedTypes.isNotEmpty()) { "Expected at least one namespaced type" }
         val first = namespacedTypes.first()
-        assert(first.source_name.scope.isNotEmpty())
+        assert(first.sourceName.scope.isNotEmpty())
     }
 
     @Test
     fun `resolves product type for table`() {
         val schema = ModuleSchema.fromJson(fixture)
-        val table = schema.tables.first { it.source_name == "logged_out_player" }
+        val table = schema.tables.first { it.sourceName == "logged_out_player" }
         val productType = schema.tableProductType(table)
 
         // logged_out_player has: identity, player_id, name
@@ -115,7 +115,7 @@ class RawModuleDefTest {
         val publicTables = schema.publicTables
 
         assert(publicTables.isNotEmpty()) { "Expected at least one public table" }
-        assert(publicTables.all { it.table_access == "Public" })
+        assert(publicTables.all { it.tableAccess == "Public" })
     }
 
     @Test
@@ -130,17 +130,17 @@ class RawModuleDefTest {
     @Test
     fun `parses Identity as Product with __identity__ field`() {
         val schema = ModuleSchema.fromJson(fixture)
-        val table = schema.tables.first { it.source_name == "logged_out_player" }
+        val table = schema.tables.first { it.sourceName == "logged_out_player" }
         val productType = schema.tableProductType(table)
 
         val identityField = productType.elements.first { it.name == "identity" }
-        val resolved = identityField.algebraic_type
+        val resolved = identityField.algebraicType
         assertIs<AlgebraicType.Product>(resolved)
 
         val innerElements = resolved.type.elements
         assertEquals(1, innerElements.size)
         assertEquals("__identity__", innerElements[0].name)
-        assertIs<AlgebraicType.U256>(innerElements[0].algebraic_type)
+        assertIs<AlgebraicType.U256>(innerElements[0].algebraicType)
     }
 
     @Test
@@ -153,8 +153,8 @@ class RawModuleDefTest {
 
         val tableEntry = names.entries.firstOrNull { it.kind == "Table" }
         assertNotNull(tableEntry)
-        assertNotNull(tableEntry.source_name)
-        assertNotNull(tableEntry.canonical_name)
+        assertNotNull(tableEntry.sourceName)
+        assertNotNull(tableEntry.canonicalName)
     }
 
     @Test
@@ -163,8 +163,8 @@ class RawModuleDefTest {
         assertEquals(1, schema.views.size)
 
         val view = schema.views.first()
-        assertEquals("my_player", view.source_name)
-        assertEquals(true, view.is_public)
+        assertEquals("my_player", view.sourceName)
+        assertEquals(true, view.isPublic)
     }
 
     @Test
@@ -173,7 +173,7 @@ class RawModuleDefTest {
         assertEquals(4, schema.procedures.size)
 
         val proc = schema.procedures.first()
-        assertNotNull(proc.source_name)
+        assertNotNull(proc.sourceName)
         assertNotNull(proc.visibility)
     }
 }

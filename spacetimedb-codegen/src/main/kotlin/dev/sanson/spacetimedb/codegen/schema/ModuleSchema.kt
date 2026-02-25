@@ -58,9 +58,9 @@ public class ModuleSchema(private val raw: RawModuleDefV10) {
      * Get the product type for a table's row, resolved from the typespace.
      */
     public fun tableProductType(table: RawTableDef): ProductType {
-        val resolved = resolveType(AlgebraicType.Ref(table.product_type_ref))
+        val resolved = resolveType(AlgebraicType.Ref(table.productTypeRef))
         return (resolved as? AlgebraicType.Product)?.type
-            ?: throw IllegalStateException("Table '${table.source_name}' type ref ${table.product_type_ref} resolved to $resolved, expected Product")
+            ?: throw IllegalStateException("Table '${table.sourceName}' type ref ${table.productTypeRef} resolved to $resolved, expected Product")
     }
 
     /**
@@ -73,7 +73,7 @@ public class ModuleSchema(private val raw: RawModuleDefV10) {
      * Returns only tables with public access (for client codegen).
      */
     public val publicTables: List<RawTableDef>
-        get() = tables.filter { it.table_access == "Public" }
+        get() = tables.filter { it.tableAccess == "Public" }
 
     /**
      * Returns only client-callable reducers (for client codegen).
@@ -82,13 +82,15 @@ public class ModuleSchema(private val raw: RawModuleDefV10) {
         get() = reducers.filter { it.visibility == "ClientCallable" }
 
     public companion object {
+        private val json = kotlinx.serialization.json.Json {
+            ignoreUnknownKeys = true
+        }
+
         /**
          * Parse a [ModuleSchema] from the JSON output of `spacetimedb-standalone extract-schema`.
          */
         public fun fromJson(json: String): ModuleSchema {
-            val rawDef = kotlinx.serialization.json.Json {
-                ignoreUnknownKeys = true
-            }.decodeFromString(RawModuleDef.serializer(), json)
+            val rawDef = this.json.decodeFromString(RawModuleDef.serializer(), json)
             return ModuleSchema(rawDef.V10)
         }
     }

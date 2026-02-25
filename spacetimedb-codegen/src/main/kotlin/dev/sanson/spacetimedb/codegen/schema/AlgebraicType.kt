@@ -2,6 +2,7 @@ package dev.sanson.spacetimedb.codegen.schema
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
@@ -68,8 +69,9 @@ public data class SumType(
 public data class SumTypeVariant(
     @Serializable(with = OptionStringSerializer::class)
     val name: String?,
+    @SerialName("algebraic_type")
     @Serializable(with = AlgebraicTypeSerializer::class)
-    val algebraic_type: AlgebraicType,
+    val algebraicType: AlgebraicType,
 )
 
 /**
@@ -87,8 +89,9 @@ public data class ProductType(
 public data class ProductTypeElement(
     @Serializable(with = OptionStringSerializer::class)
     val name: String?,
+    @SerialName("algebraic_type")
     @Serializable(with = AlgebraicTypeSerializer::class)
-    val algebraic_type: AlgebraicType,
+    val algebraicType: AlgebraicType,
 )
 
 /**

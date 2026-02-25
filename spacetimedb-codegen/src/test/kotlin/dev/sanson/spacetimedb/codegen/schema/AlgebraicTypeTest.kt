@@ -54,7 +54,7 @@ class AlgebraicTypeTest {
         assertEquals(2, type.type.elements.size)
         assertEquals("x", type.type.elements[0].name)
         assertEquals("y", type.type.elements[1].name)
-        assertIs<AlgebraicType.I32>(type.type.elements[0].algebraic_type)
+        assertIs<AlgebraicType.I32>(type.type.elements[0].algebraicType)
     }
 
     @Test
