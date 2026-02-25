@@ -1,0 +1,127 @@
+public final class dev/sanson/spacetimedb/ConnectionId : java/lang/Comparable {
+	public static final field Companion Ldev/sanson/spacetimedb/ConnectionId$Companion;
+	public fun <init> (Ldev/sanson/spacetimedb/bsatn/U128;)V
+	public fun compareTo (Ldev/sanson/spacetimedb/ConnectionId;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ldev/sanson/spacetimedb/bsatn/U128;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/ConnectionId$Companion {
+	public final fun getZERO ()Ldev/sanson/spacetimedb/ConnectionId;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/Identity : java/lang/Comparable {
+	public static final field Companion Ldev/sanson/spacetimedb/Identity$Companion;
+	public fun <init> (Ldev/sanson/spacetimedb/bsatn/U256;)V
+	public fun compareTo (Ldev/sanson/spacetimedb/Identity;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ldev/sanson/spacetimedb/bsatn/U256;
+	public fun hashCode ()I
+	public final fun toHexString ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/Identity$Companion {
+	public final fun getZERO ()Ldev/sanson/spacetimedb/Identity;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract class dev/sanson/spacetimedb/ScheduleAt {
+	public static final field Companion Ldev/sanson/spacetimedb/ScheduleAt$Companion;
+	public synthetic fun <init> (ILkotlinx/serialization/internal/SerializationConstructorMarker;)V
+	public static final synthetic fun write$Self (Ldev/sanson/spacetimedb/ScheduleAt;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
+}
+
+public final class dev/sanson/spacetimedb/ScheduleAt$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/ScheduleAt$Interval : dev/sanson/spacetimedb/ScheduleAt {
+	public static final field Companion Ldev/sanson/spacetimedb/ScheduleAt$Interval$Companion;
+	public fun <init> (Ldev/sanson/spacetimedb/TimeDuration;)V
+	public final fun component1 ()Ldev/sanson/spacetimedb/TimeDuration;
+	public final fun copy (Ldev/sanson/spacetimedb/TimeDuration;)Ldev/sanson/spacetimedb/ScheduleAt$Interval;
+	public static synthetic fun copy$default (Ldev/sanson/spacetimedb/ScheduleAt$Interval;Ldev/sanson/spacetimedb/TimeDuration;ILjava/lang/Object;)Ldev/sanson/spacetimedb/ScheduleAt$Interval;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDuration ()Ldev/sanson/spacetimedb/TimeDuration;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class dev/sanson/spacetimedb/ScheduleAt$Interval$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/ScheduleAt$Interval$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/sanson/spacetimedb/ScheduleAt$Interval;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/sanson/spacetimedb/ScheduleAt$Interval;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class dev/sanson/spacetimedb/ScheduleAt$Interval$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/ScheduleAt$Time : dev/sanson/spacetimedb/ScheduleAt {
+	public static final field Companion Ldev/sanson/spacetimedb/ScheduleAt$Time$Companion;
+	public fun <init> (Ldev/sanson/spacetimedb/Timestamp;)V
+	public final fun component1 ()Ldev/sanson/spacetimedb/Timestamp;
+	public final fun copy (Ldev/sanson/spacetimedb/Timestamp;)Ldev/sanson/spacetimedb/ScheduleAt$Time;
+	public static synthetic fun copy$default (Ldev/sanson/spacetimedb/ScheduleAt$Time;Ldev/sanson/spacetimedb/Timestamp;ILjava/lang/Object;)Ldev/sanson/spacetimedb/ScheduleAt$Time;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTimestamp ()Ldev/sanson/spacetimedb/Timestamp;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public synthetic class dev/sanson/spacetimedb/ScheduleAt$Time$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/ScheduleAt$Time$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/sanson/spacetimedb/ScheduleAt$Time;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/sanson/spacetimedb/ScheduleAt$Time;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class dev/sanson/spacetimedb/ScheduleAt$Time$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/TimeDuration : java/lang/Comparable {
+	public static final field Companion Ldev/sanson/spacetimedb/TimeDuration$Companion;
+	public fun <init> (J)V
+	public fun compareTo (Ldev/sanson/spacetimedb/TimeDuration;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMicros ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/TimeDuration$Companion {
+	public final fun getZERO ()Ldev/sanson/spacetimedb/TimeDuration;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/Timestamp : java/lang/Comparable {
+	public static final field Companion Ldev/sanson/spacetimedb/Timestamp$Companion;
+	public fun <init> (J)V
+	public fun compareTo (Ldev/sanson/spacetimedb/Timestamp;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMicrosSinceUnixEpoch ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/Timestamp$Companion {
+	public final fun getUNIX_EPOCH ()Ldev/sanson/spacetimedb/Timestamp;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+

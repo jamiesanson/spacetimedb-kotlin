@@ -28,4 +28,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "spacetimedb-kotlin"
 
-include(":sdk-bsatn")
+include(":spacetimedb-bsatn")
+include(":spacetimedb-core")
