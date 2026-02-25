@@ -108,11 +108,10 @@ The wire format is:
 
 ### Phase 4: Transport & Connection
 
-- [ ] WebSocket protocol types (v2): `ServerMessage`, `ClientMessage`, etc.
-- [ ] WebSocket transport: Ktor WebSocket client wrapper with compression
-- [ ] `DbConnectionBuilder` & `DbContext` implementation
-- [ ] Subscription management: `SubscriptionBuilder`, `SubscriptionHandle`
-- [ ] Credentials: File-based token persistence (platform-specific)
+- [x] Callback dispatch + transaction diff types (PR #12)
+- [x] WebSocket protocol types v2: `ServerMessage`, `ClientMessage`, `TaggedSumSerializer` (PR #13)
+- [x] Transport + credentials: Ktor WebSocket, Okio credential persistence, compression, URI construction (PR #14)
+- [ ] Connection + subscriptions: `DbConnectionBuilder`, `DbContext`, `SubscriptionBuilder`, `SubscriptionHandle`
 
 ### Phase 5: Codegen
 

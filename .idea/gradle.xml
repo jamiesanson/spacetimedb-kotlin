@@ -20,7 +20,8 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/gradle/plugins" />
-            <option value="$PROJECT_DIR$/module" />
+            <option value="$PROJECT_DIR$/spacetimedb-bsatn" />
+            <option value="$PROJECT_DIR$/spacetimedb-core" />
           </set>
         </option>
       </GradleProjectSettings>

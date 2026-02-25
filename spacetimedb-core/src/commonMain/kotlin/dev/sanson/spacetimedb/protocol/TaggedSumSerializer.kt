@@ -31,8 +31,7 @@ internal class TaggedSumSerializer<T : Any>(
     override fun deserialize(decoder: Decoder): T {
         val tag = decoder.decodeByte().toInt()
         require(tag in variants.indices) { "Invalid tag $tag for ${descriptor.serialName}" }
-        @Suppress("UNCHECKED_CAST")
-        return variants[tag].serializer.deserialize(decoder) as T
+        return variants[tag].serializer.deserialize(decoder)
     }
 }
 

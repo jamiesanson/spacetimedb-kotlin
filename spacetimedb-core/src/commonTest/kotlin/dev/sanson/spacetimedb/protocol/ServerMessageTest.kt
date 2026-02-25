@@ -78,7 +78,7 @@ class ServerMessageTest {
         assertTrue(decoded.sizeHint is RowSizeHint.RowOffsets)
         assertEquals(
             listOf(0uL, 3uL, 5uL),
-            (decoded.sizeHint as RowSizeHint.RowOffsets).offsets,
+            decoded.sizeHint.offsets,
         )
         assertContentEquals(list.rowsData, decoded.rowsData)
     }
@@ -382,7 +382,7 @@ class ServerMessageTest {
 
         assertTrue(decoded is ServerMessage.OneOffQueryResult)
         assertTrue(decoded.result is QueryResult.Err)
-        assertEquals("query failed", (decoded.result as QueryResult.Err).error)
+        assertEquals("query failed", decoded.result.error)
     }
 
     // -- ReducerOutcome variants --
@@ -405,7 +405,7 @@ class ServerMessageTest {
         assertEquals(8u, decoded.requestId)
         assertEquals(ts, decoded.timestamp)
         assertTrue(decoded.result is ReducerOutcome.Ok)
-        assertContentEquals(byteArrayOf(0x01), (decoded.result as ReducerOutcome.Ok).retValue)
+        assertContentEquals(byteArrayOf(0x01), decoded.result.retValue)
     }
 
     @Test
@@ -435,7 +435,7 @@ class ServerMessageTest {
 
         assertTrue(decoded is ServerMessage.ReducerResult)
         assertTrue(decoded.result is ReducerOutcome.Err)
-        assertContentEquals(errBytes, (decoded.result as ReducerOutcome.Err).error)
+        assertContentEquals(errBytes, decoded.result.error)
     }
 
     @Test
@@ -450,7 +450,7 @@ class ServerMessageTest {
 
         assertTrue(decoded is ServerMessage.ReducerResult)
         assertTrue(decoded.result is ReducerOutcome.InternalError)
-        assertEquals("something broke", (decoded.result as ReducerOutcome.InternalError).message)
+        assertEquals("something broke", decoded.result.message)
     }
 
     // -- ReducerOutcome tags --
@@ -489,7 +489,7 @@ class ServerMessageTest {
         assertTrue(decoded.status is ProcedureStatus.Returned)
         assertContentEquals(
             byteArrayOf(0x42),
-            (decoded.status as ProcedureStatus.Returned).value,
+            decoded.status.value,
         )
     }
 
