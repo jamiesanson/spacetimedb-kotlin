@@ -52,6 +52,17 @@ public final class dev/sanson/spacetimedb/ConnectionId$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class dev/sanson/spacetimedb/DbCallbacks {
+	public fun <init> ()V
+	public final fun invokeCallbacks (Ljava/lang/String;Ldev/sanson/spacetimedb/TableAppliedDiff;Ldev/sanson/spacetimedb/Event;)V
+	public final fun registerOnDelete-HxlT8pA (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)J
+	public final fun registerOnInsert-HxlT8pA (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)J
+	public final fun registerOnUpdate-HxlT8pA (Ljava/lang/String;Lkotlin/jvm/functions/Function3;)J
+	public final fun removeOnDelete-xXx09qQ (Ljava/lang/String;J)V
+	public final fun removeOnInsert-xXx09qQ (Ljava/lang/String;J)V
+	public final fun removeOnUpdate-xXx09qQ (Ljava/lang/String;J)V
+}
+
 public abstract class dev/sanson/spacetimedb/Event {
 }
 
@@ -154,6 +165,12 @@ public final class dev/sanson/spacetimedb/ReducerEvent {
 	public final fun getTimestamp-Jr5MCI8 ()Lkotlin/time/Instant;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/RowWithBsatn {
+	public fun <init> ([BLjava/lang/Object;)V
+	public final fun getBsatn ()[B
+	public final fun getRow ()Ljava/lang/Object;
 }
 
 public abstract class dev/sanson/spacetimedb/ScheduleAt {
@@ -296,14 +313,33 @@ public abstract interface class dev/sanson/spacetimedb/Table : java/lang/Iterabl
 	public abstract fun removeOnInsert-yFPdGxs (J)V
 }
 
+public final class dev/sanson/spacetimedb/TableAppliedDiff {
+	public fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDeletes ()Ljava/util/List;
+	public final fun getInserts ()Ljava/util/List;
+	public final fun getUpdateDeletes ()Ljava/util/List;
+	public final fun getUpdateInserts ()Ljava/util/List;
+	public final fun isEmpty ()Z
+	public final fun withUpdatesByPk (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/TableAppliedDiff;
+}
+
 public final class dev/sanson/spacetimedb/TableCache : java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
 	public fun <init> ()V
+	public final fun applyDiff (Ldev/sanson/spacetimedb/TableUpdate;)Ldev/sanson/spacetimedb/TableAppliedDiff;
 	public final fun clear ()V
 	public final fun delete ([B)Ljava/lang/Object;
 	public final fun getCount ()I
 	public final fun insert ([BLjava/lang/Object;)Ljava/lang/Object;
 	public fun iterator ()Ljava/util/Iterator;
 	public final fun registerUniqueIndex (Ldev/sanson/spacetimedb/UniqueIndex;)Ldev/sanson/spacetimedb/UniqueIndex;
+}
+
+public final class dev/sanson/spacetimedb/TableUpdate {
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public final fun getDeletes ()Ljava/util/List;
+	public final fun getInserts ()Ljava/util/List;
+	public final fun isEmpty ()Z
 }
 
 public abstract interface class dev/sanson/spacetimedb/TableWithPrimaryKey : dev/sanson/spacetimedb/Table {
