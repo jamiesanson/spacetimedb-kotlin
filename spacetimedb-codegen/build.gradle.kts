@@ -9,6 +9,7 @@ kotlin {
 
 dependencies {
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinpoet)
 
     testImplementation(libs.kotlin.test)
 }

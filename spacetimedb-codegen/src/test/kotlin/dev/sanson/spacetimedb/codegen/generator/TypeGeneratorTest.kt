@@ -1,0 +1,179 @@
+package dev.sanson.spacetimedb.codegen.generator
+
+import dev.sanson.spacetimedb.codegen.schema.AlgebraicType
+import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
+import dev.sanson.spacetimedb.codegen.schema.ProductType
+import dev.sanson.spacetimedb.codegen.schema.ProductTypeElement
+import dev.sanson.spacetimedb.codegen.schema.SumType
+import dev.sanson.spacetimedb.codegen.schema.SumTypeVariant
+import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+
+class TypeGeneratorTest {
+
+    private val fixture: String by lazy {
+        this::class.java.getResource("/module-test-v10.json")!!.readText()
+    }
+
+    @Test
+    fun `generates product type as class with constructor`() {
+        val schema = schemaWith()
+        val gen = TypeGenerator(schema, "com.example")
+
+        val productType = ProductType(
+            listOf(
+                ProductTypeElement("player_id", AlgebraicType.U64),
+                ProductTypeElement("name", AlgebraicType.StringType),
+            )
+        )
+
+        val file = gen.generateTableRowFile("logged_out_player", productType)
+        val output = file.toString()
+
+        assertContains(output, "class LoggedOutPlayer")
+        assertContains(output, "Serializable")
+        assertContains(output, "playerId")
+        assertContains(output, "ULong")
+        assertContains(output, "player_id")
+        assertContains(output, "val name")
+    }
+
+    @Test
+    fun `generates simple enum for unit-only sum type`() {
+        val schema = schemaWith(
+            types = listOf(
+                AlgebraicType.Sum(
+                    SumType(
+                        listOf(
+                            SumTypeVariant("Active", AlgebraicType.Product(ProductType(emptyList()))),
+                            SumTypeVariant("Inactive", AlgebraicType.Product(ProductType(emptyList()))),
+                            SumTypeVariant("Banned", AlgebraicType.Product(ProductType(emptyList()))),
+                        )
+                    )
+                )
+            ),
+            namedTypes = listOf(TypeNameEntry("PlayerStatus", 0)),
+        )
+        val gen = TypeGenerator(schema, "com.example")
+        val typeDef = schema.types.first()
+        val file = gen.generateTypeFile(typeDef)
+
+        assertNotNull(file)
+        val output = file.toString()
+        assertContains(output, "enum class PlayerStatus")
+        assertContains(output, "Active")
+        assertContains(output, "Inactive")
+        assertContains(output, "Banned")
+    }
+
+    @Test
+    fun `generates sealed class for data sum type`() {
+        val schema = schemaWith(
+            types = listOf(
+                AlgebraicType.Sum(
+                    SumType(
+                        listOf(
+                            SumTypeVariant("Circle", AlgebraicType.Product(
+                                ProductType(listOf(ProductTypeElement("radius", AlgebraicType.F64)))
+                            )),
+                            SumTypeVariant("Rectangle", AlgebraicType.Product(
+                                ProductType(listOf(
+                                    ProductTypeElement("width", AlgebraicType.F64),
+                                    ProductTypeElement("height", AlgebraicType.F64),
+                                ))
+                            )),
+                            SumTypeVariant("None", AlgebraicType.Product(ProductType(emptyList()))),
+                        )
+                    )
+                )
+            ),
+            namedTypes = listOf(TypeNameEntry("Shape", 0)),
+        )
+        val gen = TypeGenerator(schema, "com.example")
+        val typeDef = schema.types.first()
+        val file = gen.generateTypeFile(typeDef)
+
+        assertNotNull(file)
+        val output = file.toString()
+        assertContains(output, "sealed class Shape")
+        assertContains(output, "data class Circle")
+        assertContains(output, "radius")
+        assertContains(output, "Double")
+        assertContains(output, "data class Rectangle")
+        assertContains(output, "data object None")
+    }
+
+    @Test
+    fun `skips Identity type`() {
+        val schema = schemaWith(
+            types = listOf(
+                AlgebraicType.Product(
+                    ProductType(listOf(ProductTypeElement("__identity__", AlgebraicType.U256)))
+                )
+            ),
+            namedTypes = listOf(TypeNameEntry("Identity", 0)),
+        )
+        val gen = TypeGenerator(schema, "com.example")
+        val typeDef = schema.types.first()
+
+        assertNull(gen.generateTypeFile(typeDef))
+    }
+
+    @Test
+    fun `generates SerialName for snake_case fields`() {
+        val schema = schemaWith()
+        val gen = TypeGenerator(schema, "com.example")
+
+        val productType = ProductType(
+            listOf(
+                ProductTypeElement("first_name", AlgebraicType.StringType),
+                ProductTypeElement("age", AlgebraicType.U8),
+            )
+        )
+
+        val file = gen.generateTableRowFile("person", productType)
+        val output = file.toString()
+
+        // first_name → firstName with @SerialName
+        assertContains(output, "first_name")
+        assertContains(output, "firstName")
+        // age stays as age — no @SerialName needed
+        assertContains(output, "val age")
+    }
+
+    @Test
+    fun `generates types from real fixture`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = TypeGenerator(schema, "com.example.module")
+        val files = gen.generateTypeFiles()
+
+        // Should generate at least some type files (skipping Identity etc.)
+        assert(files.isNotEmpty()) { "Expected at least one generated type file" }
+
+        // Check that all generated files compile (have valid Kotlin)
+        for (file in files) {
+            val output = file.toString()
+            assert(output.contains("@Serializable")) {
+                "File ${file.name} missing @Serializable"
+            }
+        }
+    }
+
+    @Test
+    fun `generates table row types from fixture`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = TypeGenerator(schema, "com.example.module")
+
+        for (table in schema.publicTables) {
+            val productType = schema.tableProductType(table)
+            val file = gen.generateTableRowFile(table.sourceName, productType)
+            val output = file.toString()
+
+            assertContains(output, "@Serializable")
+            assertContains(output, "class ${table.sourceName.toPascalCase()}")
+        }
+    }
+}
