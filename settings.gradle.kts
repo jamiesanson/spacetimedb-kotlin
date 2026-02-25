@@ -27,6 +27,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "gradle-template"
+rootProject.name = "spacetimedb-kotlin"
 
-include(":module")
+include(":sdk-bsatn")
