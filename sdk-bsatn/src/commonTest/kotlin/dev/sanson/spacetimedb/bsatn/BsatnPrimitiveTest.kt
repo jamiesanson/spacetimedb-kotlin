@@ -1,5 +1,6 @@
 package dev.sanson.spacetimedb.bsatn
 
+import kotlinx.serialization.builtins.ByteArraySerializer
 import kotlinx.serialization.builtins.serializer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -165,5 +166,29 @@ class BsatnPrimitiveTest {
             // Need 4 bytes for an int, only provide 2
             Bsatn.decodeFromByteArray(Int.serializer(), byteArrayOf(0x01, 0x02))
         }
+    }
+
+    // -- ByteArray --
+
+    @Test
+    fun `encode byte array with length prefix`() {
+        val bytes = Bsatn.encodeToByteArray(ByteArraySerializer(), byteArrayOf(0xCA.toByte(), 0xFE.toByte()))
+        // u32LE(2) + raw bytes
+        assertContentEquals(byteArrayOf(0x02, 0x00, 0x00, 0x00, 0xCA.toByte(), 0xFE.toByte()), bytes)
+    }
+
+    @Test
+    fun `roundtrip empty byte array`() {
+        val value = byteArrayOf()
+        val bytes = Bsatn.encodeToByteArray(ByteArraySerializer(), value)
+        assertContentEquals(byteArrayOf(0x00, 0x00, 0x00, 0x00), bytes)
+        assertContentEquals(value, Bsatn.decodeFromByteArray(ByteArraySerializer(), bytes))
+    }
+
+    @Test
+    fun `roundtrip byte array`() {
+        val value = ByteArray(256) { it.toByte() }
+        val bytes = Bsatn.encodeToByteArray(ByteArraySerializer(), value)
+        assertContentEquals(value, Bsatn.decodeFromByteArray(ByteArraySerializer(), bytes))
     }
 }
