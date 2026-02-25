@@ -78,6 +78,9 @@ internal class BsatnEncoder(
     }
 
     override fun beginCollection(descriptor: SerialDescriptor, collectionSize: Int): CompositeEncoder {
+        if (descriptor.kind == StructureKind.MAP) {
+            throw BsatnEncodeException("BSATN does not support map types")
+        }
         // Arrays/Lists: write u32LE count first
         buffer.writeIntLE(collectionSize)
         return this

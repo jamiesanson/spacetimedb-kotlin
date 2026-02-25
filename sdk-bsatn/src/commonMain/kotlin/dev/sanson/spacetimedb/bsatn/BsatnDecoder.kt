@@ -91,7 +91,8 @@ internal class BsatnDecoder(
     override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
         return when (descriptor.kind) {
             PolymorphicKind.SEALED -> SealedClassDecoder(reader, serializersModule, descriptor)
-            StructureKind.LIST, StructureKind.MAP -> {
+            StructureKind.MAP -> throw BsatnDecodeException("BSATN does not support map types")
+            StructureKind.LIST -> {
                 BsatnDecoder(reader, serializersModule)
             }
             else -> {
@@ -118,14 +119,6 @@ internal class BsatnDecoder(
             }
             StructureKind.LIST -> {
                 if (elementIndex >= elementsCount) {
-                    CompositeDecoder.DECODE_DONE
-                } else {
-                    elementIndex++
-                    elementIndex - 1
-                }
-            }
-            StructureKind.MAP -> {
-                if (elementIndex >= elementsCount * 2) {
                     CompositeDecoder.DECODE_DONE
                 } else {
                     elementIndex++

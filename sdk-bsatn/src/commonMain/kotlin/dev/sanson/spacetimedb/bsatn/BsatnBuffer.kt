@@ -132,3 +132,10 @@ public open class BsatnDecodeException(message: String) : RuntimeException(messa
     public class InvalidBool(byte: Int) :
         BsatnDecodeException("Invalid bool byte: $byte (expected 0 or 1)")
 }
+
+/**
+ * Exception thrown when BSATN encoding fails.
+ *
+ * Mirrors Rust's `BsatnError` / `EncodeError`.
+ */
+public class BsatnEncodeException(message: String) : RuntimeException(message)

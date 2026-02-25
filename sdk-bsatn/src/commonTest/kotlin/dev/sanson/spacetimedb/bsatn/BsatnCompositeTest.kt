@@ -2,6 +2,7 @@ package dev.sanson.spacetimedb.bsatn
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
 import kotlin.test.Test
@@ -230,5 +231,17 @@ class BsatnCompositeTest {
             )
         val bytes = Bsatn.encodeToByteArray(MixedRow.serializer(), value)
         assertEquals(value, Bsatn.decodeFromByteArray(MixedRow.serializer(), bytes))
+    }
+
+    // -- Map rejection --
+
+    @Test
+    fun `encoding map throws`() {
+        assertFailsWith<BsatnEncodeException> {
+            Bsatn.encodeToByteArray(
+                MapSerializer(String.serializer(), Int.serializer()),
+                mapOf("a" to 1),
+            )
+        }
     }
 }
