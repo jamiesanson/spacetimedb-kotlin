@@ -2,8 +2,11 @@
 java-toolchain = "21"
 
 binary-compatibility-validator = "0.18.1"
+clikt = "5.1.0"
 foojay = "0.8.0"
 kotlin = "2.3.10"
+kotlin-compile-testing = "0.12.1"
+kotlinpoet = "2.2.0"
 kotlinx-serialization = "1.10.0"
 kotlinx-coroutines = "1.10.2"
 ktor = "3.4.0"
@@ -11,6 +14,9 @@ okio = "3.16.4"
 poko = "0.21.1"
 
 [libraries]
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+kotlin-compile-testing = { module = "dev.zacsweers.kctfork:core", version.ref = "kotlin-compile-testing" }
+kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
