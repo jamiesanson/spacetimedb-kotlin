@@ -65,6 +65,34 @@ public final class dev/sanson/spacetimedb/DbCallbacks {
 	public final fun removeOnUpdate-xXx09qQ (Ljava/lang/String;J)V
 }
 
+public final class dev/sanson/spacetimedb/DbConnection {
+	public static final field Companion Ldev/sanson/spacetimedb/DbConnection$Companion;
+	public final fun callReducer (Ljava/lang/String;[B)V
+	public final fun disconnect ()V
+	public final fun getConnectionId-mxq1o8M ()Ldev/sanson/spacetimedb/bsatn/U128;
+	public final fun getIdentity-SSl6x40 ()Ldev/sanson/spacetimedb/bsatn/U256;
+	public final fun getToken ()Ljava/lang/String;
+	public final fun isActive ()Z
+	public final fun subscriptionBuilder ()Ldev/sanson/spacetimedb/SubscriptionBuilder;
+}
+
+public final class dev/sanson/spacetimedb/DbConnection$Companion {
+	public final fun builder ()Ldev/sanson/spacetimedb/DbConnectionBuilder;
+}
+
+public final class dev/sanson/spacetimedb/DbConnectionBuilder {
+	public final fun build (Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun onConnect (Lkotlin/jvm/functions/Function3;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
+	public final fun onConnectError (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
+	public final fun onDisconnect (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
+	public final fun withCompression (Ldev/sanson/spacetimedb/protocol/Compression;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
+	public final fun withDatabaseName (Ljava/lang/String;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
+	public final fun withHttpClient (Lio/ktor/client/HttpClient;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
+	public final fun withTableDeserializers (Ljava/util/Map;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
+	public final fun withToken (Ljava/lang/String;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
+	public final fun withUri (Ljava/lang/String;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
+}
+
 public abstract class dev/sanson/spacetimedb/Event {
 }
 
@@ -304,6 +332,20 @@ public final class dev/sanson/spacetimedb/Status$Panic : dev/sanson/spacetimedb/
 	public final fun getMessage ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/SubscriptionBuilder {
+	public final fun onApplied (Lkotlin/jvm/functions/Function0;)Ldev/sanson/spacetimedb/SubscriptionBuilder;
+	public final fun onError (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/SubscriptionBuilder;
+	public final fun subscribe (Ljava/util/List;)Ldev/sanson/spacetimedb/SubscriptionHandle;
+	public final fun subscribe ([Ljava/lang/String;)Ldev/sanson/spacetimedb/SubscriptionHandle;
+}
+
+public final class dev/sanson/spacetimedb/SubscriptionHandle {
+	public final fun isActive ()Z
+	public final fun isEnded ()Z
+	public final fun unsubscribe (Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun unsubscribe$default (Ldev/sanson/spacetimedb/SubscriptionHandle;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 }
 
 public abstract interface class dev/sanson/spacetimedb/Table : java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {

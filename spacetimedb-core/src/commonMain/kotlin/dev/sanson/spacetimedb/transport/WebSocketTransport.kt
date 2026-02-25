@@ -71,7 +71,7 @@ internal class WebSocketTransport(
             }
         }
 
-        return WebSocketConnection(session)
+        return KtorWebSocketConnection(session)
     }
 }
 
@@ -81,16 +81,24 @@ internal class WebSocketTransport(
  * Provides typed send/receive for [ClientMessage] and [ServerMessage],
  * with automatic BSATN encoding and server message decompression.
  */
-internal class WebSocketConnection(
+internal abstract class WebSocketConnection {
+    /** Flow of decoded [ServerMessage]s from the server. */
+    abstract val serverMessages: Flow<ServerMessage>
+
+    /** Sends a [ClientMessage] to the server. */
+    abstract suspend fun send(message: ClientMessage)
+
+    /** Closes the connection. */
+    abstract suspend fun close()
+}
+
+/**
+ * Ktor-based [WebSocketConnection] implementation.
+ */
+internal class KtorWebSocketConnection(
     private val session: DefaultClientWebSocketSession,
-) {
-    /**
-     * Flow of decoded [ServerMessage]s from the server.
-     *
-     * Binary frames are decompressed and BSATN-decoded. Non-binary frames
-     * (ping/pong/close) are handled by Ktor automatically and filtered out.
-     */
-    val serverMessages: Flow<ServerMessage> =
+) : WebSocketConnection() {
+    override val serverMessages: Flow<ServerMessage> =
         session.incoming.receiveAsFlow()
             .mapNotNull { frame ->
                 when (frame) {
@@ -102,18 +110,12 @@ internal class WebSocketConnection(
                 }
             }
 
-    /**
-     * Sends a [ClientMessage] to the server as a BSATN-encoded binary frame.
-     */
-    suspend fun send(message: ClientMessage) {
+    override suspend fun send(message: ClientMessage) {
         val bytes = Bsatn.encodeToByteArray(ClientMessageSerializer, message)
         session.send(Frame.Binary(fin = true, data = bytes))
     }
 
-    /**
-     * Closes the WebSocket connection.
-     */
-    suspend fun close() {
+    override suspend fun close() {
         session.close()
     }
 }
