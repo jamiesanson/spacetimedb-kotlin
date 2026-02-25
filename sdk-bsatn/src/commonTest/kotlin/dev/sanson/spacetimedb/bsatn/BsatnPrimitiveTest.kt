@@ -30,6 +30,16 @@ class BsatnPrimitiveTest {
         }
     }
 
+    @Test
+    fun `invalid bool byte throws`() {
+        // Rust rejects any byte other than 0 or 1 as a bool
+        for (b in listOf(2, 127, 255)) {
+            assertFailsWith<BsatnDecodeException> {
+                Bsatn.decodeFromByteArray(Boolean.serializer(), byteArrayOf(b.toByte()))
+            }
+        }
+    }
+
     // -- Byte --
 
     @Test

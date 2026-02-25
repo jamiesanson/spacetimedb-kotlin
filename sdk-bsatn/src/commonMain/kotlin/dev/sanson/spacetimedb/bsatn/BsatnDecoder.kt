@@ -23,7 +23,11 @@ internal class BsatnDecoder(
     internal var elementsCount = 0
 
     override fun decodeBoolean(): Boolean {
-        return reader.readByte() != 0
+        return when (val byte = reader.readByte()) {
+            0 -> false
+            1 -> true
+            else -> throw BsatnDecodeException("Invalid bool byte: $byte (expected 0 or 1)")
+        }
     }
 
     override fun decodeByte(): Byte {
