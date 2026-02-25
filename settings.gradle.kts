@@ -31,3 +31,4 @@ rootProject.name = "spacetimedb-kotlin"
 include(":spacetimedb-bsatn")
 include(":spacetimedb-core")
 include(":spacetimedb-codegen")
+include(":spacetimedb-gradle-plugin")
