@@ -15,7 +15,7 @@ import kotlinx.serialization.encoding.Encoder
  */
 @Poko
 @Serializable(with = U128Serializer::class)
-public class U128(val lo: ULong, val hi: ULong) : Comparable<U128> {
+public class U128(public val lo: ULong, public val hi: ULong) : Comparable<U128> {
     public companion object {
         public val ZERO: U128 = U128(0u, 0u)
         public val MAX: U128 = U128(ULong.MAX_VALUE, ULong.MAX_VALUE)
@@ -38,7 +38,7 @@ public class U128(val lo: ULong, val hi: ULong) : Comparable<U128> {
  */
 @Poko
 @Serializable(with = I128Serializer::class)
-public class I128(val lo: ULong, val hi: ULong) : Comparable<I128> {
+public class I128(public val lo: ULong, public val hi: ULong) : Comparable<I128> {
     public companion object {
         public val ZERO: I128 = I128(0u, 0u)
         public val MIN: I128 = I128(0u, 0x8000000000000000uL)
@@ -56,7 +56,7 @@ public class I128(val lo: ULong, val hi: ULong) : Comparable<I128> {
  */
 @Poko
 @Serializable(with = U256Serializer::class)
-public class U256(val w0: ULong, val w1: ULong, val w2: ULong, val w3: ULong) : Comparable<U256> {
+public class U256(public val w0: ULong, public val w1: ULong, public val w2: ULong, public val w3: ULong) : Comparable<U256> {
     public companion object {
         public val ZERO: U256 = U256(0u, 0u, 0u, 0u)
         public val MAX: U256 = U256(ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE)
@@ -79,7 +79,7 @@ public class U256(val w0: ULong, val w1: ULong, val w2: ULong, val w3: ULong) : 
  */
 @Poko
 @Serializable(with = I256Serializer::class)
-public class I256(val w0: ULong, val w1: ULong, val w2: ULong, val w3: ULong) : Comparable<I256> {
+public class I256(public val w0: ULong, public val w1: ULong, public val w2: ULong, public val w3: ULong) : Comparable<I256> {
     public companion object {
         public val ZERO: I256 = I256(0u, 0u, 0u, 0u)
     }
