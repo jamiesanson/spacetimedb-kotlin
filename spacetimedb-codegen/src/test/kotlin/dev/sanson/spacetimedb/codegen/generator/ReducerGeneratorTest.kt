@@ -1,8 +1,12 @@
 package dev.sanson.spacetimedb.codegen.generator
 
+import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.SourceFile
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ReducerGeneratorTest {
@@ -105,5 +109,35 @@ class ReducerGeneratorTest {
         assertTrue(!output.contains("fun init("))
         assertTrue(!output.contains("fun clientConnected("))
         assertTrue(!output.contains("fun repeatingTest("))
+    }
+
+    @OptIn(ExperimentalCompilerApi::class)
+    @Test
+    fun `generated reducer code compiles`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val pkg = "com.example"
+        val typeGen = TypeGenerator(schema, pkg)
+        val reducerGen = ReducerGenerator(schema, pkg)
+
+        val sources = mutableListOf<SourceFile>()
+
+        // Custom types are needed as reducer params reference them
+        for (file in typeGen.generateTypeFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+
+        sources.add(SourceFile.kotlin("Reducer.kt", reducerGen.generateReducerFile().toString()))
+        sources.add(SourceFile.kotlin("RemoteReducers.kt", reducerGen.generateRemoteReducersFile().toString()))
+
+        val result = KotlinCompilation().apply {
+            this.sources = sources
+            inheritClassPath = true
+        }.compile()
+
+        assertEquals(
+            KotlinCompilation.ExitCode.OK,
+            result.exitCode,
+            "Generated reducer code failed to compile:\n${result.messages}",
+        )
     }
 }

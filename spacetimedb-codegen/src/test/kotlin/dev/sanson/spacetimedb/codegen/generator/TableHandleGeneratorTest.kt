@@ -1,12 +1,9 @@
 package dev.sanson.spacetimedb.codegen.generator
 
-import dev.sanson.spacetimedb.codegen.schema.AlgebraicType
-import dev.sanson.spacetimedb.codegen.schema.ConstraintData
+import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.SourceFile
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
-import dev.sanson.spacetimedb.codegen.schema.ProductType
-import dev.sanson.spacetimedb.codegen.schema.ProductTypeElement
-import dev.sanson.spacetimedb.codegen.schema.RawConstraintDef
-import dev.sanson.spacetimedb.codegen.schema.RawTableDef
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -95,5 +92,43 @@ class TableHandleGeneratorTest {
         for (file in files) {
             assertContains(file.toString(), "TableHandle")
         }
+    }
+
+    @OptIn(ExperimentalCompilerApi::class)
+    @Test
+    fun `generated table handles compile against SDK types`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val pkg = "com.example"
+        val typeGen = TypeGenerator(schema, pkg)
+        val tableHandleGen = TableHandleGenerator(schema, pkg)
+
+        val sources = mutableListOf<SourceFile>()
+
+        // Row types are needed for table handles to compile
+        for (file in typeGen.generateTypeFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+        for (table in schema.publicTables) {
+            val productType = schema.tableProductType(table)
+            val file = typeGen.generateTableRowFile(table.sourceName, productType)
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+
+        // Table handles + RemoteTables
+        for (file in tableHandleGen.generateTableHandleFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+        sources.add(SourceFile.kotlin("RemoteTables.kt", tableHandleGen.generateRemoteTablesFile().toString()))
+
+        val result = KotlinCompilation().apply {
+            this.sources = sources
+            inheritClassPath = true
+        }.compile()
+
+        assertEquals(
+            KotlinCompilation.ExitCode.OK,
+            result.exitCode,
+            "Generated table handles failed to compile:\n${result.messages}",
+        )
     }
 }

@@ -5,14 +5,9 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
-import dev.sanson.spacetimedb.codegen.schema.RawReducerDef
-
-private val SERIALIZABLE = ClassName("kotlinx.serialization", "Serializable")
-private val SERIAL_NAME = ClassName("kotlinx.serialization", "SerialName")
 
 /**
  * Generates typed reducer wrappers.
