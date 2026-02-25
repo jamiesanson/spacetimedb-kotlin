@@ -6,33 +6,33 @@ package dev.sanson.spacetimedb.codegen.schema
  *
  * Resolves [AlgebraicType.Ref] references via the [Typespace].
  */
-class ModuleSchema(private val raw: RawModuleDefV10) {
-    val typespace: Typespace = raw.sections
+public class ModuleSchema(private val raw: RawModuleDefV10) {
+    public val typespace: Typespace = raw.sections
         .filterIsInstance<RawModuleDefV10Section.TypespaceSection>()
         .singleOrNull()?.typespace
         ?: Typespace(emptyList())
 
-    val types: List<RawTypeDef> = raw.sections
+    public val types: List<RawTypeDef> = raw.sections
         .filterIsInstance<RawModuleDefV10Section.TypesSection>()
         .flatMap { it.types }
 
-    val tables: List<RawTableDef> = raw.sections
+    public val tables: List<RawTableDef> = raw.sections
         .filterIsInstance<RawModuleDefV10Section.TablesSection>()
         .flatMap { it.tables }
 
-    val reducers: List<RawReducerDef> = raw.sections
+    public val reducers: List<RawReducerDef> = raw.sections
         .filterIsInstance<RawModuleDefV10Section.ReducersSection>()
         .flatMap { it.reducers }
 
-    val procedures: List<RawProcedureDef> = raw.sections
+    public val procedures: List<RawProcedureDef> = raw.sections
         .filterIsInstance<RawModuleDefV10Section.ProceduresSection>()
         .flatMap { it.procedures }
 
-    val views: List<RawViewDef> = raw.sections
+    public val views: List<RawViewDef> = raw.sections
         .filterIsInstance<RawModuleDefV10Section.ViewsSection>()
         .flatMap { it.views }
 
-    val explicitNames: ExplicitNames? = raw.sections
+    public val explicitNames: ExplicitNames? = raw.sections
         .filterIsInstance<RawModuleDefV10Section.ExplicitNamesSection>()
         .singleOrNull()?.names
 
@@ -40,7 +40,7 @@ class ModuleSchema(private val raw: RawModuleDefV10) {
      * Resolve an [AlgebraicType.Ref] to the concrete type in the typespace.
      * Follows chains of refs (e.g. Ref → Ref → Product).
      */
-    fun resolveType(type: AlgebraicType): AlgebraicType {
+    public fun resolveType(type: AlgebraicType): AlgebraicType {
         var current = type
         val visited = mutableSetOf<Int>()
         while (current is AlgebraicType.Ref) {
@@ -57,7 +57,7 @@ class ModuleSchema(private val raw: RawModuleDefV10) {
     /**
      * Get the product type for a table's row, resolved from the typespace.
      */
-    fun tableProductType(table: RawTableDef): ProductType {
+    public fun tableProductType(table: RawTableDef): ProductType {
         val resolved = resolveType(AlgebraicType.Ref(table.product_type_ref))
         return (resolved as? AlgebraicType.Product)?.type
             ?: throw IllegalStateException("Table '${table.source_name}' type ref ${table.product_type_ref} resolved to $resolved, expected Product")
@@ -66,26 +66,26 @@ class ModuleSchema(private val raw: RawModuleDefV10) {
     /**
      * Find the [RawTypeDef] (named custom type) for a given typespace index, if one exists.
      */
-    fun namedTypeForRef(ref: Int): RawTypeDef? =
+    public fun namedTypeForRef(ref: Int): RawTypeDef? =
         types.find { it.ty == ref }
 
     /**
      * Returns only tables with public access (for client codegen).
      */
-    val publicTables: List<RawTableDef>
+    public val publicTables: List<RawTableDef>
         get() = tables.filter { it.table_access == "Public" }
 
     /**
      * Returns only client-callable reducers (for client codegen).
      */
-    val clientCallableReducers: List<RawReducerDef>
+    public val clientCallableReducers: List<RawReducerDef>
         get() = reducers.filter { it.visibility == "ClientCallable" }
 
-    companion object {
+    public companion object {
         /**
          * Parse a [ModuleSchema] from the JSON output of `spacetimedb-standalone extract-schema`.
          */
-        fun fromJson(json: String): ModuleSchema {
+        public fun fromJson(json: String): ModuleSchema {
             val rawDef = kotlinx.serialization.json.Json {
                 ignoreUnknownKeys = true
             }.decodeFromString(RawModuleDef.serializer(), json)

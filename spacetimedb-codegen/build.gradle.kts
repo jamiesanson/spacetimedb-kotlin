@@ -3,6 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+kotlin {
+    explicitApi()
+}
+
 dependencies {
     implementation(libs.kotlinx.serialization.json)
 

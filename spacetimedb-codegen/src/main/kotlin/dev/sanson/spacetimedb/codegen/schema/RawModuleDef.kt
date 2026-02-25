@@ -20,31 +20,31 @@ import kotlinx.serialization.json.jsonObject
  * The JSON envelope is `{"V10": {"sections": [...]}}`.
  */
 @Serializable
-data class RawModuleDef(
+public data class RawModuleDef(
     val V10: RawModuleDefV10,
 )
 
 @Serializable
-data class RawModuleDefV10(
+public data class RawModuleDefV10(
     val sections: List<@Serializable(with = RawModuleDefV10SectionSerializer::class) RawModuleDefV10Section>,
 )
 
 /**
  * A single section of the V10 module definition.
  */
-sealed interface RawModuleDefV10Section {
-    data class TypespaceSection(val typespace: Typespace) : RawModuleDefV10Section
-    data class TypesSection(val types: List<RawTypeDef>) : RawModuleDefV10Section
-    data class TablesSection(val tables: List<RawTableDef>) : RawModuleDefV10Section
-    data class ReducersSection(val reducers: List<RawReducerDef>) : RawModuleDefV10Section
-    data class ProceduresSection(val procedures: List<RawProcedureDef>) : RawModuleDefV10Section
-    data class ViewsSection(val views: List<RawViewDef>) : RawModuleDefV10Section
-    data class SchedulesSection(val schedules: List<RawScheduleDef>) : RawModuleDefV10Section
-    data class LifeCycleReducersSection(val reducers: List<RawLifeCycleReducerDef>) : RawModuleDefV10Section
-    data class ExplicitNamesSection(val names: ExplicitNames) : RawModuleDefV10Section
+public sealed interface RawModuleDefV10Section {
+    public data class TypespaceSection(val typespace: Typespace) : RawModuleDefV10Section
+    public data class TypesSection(val types: List<RawTypeDef>) : RawModuleDefV10Section
+    public data class TablesSection(val tables: List<RawTableDef>) : RawModuleDefV10Section
+    public data class ReducersSection(val reducers: List<RawReducerDef>) : RawModuleDefV10Section
+    public data class ProceduresSection(val procedures: List<RawProcedureDef>) : RawModuleDefV10Section
+    public data class ViewsSection(val views: List<RawViewDef>) : RawModuleDefV10Section
+    public data class SchedulesSection(val schedules: List<RawScheduleDef>) : RawModuleDefV10Section
+    public data class LifeCycleReducersSection(val reducers: List<RawLifeCycleReducerDef>) : RawModuleDefV10Section
+    public data class ExplicitNamesSection(val names: ExplicitNames) : RawModuleDefV10Section
 
     /** Sections we don't need to parse for codegen. */
-    data class Unknown(val key: String) : RawModuleDefV10Section
+    public data class Unknown(val key: String) : RawModuleDefV10Section
 }
 
 // --- Typespace ---
@@ -54,7 +54,7 @@ sealed interface RawModuleDefV10Section {
  * Types are referenced by [AlgebraicType.Ref] using their index in this list.
  */
 @Serializable
-data class Typespace(
+public data class Typespace(
     @Serializable(with = AlgebraicTypeListSerializer::class)
     val types: List<AlgebraicType>,
 )
@@ -69,7 +69,7 @@ internal object AlgebraicTypeListSerializer : KSerializer<List<AlgebraicType>> {
 // --- Table ---
 
 @Serializable
-data class RawTableDef(
+public data class RawTableDef(
     val source_name: String,
     val product_type_ref: Int,
     val primary_key: List<Int>,
@@ -84,7 +84,7 @@ data class RawTableDef(
 )
 
 @Serializable
-data class RawIndexDef(
+public data class RawIndexDef(
     @Serializable(with = OptionStringSerializer::class)
     val source_name: String?,
     @Serializable(with = OptionStringSerializer::class)
@@ -93,26 +93,26 @@ data class RawIndexDef(
     val algorithm: IndexAlgorithm,
 )
 
-data class IndexAlgorithm(
+public data class IndexAlgorithm(
     val type: String,
     val columns: List<Int>,
 )
 
 @Serializable
-data class RawConstraintDef(
+public data class RawConstraintDef(
     @Serializable(with = OptionStringSerializer::class)
     val source_name: String?,
     @Serializable(with = ConstraintDataSerializer::class)
     val data: ConstraintData,
 )
 
-data class ConstraintData(
+public data class ConstraintData(
     val type: String,
     val columns: List<Int>,
 )
 
 @Serializable
-data class RawSequenceDef(
+public data class RawSequenceDef(
     @Serializable(with = OptionStringSerializer::class)
     val source_name: String?,
     val column: Int,
@@ -122,7 +122,7 @@ data class RawSequenceDef(
 // --- Reducer ---
 
 @Serializable
-data class RawReducerDef(
+public data class RawReducerDef(
     val source_name: String,
     val params: ProductType,
     @Serializable(with = TaggedUnitSerializer::class)
@@ -136,7 +136,7 @@ data class RawReducerDef(
 // --- Procedure ---
 
 @Serializable
-data class RawProcedureDef(
+public data class RawProcedureDef(
     val source_name: String,
     val params: ProductType,
     @Serializable(with = TaggedUnitSerializer::class)
@@ -148,7 +148,7 @@ data class RawProcedureDef(
 // --- View ---
 
 @Serializable
-data class RawViewDef(
+public data class RawViewDef(
     val source_name: String,
     val index: Int,
     val is_public: Boolean,
@@ -161,7 +161,7 @@ data class RawViewDef(
 // --- Schedule ---
 
 @Serializable
-data class RawScheduleDef(
+public data class RawScheduleDef(
     @Serializable(with = OptionStringSerializer::class)
     val source_name: String?,
     val table_name: String,
@@ -172,7 +172,7 @@ data class RawScheduleDef(
 // --- Lifecycle ---
 
 @Serializable
-data class RawLifeCycleReducerDef(
+public data class RawLifeCycleReducerDef(
     @Serializable(with = TaggedUnitSerializer::class)
     val lifecycle_spec: String,
     val function_name: String,
@@ -181,11 +181,11 @@ data class RawLifeCycleReducerDef(
 // --- Explicit names ---
 
 @Serializable
-data class ExplicitNames(
+public data class ExplicitNames(
     val entries: List<@Serializable(with = ExplicitNameEntrySerializer::class) ExplicitNameEntry>,
 )
 
-data class ExplicitNameEntry(
+public data class ExplicitNameEntry(
     val kind: String,
     val source_name: String,
     val canonical_name: String,
@@ -245,14 +245,14 @@ internal object RawModuleDefV10SectionSerializer : KSerializer<RawModuleDefV10Se
 // --- Type definitions ---
 
 @Serializable
-data class RawTypeDef(
+public data class RawTypeDef(
     val source_name: ScopedTypeName,
     val ty: Int,
     val custom_ordering: Boolean,
 )
 
 @Serializable
-data class ScopedTypeName(
+public data class ScopedTypeName(
     val scope: List<String>,
     val source_name: String,
 )

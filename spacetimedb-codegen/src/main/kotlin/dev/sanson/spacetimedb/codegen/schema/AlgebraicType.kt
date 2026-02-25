@@ -21,43 +21,43 @@ import kotlinx.serialization.json.jsonObject
  * Serialized as a JSON tagged union: `{"VariantName": payload}` where unit types use `[]`.
  */
 @Serializable(with = AlgebraicTypeSerializer::class)
-sealed interface AlgebraicType {
+public sealed interface AlgebraicType {
     /** Reference to a type in the [Typespace] by index. */
-    data class Ref(val id: Int) : AlgebraicType
+    public data class Ref(val id: Int) : AlgebraicType
 
     /** Sum type (tagged union / enum). */
-    data class Sum(val type: SumType) : AlgebraicType
+    public data class Sum(val type: SumType) : AlgebraicType
 
     /** Product type (struct / record). */
-    data class Product(val type: ProductType) : AlgebraicType
+    public data class Product(val type: ProductType) : AlgebraicType
 
     /** Homogeneous array type. */
-    data class Array(val elementType: AlgebraicType) : AlgebraicType
+    public data class Array(val elementType: AlgebraicType) : AlgebraicType
 
     // Primitive types
-    data object Bool : AlgebraicType
-    data object I8 : AlgebraicType
-    data object U8 : AlgebraicType
-    data object I16 : AlgebraicType
-    data object U16 : AlgebraicType
-    data object I32 : AlgebraicType
-    data object U32 : AlgebraicType
-    data object I64 : AlgebraicType
-    data object U64 : AlgebraicType
-    data object I128 : AlgebraicType
-    data object U128 : AlgebraicType
-    data object I256 : AlgebraicType
-    data object U256 : AlgebraicType
-    data object F32 : AlgebraicType
-    data object F64 : AlgebraicType
-    data object StringType : AlgebraicType
+    public data object Bool : AlgebraicType
+    public data object I8 : AlgebraicType
+    public data object U8 : AlgebraicType
+    public data object I16 : AlgebraicType
+    public data object U16 : AlgebraicType
+    public data object I32 : AlgebraicType
+    public data object U32 : AlgebraicType
+    public data object I64 : AlgebraicType
+    public data object U64 : AlgebraicType
+    public data object I128 : AlgebraicType
+    public data object U128 : AlgebraicType
+    public data object I256 : AlgebraicType
+    public data object U256 : AlgebraicType
+    public data object F32 : AlgebraicType
+    public data object F64 : AlgebraicType
+    public data object StringType : AlgebraicType
 }
 
 /**
  * A sum type: a tagged union of named variants.
  */
 @Serializable
-data class SumType(
+public data class SumType(
     val variants: List<SumTypeVariant>,
 )
 
@@ -65,7 +65,7 @@ data class SumType(
  * A single variant of a [SumType].
  */
 @Serializable
-data class SumTypeVariant(
+public data class SumTypeVariant(
     @Serializable(with = OptionStringSerializer::class)
     val name: String?,
     @Serializable(with = AlgebraicTypeSerializer::class)
@@ -76,7 +76,7 @@ data class SumTypeVariant(
  * A product type: a record of named fields.
  */
 @Serializable
-data class ProductType(
+public data class ProductType(
     val elements: List<ProductTypeElement>,
 )
 
@@ -84,7 +84,7 @@ data class ProductType(
  * A single field of a [ProductType].
  */
 @Serializable
-data class ProductTypeElement(
+public data class ProductTypeElement(
     @Serializable(with = OptionStringSerializer::class)
     val name: String?,
     @Serializable(with = AlgebraicTypeSerializer::class)
