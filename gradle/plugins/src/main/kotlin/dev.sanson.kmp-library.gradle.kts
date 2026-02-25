@@ -18,6 +18,10 @@ apiValidation {
 kotlin {
     explicitApi()
 
+    compilerOptions {
+        optIn.add("kotlin.time.ExperimentalTime")
+    }
+
     jvm()
     js(IR) {
         browser()
