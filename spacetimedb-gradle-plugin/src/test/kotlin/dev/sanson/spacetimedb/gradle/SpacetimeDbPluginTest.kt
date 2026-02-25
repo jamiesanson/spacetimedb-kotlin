@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 class SpacetimeDbPluginTest {
 
     @Test
-    fun `generateSpacetimeTypes task is registered`() {
+    fun `tasks are registered`() {
         val projectDir = createTestProject()
 
         val result = GradleRunner.create()
@@ -19,6 +19,7 @@ class SpacetimeDbPluginTest {
             .withPluginClasspath()
             .build()
 
+        assertTrue(result.output.contains("buildSpacetimeModule"), "Expected buildSpacetimeModule task")
         assertTrue(result.output.contains("generateSpacetimeTypes"), "Expected generateSpacetimeTypes task")
     }
 
@@ -26,9 +27,14 @@ class SpacetimeDbPluginTest {
     fun `generates Kotlin files from schema`() {
         val projectDir = createTestProject()
 
+        // Pre-populate the schema file so we can test generation without spacetime CLI
+        val schemaDir = File(projectDir, "build/generated/spacetimedb")
+        schemaDir.mkdirs()
+        copyFixture(File(schemaDir, "schema.json"))
+
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
-            .withArguments("generateSpacetimeTypes", "--stacktrace")
+            .withArguments("generateSpacetimeTypes", "--stacktrace", "-x", "buildSpacetimeModule")
             .withPluginClasspath()
             .build()
 
@@ -42,7 +48,6 @@ class SpacetimeDbPluginTest {
             .map { it.name }
             .toSet()
 
-        // Verify key generated files from the test fixture
         assertTrue("Player.kt" in generatedFiles, "Expected Player.kt, got: $generatedFiles")
         assertTrue("Person.kt" in generatedFiles, "Expected Person.kt, got: $generatedFiles")
         assertTrue("RemoteTables.kt" in generatedFiles, "Expected RemoteTables.kt, got: $generatedFiles")
@@ -54,15 +59,19 @@ class SpacetimeDbPluginTest {
     fun `task is cacheable - UP-TO-DATE on second run`() {
         val projectDir = createTestProject()
 
+        val schemaDir = File(projectDir, "build/generated/spacetimedb")
+        schemaDir.mkdirs()
+        copyFixture(File(schemaDir, "schema.json"))
+
         GradleRunner.create()
             .withProjectDir(projectDir)
-            .withArguments("generateSpacetimeTypes")
+            .withArguments("generateSpacetimeTypes", "-x", "buildSpacetimeModule")
             .withPluginClasspath()
             .build()
 
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
-            .withArguments("generateSpacetimeTypes")
+            .withArguments("generateSpacetimeTypes", "-x", "buildSpacetimeModule")
             .withPluginClasspath()
             .build()
 
@@ -70,16 +79,22 @@ class SpacetimeDbPluginTest {
     }
 
     @Test
-    fun `extractSpacetimeSchema is skipped when wasmModule not set`() {
-        val projectDir = createTestProject()
+    fun `extension accepts buildOptions`() {
+        val projectDir = createTestProjectWithBuildOptions()
 
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
-            .withArguments("extractSpacetimeSchema", "generateSpacetimeTypes")
+            .withArguments("tasks", "--all")
             .withPluginClasspath()
             .build()
 
-        assertEquals(TaskOutcome.SKIPPED, result.task(":extractSpacetimeSchema")?.outcome)
+        assertTrue(result.output.contains("buildSpacetimeModule"), "Expected buildSpacetimeModule task")
+    }
+
+    private fun copyFixture(target: File) {
+        val stream = javaClass.classLoader.getResourceAsStream("module-test-v10.json")
+            ?: error("Test fixture module-test-v10.json not found on classpath")
+        target.writeText(stream.bufferedReader().readText())
     }
 
     private fun createTestProject(): File {
@@ -88,12 +103,8 @@ class SpacetimeDbPluginTest {
             mkdirs()
         }
 
-        // Copy test fixture schema
-        val fixtureStream = javaClass.classLoader.getResourceAsStream("module-test-v10.json")
-            ?: SpacetimeDbPluginTest::class.java.getResourceAsStream("/module-test-v10.json")
-            ?: error("Test fixture module-test-v10.json not found on classpath")
-
-        File(projectDir, "schema.json").writeText(fixtureStream.bufferedReader().readText())
+        // Create a fake module directory (won't actually build, but satisfies config)
+        File(projectDir, "server").mkdirs()
 
         File(projectDir, "settings.gradle.kts").writeText("""
             rootProject.name = "test-project"
@@ -105,8 +116,35 @@ class SpacetimeDbPluginTest {
             }
             
             spacetimedb {
-                schemaFile.set(file("schema.json"))
+                modulePath.set(file("server"))
                 packageName.set("com.example.test")
+            }
+        """.trimIndent())
+
+        return projectDir
+    }
+
+    private fun createTestProjectWithBuildOptions(): File {
+        val projectDir = File.createTempFile("stdb-test-", "").apply {
+            delete()
+            mkdirs()
+        }
+
+        File(projectDir, "server").mkdirs()
+
+        File(projectDir, "settings.gradle.kts").writeText("""
+            rootProject.name = "test-project"
+        """.trimIndent())
+
+        File(projectDir, "build.gradle.kts").writeText("""
+            plugins {
+                id("dev.sanson.spacetimedb")
+            }
+            
+            spacetimedb {
+                modulePath.set(file("server"))
+                packageName.set("com.example.test")
+                buildOptions.set(listOf("--debug"))
             }
         """.trimIndent())
 

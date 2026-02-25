@@ -7,8 +7,8 @@ import org.gradle.api.tasks.SourceSetContainer
 /**
  * Gradle plugin for SpacetimeDB Kotlin code generation.
  *
- * Registers a `spacetimedb` extension and a `generateSpacetimeTypes` task that
- * generates typed Kotlin sources from a module schema. Generated sources are
+ * Registers a `spacetimedb` extension and tasks that build a SpacetimeDB module,
+ * extract its schema, and generate typed Kotlin sources. Generated sources are
  * automatically added to the main source set.
  *
  * Usage:
@@ -18,7 +18,7 @@ import org.gradle.api.tasks.SourceSetContainer
  * }
  *
  * spacetimedb {
- *     schemaFile.set(file("schema.json"))
+ *     modulePath.set(file("server"))
  *     packageName.set("com.example.mymodule")
  * }
  * ```
@@ -29,29 +29,21 @@ public class SpacetimeDbPlugin : Plugin<Project> {
         val extension = project.extensions.create("spacetimedb", SpacetimeDbExtension::class.java)
 
         val generatedDir = project.layout.buildDirectory.dir("generated/spacetimedb/kotlin")
+        val schemaFile = project.layout.buildDirectory.file("generated/spacetimedb/schema.json")
 
-        // Optional: extract schema from .wasm if wasmModule is configured
-        val extractSchemaTask = project.tasks.register("extractSpacetimeSchema", ExtractSchemaTask::class.java) { task ->
-            task.wasmModule.set(extension.wasmModule)
-            task.schemaFile.set(project.layout.buildDirectory.file("generated/spacetimedb/schema.json"))
-            task.onlyIf { extension.wasmModule.isPresent }
+        // Build module and extract schema
+        val buildTask = project.tasks.register("buildSpacetimeModule", BuildModuleTask::class.java) { task ->
+            task.modulePath.set(extension.modulePath)
+            task.buildOptions.set(extension.buildOptions)
+            task.schemaFile.set(schemaFile)
         }
 
-        // Main generation task
+        // Generate Kotlin sources from schema
         val generateTask = project.tasks.register("generateSpacetimeTypes", GenerateSpacetimeTypesTask::class.java) { task ->
-            // Use schemaFile if set directly, otherwise use extracted schema
-            task.schemaFile.set(
-                extension.schemaFile.orElse(
-                    extractSchemaTask.flatMap { it.schemaFile }
-                )
-            )
+            task.schemaFile.set(buildTask.flatMap { it.schemaFile })
             task.packageName.set(extension.packageName)
             task.outputDirectory.set(generatedDir)
-
-            // If using wasmModule, depend on extraction
-            if (extension.wasmModule.isPresent) {
-                task.dependsOn(extractSchemaTask)
-            }
+            task.dependsOn(buildTask)
         }
 
         // Wire generated sources into compilation

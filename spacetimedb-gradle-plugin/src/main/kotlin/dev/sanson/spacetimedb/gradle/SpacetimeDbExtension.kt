@@ -1,19 +1,18 @@
 package dev.sanson.spacetimedb.gradle
 
-import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 
 /**
  * Configuration extension for the SpacetimeDB code generation plugin.
  *
- * Configure either [schemaFile] (pre-extracted JSON) or [wasmModule]
- * (to run `spacetime extract-schema` automatically).
+ * Point [modulePath] at your SpacetimeDB module project directory. The plugin
+ * will build the module, extract the schema, and generate typed Kotlin sources.
  *
  * ```kotlin
  * spacetimedb {
- *     schemaFile.set(file("schema.json"))
- *     // or
- *     wasmModule.set(file("target/wasm32-unknown-unknown/release/module.wasm"))
+ *     modulePath.set(file("server"))
  *     packageName.set("com.example.mymodule")
  * }
  * ```
@@ -21,23 +20,20 @@ import org.gradle.api.provider.Property
 public interface SpacetimeDbExtension {
 
     /**
-     * Path to a pre-extracted V10 module schema JSON file
-     * (output of `spacetime extract-schema`).
+     * Path to the SpacetimeDB module project directory.
      *
-     * Mutually exclusive with [wasmModule]. If both are set, [schemaFile] takes precedence.
+     * The plugin runs `spacetime build -p <dir>` to compile the module,
+     * then extracts the schema and generates Kotlin sources.
      */
-    public val schemaFile: RegularFileProperty
-
-    /**
-     * Path to a compiled SpacetimeDB `.wasm` module.
-     *
-     * When set, the plugin runs `spacetime extract-schema <wasm>` to produce
-     * the schema JSON before code generation.
-     */
-    public val wasmModule: RegularFileProperty
+    public val modulePath: DirectoryProperty
 
     /**
      * Package name for generated Kotlin sources (e.g. `"com.example.mymodule"`).
      */
     public val packageName: Property<String>
+
+    /**
+     * Extra CLI options passed to `spacetime build` (e.g. `listOf("--debug")`).
+     */
+    public val buildOptions: ListProperty<String>
 }
