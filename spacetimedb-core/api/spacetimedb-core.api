@@ -32,6 +32,53 @@ public final class dev/sanson/spacetimedb/ConnectionId$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public abstract class dev/sanson/spacetimedb/Event {
+}
+
+public final class dev/sanson/spacetimedb/Event$Disconnected : dev/sanson/spacetimedb/Event {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/Event$Disconnected;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/Event$Reducer : dev/sanson/spacetimedb/Event {
+	public fun <init> (Ldev/sanson/spacetimedb/ReducerEvent;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvent ()Ldev/sanson/spacetimedb/ReducerEvent;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/Event$SubscribeApplied : dev/sanson/spacetimedb/Event {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/Event$SubscribeApplied;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/Event$SubscribeError : dev/sanson/spacetimedb/Event {
+	public fun <init> (Ldev/sanson/spacetimedb/SpacetimeError;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ldev/sanson/spacetimedb/SpacetimeError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/Event$Transaction : dev/sanson/spacetimedb/Event {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/Event$Transaction;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/Event$UnsubscribeApplied : dev/sanson/spacetimedb/Event {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/Event$UnsubscribeApplied;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/sanson/spacetimedb/Identity : java/lang/Comparable {
 	public static final field Companion Ldev/sanson/spacetimedb/Identity$Companion;
 	public static final synthetic fun box-impl (Ldev/sanson/spacetimedb/bsatn/U256;)Ldev/sanson/spacetimedb/Identity;
@@ -65,6 +112,16 @@ public final synthetic class dev/sanson/spacetimedb/Identity$$serializer : kotli
 public final class dev/sanson/spacetimedb/Identity$Companion {
 	public final fun getZERO-8yUCwY8 ()Ldev/sanson/spacetimedb/bsatn/U256;
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/ReducerEvent {
+	public synthetic fun <init> (Lkotlin/time/Instant;Ldev/sanson/spacetimedb/Status;Ljava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReducer ()Ljava/lang/Object;
+	public final fun getStatus ()Ldev/sanson/spacetimedb/Status;
+	public final fun getTimestamp-Jr5MCI8 ()Lkotlin/time/Instant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract class dev/sanson/spacetimedb/ScheduleAt {
@@ -129,6 +186,73 @@ public final synthetic class dev/sanson/spacetimedb/ScheduleAt$Time$$serializer 
 
 public final class dev/sanson/spacetimedb/ScheduleAt$Time$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract class dev/sanson/spacetimedb/SpacetimeError : java/lang/Exception {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeError$AlreadyEnded : dev/sanson/spacetimedb/SpacetimeError {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/SpacetimeError$AlreadyEnded;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeError$AlreadyUnsubscribed : dev/sanson/spacetimedb/SpacetimeError {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/SpacetimeError$AlreadyUnsubscribed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeError$Disconnected : dev/sanson/spacetimedb/SpacetimeError {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/SpacetimeError$Disconnected;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeError$FailedToConnect : dev/sanson/spacetimedb/SpacetimeError {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeError$Internal : dev/sanson/spacetimedb/SpacetimeError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeError$SubscriptionError : dev/sanson/spacetimedb/SpacetimeError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getError ()Ljava/lang/String;
+}
+
+public abstract class dev/sanson/spacetimedb/Status {
+}
+
+public final class dev/sanson/spacetimedb/Status$Committed : dev/sanson/spacetimedb/Status {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/Status$Committed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/Status$Failed : dev/sanson/spacetimedb/Status {
+	public fun <init> (Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/Status$Panic : dev/sanson/spacetimedb/Status {
+	public fun <init> (Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class dev/sanson/spacetimedb/TimeDuration : java/lang/Comparable {
