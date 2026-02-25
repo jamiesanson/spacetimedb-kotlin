@@ -5,6 +5,13 @@ plugins {
     id("dev.drewhamilton.poko")
 }
 
+apiValidation {
+    @OptIn(kotlinx.validation.ExperimentalBCVApi::class)
+    klib {
+        enabled = false
+    }
+}
+
 kotlin {
     explicitApi()
 
