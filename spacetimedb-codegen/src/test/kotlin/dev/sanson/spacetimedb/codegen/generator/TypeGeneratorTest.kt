@@ -182,24 +182,30 @@ class TypeGeneratorTest {
     @Test
     fun `generated code compiles successfully`() {
         val schema = ModuleSchema.fromJson(fixture)
-        val gen = TypeGenerator(schema, "com.example.module")
+        val pkg = "com.example.module"
+        val typeGen = TypeGenerator(schema, pkg)
+        val tableHandleGen = TableHandleGenerator(schema, pkg)
+        val reducerGen = ReducerGenerator(schema, pkg)
 
         // Collect all generated sources
         val sources = mutableListOf<SourceFile>()
 
-        for (file in gen.generateTypeFiles()) {
-            sources.add(
-                SourceFile.kotlin("${file.name}.kt", file.toString())
-            )
+        for (file in typeGen.generateTypeFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
         }
 
         for (table in schema.publicTables) {
             val productType = schema.tableProductType(table)
-            val file = gen.generateTableRowFile(table.sourceName, productType)
-            sources.add(
-                SourceFile.kotlin("${file.name}.kt", file.toString())
-            )
+            val file = typeGen.generateTableRowFile(table.sourceName, productType)
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
         }
+
+        for (file in tableHandleGen.generateTableHandleFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+        sources.add(SourceFile.kotlin("RemoteTables.kt", tableHandleGen.generateRemoteTablesFile().toString()))
+        sources.add(SourceFile.kotlin("Reducer.kt", reducerGen.generateReducerFile().toString()))
+        sources.add(SourceFile.kotlin("RemoteReducers.kt", reducerGen.generateRemoteReducersFile().toString()))
 
         val compilation = KotlinCompilation().apply {
             this.sources = sources

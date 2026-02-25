@@ -19,9 +19,6 @@ import dev.sanson.spacetimedb.codegen.schema.isScheduleAt
 import dev.sanson.spacetimedb.codegen.schema.isTimeDuration
 import dev.sanson.spacetimedb.codegen.schema.isTimestamp
 
-private val SERIALIZABLE = ClassName("kotlinx.serialization", "Serializable")
-private val SERIAL_NAME = ClassName("kotlinx.serialization", "SerialName")
-
 /**
  * Generates Kotlin source files for SpacetimeDB table row types and custom types.
  */
