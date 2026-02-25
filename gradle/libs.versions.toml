@@ -1,0 +1,11 @@
+[versions]
+java-toolchain = "21"
+
+foojay = "0.8.0"
+kotlin = "2.1.0"
+
+[libraries]
+
+[plugins]
+foojay = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "foojay" }
+kotlin-jvm  = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
