@@ -6,6 +6,8 @@ import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.path
+import dev.sanson.spacetimedb.codegen.generator.ReducerGenerator
+import dev.sanson.spacetimedb.codegen.generator.TableHandleGenerator
 import dev.sanson.spacetimedb.codegen.generator.TypeGenerator
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
 import java.nio.file.Path
@@ -38,26 +40,35 @@ public class GenerateCommand : CliktCommand(
     override fun run() {
         val schemaJson = schema.readText()
         val moduleSchema = ModuleSchema.fromJson(schemaJson)
-        val generator = TypeGenerator(moduleSchema, packageName)
+        val typeGenerator = TypeGenerator(moduleSchema, packageName)
+        val tableHandleGenerator = TableHandleGenerator(moduleSchema, packageName)
+        val reducerGenerator = ReducerGenerator(moduleSchema, packageName)
 
         outDir.createDirectories()
         val outFile = outDir.toFile()
 
-        var count = 0
+        val files = buildList {
+            // Custom types
+            addAll(typeGenerator.generateTypeFiles())
 
-        for (file in generator.generateTypeFiles()) {
-            file.writeTo(outFile)
-            count++
+            // Table row types + table handles
+            for (table in moduleSchema.publicTables) {
+                val productType = moduleSchema.tableProductType(table)
+                add(typeGenerator.generateTableRowFile(table.sourceName, productType))
+            }
+            addAll(tableHandleGenerator.generateTableHandleFiles())
+            add(tableHandleGenerator.generateRemoteTablesFile())
+
+            // Reducers
+            add(reducerGenerator.generateReducerFile())
+            add(reducerGenerator.generateRemoteReducersFile())
         }
 
-        for (table in moduleSchema.publicTables) {
-            val productType = moduleSchema.tableProductType(table)
-            val file = generator.generateTableRowFile(table.sourceName, productType)
+        for (file in files) {
             file.writeTo(outFile)
-            count++
         }
 
-        echo("Generated $count files in ${outDir.toAbsolutePath()}")
+        echo("Generated ${files.size} files in ${outDir.toAbsolutePath()}")
     }
 }
 
