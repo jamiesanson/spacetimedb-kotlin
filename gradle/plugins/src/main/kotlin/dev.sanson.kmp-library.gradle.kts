@@ -6,8 +6,8 @@ plugins {
     `maven-publish`
 }
 
-group = property("GROUP") as String
-version = property("VERSION_NAME") as String
+group = property("dev.sanson.spacetimedb.group") as String
+version = property("dev.sanson.spacetimedb.version") as String
 
 apiValidation {
     @OptIn(kotlinx.validation.ExperimentalBCVApi::class)
