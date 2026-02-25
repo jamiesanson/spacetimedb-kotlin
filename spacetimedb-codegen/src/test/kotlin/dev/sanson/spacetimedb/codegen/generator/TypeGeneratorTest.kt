@@ -1,11 +1,14 @@
 package dev.sanson.spacetimedb.codegen.generator
 
+import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.SourceFile
 import dev.sanson.spacetimedb.codegen.schema.AlgebraicType
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
 import dev.sanson.spacetimedb.codegen.schema.ProductType
 import dev.sanson.spacetimedb.codegen.schema.ProductTypeElement
 import dev.sanson.spacetimedb.codegen.schema.SumType
 import dev.sanson.spacetimedb.codegen.schema.SumTypeVariant
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -150,10 +153,8 @@ class TypeGeneratorTest {
         val gen = TypeGenerator(schema, "com.example.module")
         val files = gen.generateTypeFiles()
 
-        // Should generate at least some type files (skipping Identity etc.)
         assert(files.isNotEmpty()) { "Expected at least one generated type file" }
 
-        // Check that all generated files compile (have valid Kotlin)
         for (file in files) {
             val output = file.toString()
             assert(output.contains("@Serializable")) {
@@ -175,5 +176,41 @@ class TypeGeneratorTest {
             assertContains(output, "@Serializable")
             assertContains(output, "class ${table.sourceName.toPascalCase()}")
         }
+    }
+
+    @OptIn(ExperimentalCompilerApi::class)
+    @Test
+    fun `generated code compiles successfully`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = TypeGenerator(schema, "com.example.module")
+
+        // Collect all generated sources
+        val sources = mutableListOf<SourceFile>()
+
+        for (file in gen.generateTypeFiles()) {
+            sources.add(
+                SourceFile.kotlin("${file.name}.kt", file.toString())
+            )
+        }
+
+        for (table in schema.publicTables) {
+            val productType = schema.tableProductType(table)
+            val file = gen.generateTableRowFile(table.sourceName, productType)
+            sources.add(
+                SourceFile.kotlin("${file.name}.kt", file.toString())
+            )
+        }
+
+        val compilation = KotlinCompilation().apply {
+            this.sources = sources
+            inheritClassPath = true
+        }
+
+        val result = compilation.compile()
+        assertEquals(
+            KotlinCompilation.ExitCode.OK,
+            result.exitCode,
+            "Generated code failed to compile:\n${result.messages}",
+        )
     }
 }

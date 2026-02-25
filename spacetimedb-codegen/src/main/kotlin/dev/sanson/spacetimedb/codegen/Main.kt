@@ -1,97 +1,66 @@
 package dev.sanson.spacetimedb.codegen
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.main
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.required
+import com.github.ajalt.clikt.parameters.types.path
 import dev.sanson.spacetimedb.codegen.generator.TypeGenerator
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.createDirectories
+import kotlin.io.path.readText
 
 /**
  * CLI entry point for SpacetimeDB Kotlin codegen.
  *
- * Usage:
- *   spacetimedb-codegen --schema <file> --out-dir <dir> --package <name>
- *
  * Reads a V10 module schema JSON file (from `spacetimedb-standalone extract-schema`)
  * and generates typed Kotlin source files.
  */
-public fun main(args: Array<String>) {
-    val config = parseArgs(args)
+public class GenerateCommand : CliktCommand(
+    name = "spacetimedb-codegen",
+) {
+    override fun help(context: Context): String =
+        "Generate typed Kotlin sources from a SpacetimeDB module schema."
 
-    val schemaJson = File(config.schemaFile).readText()
-    val schema = ModuleSchema.fromJson(schemaJson)
-    val generator = TypeGenerator(schema, config.packageName)
+    private val schema: Path by option("--schema", help = "Path to V10 module schema JSON")
+        .path(mustExist = true, canBeDir = false)
+        .required()
 
-    val outDir = File(config.outDir)
-    outDir.mkdirs()
+    private val outDir: Path by option("--out-dir", help = "Output directory for generated sources")
+        .path()
+        .required()
 
-    var count = 0
+    private val packageName: String by option("--package", help = "Package name for generated code")
+        .required()
 
-    // Generate custom type files
-    for (file in generator.generateTypeFiles()) {
-        file.writeTo(outDir)
-        count++
-    }
+    override fun run() {
+        val schemaJson = schema.readText()
+        val moduleSchema = ModuleSchema.fromJson(schemaJson)
+        val generator = TypeGenerator(moduleSchema, packageName)
 
-    // Generate table row files
-    for (table in schema.publicTables) {
-        val productType = schema.tableProductType(table)
-        val file = generator.generateTableRowFile(table.sourceName, productType)
-        file.writeTo(outDir)
-        count++
-    }
+        outDir.createDirectories()
+        val outFile = outDir.toFile()
 
-    println("Generated $count files in ${outDir.absolutePath}")
-}
+        var count = 0
 
-internal data class CliConfig(
-    val schemaFile: String,
-    val outDir: String,
-    val packageName: String,
-)
-
-internal fun parseArgs(args: Array<String>): CliConfig {
-    var schemaFile: String? = null
-    var outDir: String? = null
-    var packageName: String? = null
-
-    val iter = args.iterator()
-    while (iter.hasNext()) {
-        when (val arg = iter.next()) {
-            "--schema" -> schemaFile = iter.nextOrError("--schema requires a value")
-            "--out-dir" -> outDir = iter.nextOrError("--out-dir requires a value")
-            "--package" -> packageName = iter.nextOrError("--package requires a value")
-            "--help", "-h" -> {
-                printUsage()
-                System.exit(0)
-            }
-            else -> error("Unknown argument: $arg. Use --help for usage.")
+        for (file in generator.generateTypeFiles()) {
+            file.writeTo(outFile)
+            count++
         }
+
+        for (table in moduleSchema.publicTables) {
+            val productType = moduleSchema.tableProductType(table)
+            val file = generator.generateTableRowFile(table.sourceName, productType)
+            file.writeTo(outFile)
+            count++
+        }
+
+        echo("Generated $count files in ${outDir.toAbsolutePath()}")
     }
-
-    return CliConfig(
-        schemaFile = schemaFile ?: error("--schema is required"),
-        outDir = outDir ?: error("--out-dir is required"),
-        packageName = packageName ?: error("--package is required"),
-    )
 }
 
-private fun Iterator<String>.nextOrError(message: String): String {
-    if (!hasNext()) error(message)
-    return next()
-}
-
-private fun printUsage() {
-    println(
-        """
-        |SpacetimeDB Kotlin Codegen
-        |
-        |Usage:
-        |  spacetimedb-codegen --schema <file> --out-dir <dir> --package <name>
-        |
-        |Options:
-        |  --schema <file>    Path to V10 module schema JSON (from extract-schema)
-        |  --out-dir <dir>    Output directory for generated Kotlin sources
-        |  --package <name>   Package name for generated code
-        |  --help, -h         Show this help
-        """.trimMargin()
-    )
+public fun main(args: Array<String>) {
+    GenerateCommand().main(args)
 }

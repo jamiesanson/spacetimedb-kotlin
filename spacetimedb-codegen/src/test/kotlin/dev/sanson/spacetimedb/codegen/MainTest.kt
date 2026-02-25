@@ -1,9 +1,9 @@
 package dev.sanson.spacetimedb.codegen
 
+import com.github.ajalt.clikt.testing.test
 import java.io.File
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
+import kotlin.test.assertContains
 import kotlin.test.assertTrue
 
 class MainTest {
@@ -13,25 +13,18 @@ class MainTest {
     }
 
     @Test
-    fun `parses CLI arguments`() {
-        val config = parseArgs(arrayOf("--schema", "schema.json", "--out-dir", "out", "--package", "com.example"))
-        assertEquals("schema.json", config.schemaFile)
-        assertEquals("out", config.outDir)
-        assertEquals("com.example", config.packageName)
+    fun `shows help text`() {
+        val result = GenerateCommand().test("--help")
+        assertContains(result.output, "spacetimedb-codegen")
+        assertContains(result.output, "--schema")
+        assertContains(result.output, "--out-dir")
+        assertContains(result.output, "--package")
     }
 
     @Test
     fun `fails on missing required args`() {
-        assertFailsWith<IllegalStateException> {
-            parseArgs(arrayOf("--schema", "schema.json"))
-        }
-    }
-
-    @Test
-    fun `fails on unknown argument`() {
-        assertFailsWith<IllegalStateException> {
-            parseArgs(arrayOf("--schema", "schema.json", "--unknown", "value"))
-        }
+        val result = GenerateCommand().test("")
+        assertTrue(result.statusCode != 0)
     }
 
     @Test
@@ -43,13 +36,14 @@ class MainTest {
             tempDir.mkdirs()
             schemaFile.writeText(fixture)
 
-            main(
-                arrayOf(
-                    "--schema", schemaFile.absolutePath,
-                    "--out-dir", File(tempDir, "generated").absolutePath,
-                    "--package", "com.example.test",
-                )
+            val result = GenerateCommand().test(
+                "--schema ${schemaFile.absolutePath} " +
+                    "--out-dir ${File(tempDir, "generated").absolutePath} " +
+                    "--package com.example.test"
             )
+
+            assertTrue(result.statusCode == 0, "Expected success, got: ${result.output}")
+            assertContains(result.output, "Generated")
 
             val genDir = File(tempDir, "generated/com/example/test")
             assertTrue(genDir.exists(), "Generated directory should exist")
@@ -57,11 +51,9 @@ class MainTest {
             val files = genDir.listFiles()?.filter { it.extension == "kt" } ?: emptyList()
             assertTrue(files.isNotEmpty(), "Should generate at least one .kt file")
 
-            // Verify generated files contain valid content
             for (file in files) {
                 val content = file.readText()
-                assertTrue(content.contains("package com.example.test"), "File ${file.name} missing package")
-                assertTrue(content.contains("@Serializable") || content.contains("Serializable"), "File ${file.name} missing @Serializable")
+                assertContains(content, "package com.example.test")
             }
         } finally {
             tempDir.deleteRecursively()
