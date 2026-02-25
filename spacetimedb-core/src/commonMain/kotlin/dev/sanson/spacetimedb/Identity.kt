@@ -1,21 +1,17 @@
 package dev.sanson.spacetimedb
 
-import dev.drewhamilton.poko.Poko
 import dev.sanson.spacetimedb.bsatn.U256
-import kotlinx.serialization.KSerializer
+import kotlin.jvm.JvmInline
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
 /**
  * A unique identifier for a user, derived from their credentials.
  *
  * Wraps a 256-bit unsigned integer, serialized as 32 little-endian bytes in BSATN.
  */
-@Poko
-@Serializable(with = IdentitySerializer::class)
-public class Identity(public val value: U256) : Comparable<Identity> {
+@Serializable
+@JvmInline
+public value class Identity(public val value: U256) : Comparable<Identity> {
     public companion object {
         public val ZERO: Identity = Identity(U256.ZERO)
     }
@@ -34,17 +30,4 @@ public class Identity(public val value: U256) : Comparable<Identity> {
     }
 
     override fun toString(): String = "Identity(${toHexString()})"
-}
-
-internal object IdentitySerializer : KSerializer<Identity> {
-    private val delegate = U256.serializer()
-    override val descriptor: SerialDescriptor = SerialDescriptor("dev.sanson.spacetimedb.Identity", delegate.descriptor)
-
-    override fun serialize(encoder: Encoder, value: Identity) {
-        encoder.encodeSerializableValue(delegate, value.value)
-    }
-
-    override fun deserialize(decoder: Decoder): Identity {
-        return Identity(decoder.decodeSerializableValue(delegate))
-    }
 }

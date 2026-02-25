@@ -1,6 +1,8 @@
 package dev.sanson.spacetimedb
 
-import dev.drewhamilton.poko.Poko
+import kotlin.jvm.JvmInline
+import kotlin.time.Duration.Companion.microseconds
+import kotlin.time.Instant
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -10,21 +12,38 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 /**
- * A point in time, represented as microseconds since the Unix epoch.
+ * A point in time, backed by [Instant].
  *
- * Serialized as a signed 64-bit little-endian integer in BSATN.
+ * Serialized as microseconds since the Unix epoch (signed 64-bit LE integer) in BSATN.
  */
-@Poko
 @Serializable(with = TimestampSerializer::class)
-public class Timestamp(public val microsSinceUnixEpoch: Long) : Comparable<Timestamp> {
+@JvmInline
+public value class Timestamp(public val instant: Instant) : Comparable<Timestamp> {
     public companion object {
-        public val UNIX_EPOCH: Timestamp = Timestamp(0L)
+        public val UNIX_EPOCH: Timestamp = Timestamp(Instant.fromEpochSeconds(0))
+
+        /**
+         * Creates a [Timestamp] from microseconds since the Unix epoch.
+         */
+        public fun fromEpochMicroseconds(micros: Long): Timestamp {
+            val seconds = micros.floorDiv(MICROS_PER_SECOND)
+            val nanoAdjustment = micros.mod(MICROS_PER_SECOND) * NANOS_PER_MICRO
+            return Timestamp(Instant.fromEpochSeconds(seconds, nanoAdjustment))
+        }
+
+        private const val MICROS_PER_SECOND = 1_000_000L
+        private const val NANOS_PER_MICRO = 1_000L
     }
 
-    override fun compareTo(other: Timestamp): Int =
-        microsSinceUnixEpoch.compareTo(other.microsSinceUnixEpoch)
+    /**
+     * Returns the number of microseconds since the Unix epoch.
+     */
+    public val epochMicroseconds: Long
+        get() = instant.epochSeconds * 1_000_000L + instant.nanosecondsOfSecond / 1_000
 
-    override fun toString(): String = "Timestamp(${microsSinceUnixEpoch}µs)"
+    override fun compareTo(other: Timestamp): Int = instant.compareTo(other.instant)
+
+    override fun toString(): String = "Timestamp($instant)"
 }
 
 internal object TimestampSerializer : KSerializer<Timestamp> {
@@ -32,10 +51,10 @@ internal object TimestampSerializer : KSerializer<Timestamp> {
         PrimitiveSerialDescriptor("dev.sanson.spacetimedb.Timestamp", PrimitiveKind.LONG)
 
     override fun serialize(encoder: Encoder, value: Timestamp) {
-        encoder.encodeLong(value.microsSinceUnixEpoch)
+        encoder.encodeLong(value.epochMicroseconds)
     }
 
     override fun deserialize(decoder: Decoder): Timestamp {
-        return Timestamp(decoder.decodeLong())
+        return Timestamp.fromEpochMicroseconds(decoder.decodeLong())
     }
 }

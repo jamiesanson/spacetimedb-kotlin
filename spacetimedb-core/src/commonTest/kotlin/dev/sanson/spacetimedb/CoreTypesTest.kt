@@ -6,6 +6,9 @@ import dev.sanson.spacetimedb.bsatn.U256
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.microseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 class CoreTypesTest {
 
@@ -81,7 +84,7 @@ class CoreTypesTest {
 
     @Test
     fun `Timestamp roundtrip`() {
-        val ts = Timestamp(1_000_000L) // 1 second
+        val ts = Timestamp.fromEpochMicroseconds(1_000_000L) // 1 second
         val bytes = Bsatn.encodeToByteArray(Timestamp.serializer(), ts)
         val decoded = Bsatn.decodeFromByteArray(Timestamp.serializer(), bytes)
         assertEquals(ts, decoded)
@@ -89,7 +92,7 @@ class CoreTypesTest {
 
     @Test
     fun `Timestamp serializes as 8 LE bytes`() {
-        val ts = Timestamp(0x0102030405060708L)
+        val ts = Timestamp.fromEpochMicroseconds(0x0102030405060708L)
         val bytes = Bsatn.encodeToByteArray(Timestamp.serializer(), ts)
         assertEquals(8, bytes.size)
         assertEquals(0x08.toByte(), bytes[0])
@@ -104,17 +107,25 @@ class CoreTypesTest {
 
     @Test
     fun `Timestamp negative value`() {
-        val ts = Timestamp(-1_000_000L)
+        val ts = Timestamp.fromEpochMicroseconds(-1_000_000L)
         val bytes = Bsatn.encodeToByteArray(Timestamp.serializer(), ts)
         val decoded = Bsatn.decodeFromByteArray(Timestamp.serializer(), bytes)
         assertEquals(ts, decoded)
+    }
+
+    @Test
+    fun `Timestamp wraps Instant`() {
+        val instant = Instant.fromEpochSeconds(1_700_000_000)
+        val ts = Timestamp(instant)
+        assertEquals(instant, ts.instant)
+        assertEquals(1_700_000_000_000_000L, ts.epochMicroseconds)
     }
 
     // -- TimeDuration --
 
     @Test
     fun `TimeDuration roundtrip`() {
-        val dur = TimeDuration(5_000_000L) // 5 seconds
+        val dur = TimeDuration(5.seconds)
         val bytes = Bsatn.encodeToByteArray(TimeDuration.serializer(), dur)
         val decoded = Bsatn.decodeFromByteArray(TimeDuration.serializer(), bytes)
         assertEquals(dur, decoded)
@@ -122,7 +133,7 @@ class CoreTypesTest {
 
     @Test
     fun `TimeDuration negative`() {
-        val dur = TimeDuration(-1_000_000L)
+        val dur = TimeDuration((-1_000_000L).microseconds)
         val bytes = Bsatn.encodeToByteArray(TimeDuration.serializer(), dur)
         val decoded = Bsatn.decodeFromByteArray(TimeDuration.serializer(), bytes)
         assertEquals(dur, decoded)
@@ -134,11 +145,17 @@ class CoreTypesTest {
         assertContentEquals(ByteArray(8), bytes)
     }
 
+    @Test
+    fun `TimeDuration wraps Duration`() {
+        val dur = TimeDuration(5.seconds)
+        assertEquals(5.seconds, dur.duration)
+    }
+
     // -- ScheduleAt --
 
     @Test
     fun `ScheduleAt Interval roundtrip`() {
-        val schedule = ScheduleAt.Interval(TimeDuration(60_000_000L))
+        val schedule = ScheduleAt.Interval(TimeDuration(60.seconds))
         val bytes = Bsatn.encodeToByteArray(ScheduleAt.serializer(), schedule)
         val decoded = Bsatn.decodeFromByteArray(ScheduleAt.serializer(), bytes)
         assertEquals(schedule, decoded)
@@ -146,7 +163,7 @@ class CoreTypesTest {
 
     @Test
     fun `ScheduleAt Time roundtrip`() {
-        val schedule = ScheduleAt.Time(Timestamp(1_700_000_000_000_000L))
+        val schedule = ScheduleAt.Time(Timestamp.fromEpochMicroseconds(1_700_000_000_000_000L))
         val bytes = Bsatn.encodeToByteArray(ScheduleAt.serializer(), schedule)
         val decoded = Bsatn.decodeFromByteArray(ScheduleAt.serializer(), bytes)
         assertEquals(schedule, decoded)
@@ -154,7 +171,7 @@ class CoreTypesTest {
 
     @Test
     fun `ScheduleAt Interval has tag 0`() {
-        val schedule = ScheduleAt.Interval(TimeDuration(1L))
+        val schedule = ScheduleAt.Interval(TimeDuration(1L.microseconds))
         val bytes = Bsatn.encodeToByteArray(ScheduleAt.serializer(), schedule)
         // First byte is the sum type tag
         assertEquals(0.toByte(), bytes[0])
@@ -162,7 +179,7 @@ class CoreTypesTest {
 
     @Test
     fun `ScheduleAt Time has tag 1`() {
-        val schedule = ScheduleAt.Time(Timestamp(1L))
+        val schedule = ScheduleAt.Time(Timestamp.fromEpochMicroseconds(1L))
         val bytes = Bsatn.encodeToByteArray(ScheduleAt.serializer(), schedule)
         // First byte is the sum type tag
         assertEquals(1.toByte(), bytes[0])
@@ -177,7 +194,7 @@ class CoreTypesTest {
 
         val event = Event(
             caller = Identity(U256(42u, 0u, 0u, 0u)),
-            at = Timestamp(1_000_000L),
+            at = Timestamp.fromEpochMicroseconds(1_000_000L),
         )
         val bytes = Bsatn.encodeToByteArray(Event.serializer(), event)
         // 32 bytes identity + 8 bytes timestamp

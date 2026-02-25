@@ -1,6 +1,8 @@
 package dev.sanson.spacetimedb
 
-import dev.drewhamilton.poko.Poko
+import kotlin.jvm.JvmInline
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.microseconds
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -10,22 +12,21 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 /**
- * A signed duration of time in microseconds.
+ * A signed duration of time, backed by [Duration].
  *
- * Unlike `kotlin.time.Duration`, this supports negative values (for representing
- * durations in the past). Serialized as a signed 64-bit little-endian integer in BSATN.
+ * Serialized as microseconds (signed 64-bit LE integer) in BSATN.
  */
-@Poko
 @Serializable(with = TimeDurationSerializer::class)
-public class TimeDuration(public val micros: Long) : Comparable<TimeDuration> {
+@JvmInline
+public value class TimeDuration(public val duration: Duration) : Comparable<TimeDuration> {
     public companion object {
-        public val ZERO: TimeDuration = TimeDuration(0L)
+        public val ZERO: TimeDuration = TimeDuration(Duration.ZERO)
     }
 
     override fun compareTo(other: TimeDuration): Int =
-        micros.compareTo(other.micros)
+        duration.compareTo(other.duration)
 
-    override fun toString(): String = "TimeDuration(${micros}µs)"
+    override fun toString(): String = "TimeDuration($duration)"
 }
 
 internal object TimeDurationSerializer : KSerializer<TimeDuration> {
@@ -33,10 +34,10 @@ internal object TimeDurationSerializer : KSerializer<TimeDuration> {
         PrimitiveSerialDescriptor("dev.sanson.spacetimedb.TimeDuration", PrimitiveKind.LONG)
 
     override fun serialize(encoder: Encoder, value: TimeDuration) {
-        encoder.encodeLong(value.micros)
+        encoder.encodeLong(value.duration.inWholeMicroseconds)
     }
 
     override fun deserialize(decoder: Decoder): TimeDuration {
-        return TimeDuration(decoder.decodeLong())
+        return TimeDuration(decoder.decodeLong().microseconds)
     }
 }
