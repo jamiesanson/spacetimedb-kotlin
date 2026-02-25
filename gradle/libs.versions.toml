@@ -4,6 +4,7 @@ java-toolchain = "21"
 foojay = "0.8.0"
 kotlin = "2.1.0"
 kotlinx-serialization = "1.8.0"
+poko = "0.18.7"
 
 [libraries]
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
@@ -14,3 +15,4 @@ foojay = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref 
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+poko = { id = "dev.drewhamilton.poko", version.ref = "poko" }

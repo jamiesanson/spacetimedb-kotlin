@@ -1,5 +1,6 @@
 package dev.sanson.spacetimedb.bsatn
 
+import dev.drewhamilton.poko.Poko
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -12,8 +13,9 @@ import kotlinx.serialization.encoding.Encoder
  * 128-bit unsigned integer, stored as two [ULong] halves in little-endian order.
  * [lo] is the least-significant 64 bits, [hi] is the most-significant 64 bits.
  */
+@Poko
 @Serializable(with = U128Serializer::class)
-public data class U128(val lo: ULong, val hi: ULong) : Comparable<U128> {
+public class U128(val lo: ULong, val hi: ULong) : Comparable<U128> {
     public companion object {
         public val ZERO: U128 = U128(0u, 0u)
         public val MAX: U128 = U128(ULong.MAX_VALUE, ULong.MAX_VALUE)
@@ -34,8 +36,9 @@ public data class U128(val lo: ULong, val hi: ULong) : Comparable<U128> {
  * 128-bit signed integer, stored as two [ULong] halves in little-endian order.
  * Interpreted as two's complement.
  */
+@Poko
 @Serializable(with = I128Serializer::class)
-public data class I128(val lo: ULong, val hi: ULong) : Comparable<I128> {
+public class I128(val lo: ULong, val hi: ULong) : Comparable<I128> {
     public companion object {
         public val ZERO: I128 = I128(0u, 0u)
         public val MIN: I128 = I128(0u, 0x8000000000000000uL)
@@ -43,7 +46,6 @@ public data class I128(val lo: ULong, val hi: ULong) : Comparable<I128> {
     }
 
     override fun compareTo(other: I128): Int {
-        // Signed comparison: treat hi as signed
         val hiCmp = hi.toLong().compareTo(other.hi.toLong())
         return if (hiCmp != 0) hiCmp else lo.compareTo(other.lo)
     }
@@ -52,8 +54,9 @@ public data class I128(val lo: ULong, val hi: ULong) : Comparable<I128> {
 /**
  * 256-bit unsigned integer, stored as four [ULong] words in little-endian order.
  */
+@Poko
 @Serializable(with = U256Serializer::class)
-public data class U256(val w0: ULong, val w1: ULong, val w2: ULong, val w3: ULong) : Comparable<U256> {
+public class U256(val w0: ULong, val w1: ULong, val w2: ULong, val w3: ULong) : Comparable<U256> {
     public companion object {
         public val ZERO: U256 = U256(0u, 0u, 0u, 0u)
         public val MAX: U256 = U256(ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE)
@@ -74,14 +77,14 @@ public data class U256(val w0: ULong, val w1: ULong, val w2: ULong, val w3: ULon
  * 256-bit signed integer, stored as four [ULong] words in little-endian order.
  * Interpreted as two's complement.
  */
+@Poko
 @Serializable(with = I256Serializer::class)
-public data class I256(val w0: ULong, val w1: ULong, val w2: ULong, val w3: ULong) : Comparable<I256> {
+public class I256(val w0: ULong, val w1: ULong, val w2: ULong, val w3: ULong) : Comparable<I256> {
     public companion object {
         public val ZERO: I256 = I256(0u, 0u, 0u, 0u)
     }
 
     override fun compareTo(other: I256): Int {
-        // Most significant word is signed
         val cmp = w3.toLong().compareTo(other.w3.toLong())
         if (cmp != 0) return cmp
         val cmp2 = w2.compareTo(other.w2)
