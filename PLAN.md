@@ -92,16 +92,19 @@ The wire format is:
 - [x] BSATN format object
 - [x] BSATN tests
 
-### Phase 2: Core Types
+### Phase 2: Core Types ✅
 
-- [ ] Core domain types: `Identity`, `ConnectionId`, `Timestamp`, `TimeDuration`, `ScheduleAt`, `Uuid` — all with BSATN `@Serializable`
-- [ ] Error types: `SpacetimeError` abstract class hierarchy
-- [ ] Event types: `Event` abstract class, `ReducerEvent`, `Status` abstract class
+- [x] Core domain types: `Identity`, `ConnectionId`, `Timestamp`, `TimeDuration`, `ScheduleAt` — all with BSATN `@Serializable`
+- [x] `UuidSerializer` for `kotlin.uuid.Uuid` — BSATN serialization via U128 LE
+- [x] Error types: `SpacetimeError` abstract class hierarchy
+- [x] Event types: `Event` abstract class, `ReducerEvent`, `Status` abstract class
 
-### Phase 3: Client Cache & Tables
+### Phase 3: Client Cache & Tables ✅
 
-- [ ] Table interfaces: `Table<Row>`, `TableWithPrimaryKey<Row>`, `EventTable<Row>`
-- [ ] Client cache: `ClientCache` with `TableCache<Row>`, reference counting, unique index support
+- [x] `CallbackId` value class for callback deregistration handles
+- [x] Table interfaces: `Table<Row>`, `TableWithPrimaryKey<Row>`, `EventTable<Row>`
+- [x] Client cache: `ClientCache` with `TableCache<Row>`, reference counting
+- [x] `UniqueIndex<Row, Col>` for efficient column lookups, integrated into `TableCache`
 
 ### Phase 4: Transport & Connection
 
