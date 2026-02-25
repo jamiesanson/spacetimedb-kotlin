@@ -14,7 +14,6 @@ import kotlin.test.assertEquals
  */
 class BsatnCompatibilityTest {
 
-    // -- Primitive compatibility --
 
     @Test
     fun `bool true matches Rust`() {
@@ -64,7 +63,6 @@ class BsatnCompatibilityTest {
         )
     }
 
-    // -- Product compatibility --
 
     @Serializable
     data class TestPoint(val x: Int, val y: Int)
@@ -79,7 +77,6 @@ class BsatnCompatibilityTest {
         )
     }
 
-    // -- Option compatibility --
 
     @Test
     fun `option some matches Rust`() {
@@ -103,7 +100,6 @@ class BsatnCompatibilityTest {
         assertContentEquals(byteArrayOf(1), bytes)
     }
 
-    // -- Enum compatibility --
 
     @Serializable
     enum class SimpleEnum { Zero, One, Two }
@@ -116,7 +112,6 @@ class BsatnCompatibilityTest {
         assertContentEquals(byteArrayOf(2), Bsatn.encodeToByteArray(SimpleEnum.serializer(), SimpleEnum.Two))
     }
 
-    // -- Vec compatibility --
 
     @Test
     fun `vec of i32 matches Rust`() {
@@ -132,7 +127,6 @@ class BsatnCompatibilityTest {
         )
     }
 
-    // -- Cross-decode: decode Rust-produced bytes --
 
     @Test
     fun `decode Rust-produced product bytes`() {

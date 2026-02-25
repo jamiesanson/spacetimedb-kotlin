@@ -6,8 +6,6 @@ import kotlin.test.assertEquals
 
 class BsatnBigIntegerTest {
 
-    // -- U128 --
-
     @Test
     fun `encode U128 zero`() {
         val bytes = Bsatn.encodeToByteArray(U128.serializer(), U128.ZERO)
@@ -41,8 +39,6 @@ class BsatnBigIntegerTest {
         }
     }
 
-    // -- I128 --
-
     @Test
     fun `roundtrip I128`() {
         val values = listOf(
@@ -57,8 +53,6 @@ class BsatnBigIntegerTest {
             assertEquals(v, Bsatn.decodeFromByteArray(I128.serializer(), bytes))
         }
     }
-
-    // -- U256 --
 
     @Test
     fun `encode U256 zero`() {
@@ -81,8 +75,6 @@ class BsatnBigIntegerTest {
         }
     }
 
-    // -- I256 --
-
     @Test
     fun `roundtrip I256`() {
         val values = listOf(
@@ -95,9 +87,6 @@ class BsatnBigIntegerTest {
             assertEquals(v, Bsatn.decodeFromByteArray(I256.serializer(), bytes))
         }
     }
-
-    // -- Compatibility with Rust BSATN --
-    // These test against known byte sequences that the Rust encoder produces.
 
     @Test
     fun `U128 encoding matches Rust`() {

@@ -9,7 +9,6 @@ import kotlin.test.assertFailsWith
 
 class BsatnPrimitiveTest {
 
-    // -- Boolean --
 
     @Test
     fun `encode true`() {
@@ -41,7 +40,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-    // -- Byte --
 
     @Test
     fun `roundtrip byte`() {
@@ -52,7 +50,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-    // -- Short (i16 LE) --
 
     @Test
     fun `encode short little-endian`() {
@@ -70,7 +67,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-    // -- Int (i32 LE) --
 
     @Test
     fun `encode int little-endian`() {
@@ -88,7 +84,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-    // -- Long (i64 LE) --
 
     @Test
     fun `encode long little-endian`() {
@@ -105,7 +100,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-    // -- Float (f32 as bits LE) --
 
     @Test
     fun `roundtrip float`() {
@@ -118,7 +112,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-    // -- Double (f64 as bits LE) --
 
     @Test
     fun `roundtrip double`() {
@@ -134,7 +127,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-    // -- String --
 
     @Test
     fun `encode string with length prefix`() {
@@ -158,7 +150,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-    // -- Truncated input --
 
     @Test
     fun `decode from truncated input throws`() {
@@ -168,7 +159,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-    // -- Unsigned integers --
 
     @OptIn(ExperimentalUnsignedTypes::class)
     @Test
@@ -215,7 +205,6 @@ class BsatnPrimitiveTest {
         assertContentEquals(byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()), bytes)
     }
 
-    // -- ByteArray --
 
     @Test
     fun `encode byte array with length prefix`() {

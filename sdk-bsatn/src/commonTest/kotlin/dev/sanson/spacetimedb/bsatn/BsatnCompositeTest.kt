@@ -13,7 +13,6 @@ import kotlin.test.assertFailsWith
 
 class BsatnCompositeTest {
 
-    // -- Data class (product type) --
 
     @Serializable
     data class Point(val x: Int, val y: Int)
@@ -38,7 +37,6 @@ class BsatnCompositeTest {
         assertEquals(value, Bsatn.decodeFromByteArray(Point.serializer(), bytes))
     }
 
-    // -- Nested products --
 
     @Serializable
     data class Line(val start: Point, val end: Point)
@@ -50,7 +48,6 @@ class BsatnCompositeTest {
         assertEquals(value, Bsatn.decodeFromByteArray(Line.serializer(), bytes))
     }
 
-    // -- List --
 
     @Test
     fun `encode list with count prefix`() {
@@ -90,7 +87,6 @@ class BsatnCompositeTest {
         assertEquals(list, Bsatn.decodeFromByteArray(ListSerializer(Point.serializer()), bytes))
     }
 
-    // -- Nullable (BSATN sum: tag 0 = Some, tag 1 = None) --
 
     @Test
     fun `encode nullable some`() {
@@ -123,7 +119,6 @@ class BsatnCompositeTest {
         assertNull(Bsatn.decodeFromByteArray(Int.serializer().nullable, bytes))
     }
 
-    // -- Sealed class (sum type) --
 
     @Serializable
     sealed class Shape {
@@ -171,7 +166,6 @@ class BsatnCompositeTest {
         }
     }
 
-    // -- Enum (simple, no payload) --
 
     @Serializable
     enum class Color { Red, Green, Blue }
@@ -191,7 +185,6 @@ class BsatnCompositeTest {
         }
     }
 
-    // -- Product with various field types --
 
     @Serializable
     data class MixedRow(
@@ -233,7 +226,6 @@ class BsatnCompositeTest {
         assertEquals(value, Bsatn.decodeFromByteArray(MixedRow.serializer(), bytes))
     }
 
-    // -- Map rejection --
 
     @Test
     fun `encoding map throws`() {
