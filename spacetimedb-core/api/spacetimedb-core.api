@@ -99,16 +99,16 @@ public final class dev/sanson/spacetimedb/Event$UnsubscribeApplied : dev/sanson/
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class dev/sanson/spacetimedb/EventTable {
+public abstract interface class dev/sanson/spacetimedb/EventTable : java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
 	public fun getCount ()I
-	public fun iter ()Ljava/util/Iterator;
+	public fun iterator ()Ljava/util/Iterator;
 	public abstract fun onEvent-4UbDo-M (Lkotlin/jvm/functions/Function2;)J
 	public abstract fun removeOnEvent-yFPdGxs (J)V
 }
 
 public final class dev/sanson/spacetimedb/EventTable$DefaultImpls {
 	public static fun getCount (Ldev/sanson/spacetimedb/EventTable;)I
-	public static fun iter (Ldev/sanson/spacetimedb/EventTable;)Ljava/util/Iterator;
+	public static fun iterator (Ldev/sanson/spacetimedb/EventTable;)Ljava/util/Iterator;
 }
 
 public final class dev/sanson/spacetimedb/Identity : java/lang/Comparable {
@@ -287,22 +287,22 @@ public final class dev/sanson/spacetimedb/Status$Panic : dev/sanson/spacetimedb/
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class dev/sanson/spacetimedb/Table {
+public abstract interface class dev/sanson/spacetimedb/Table : java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
 	public abstract fun getCount ()I
-	public abstract fun iter ()Ljava/util/Iterator;
+	public abstract fun iterator ()Ljava/util/Iterator;
 	public abstract fun onDelete-4UbDo-M (Lkotlin/jvm/functions/Function2;)J
 	public abstract fun onInsert-4UbDo-M (Lkotlin/jvm/functions/Function2;)J
 	public abstract fun removeOnDelete-yFPdGxs (J)V
 	public abstract fun removeOnInsert-yFPdGxs (J)V
 }
 
-public final class dev/sanson/spacetimedb/TableCache {
+public final class dev/sanson/spacetimedb/TableCache : java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
 	public fun <init> ()V
 	public final fun clear ()V
 	public final fun delete ([B)Ljava/lang/Object;
 	public final fun getCount ()I
 	public final fun insert ([BLjava/lang/Object;)Ljava/lang/Object;
-	public final fun iter ()Ljava/util/Iterator;
+	public fun iterator ()Ljava/util/Iterator;
 	public final fun registerUniqueIndex (Ldev/sanson/spacetimedb/UniqueIndex;)Ldev/sanson/spacetimedb/UniqueIndex;
 }
 

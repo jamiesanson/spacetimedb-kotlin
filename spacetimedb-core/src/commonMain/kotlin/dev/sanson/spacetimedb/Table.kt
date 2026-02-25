@@ -4,16 +4,15 @@ package dev.sanson.spacetimedb
  * A read-only view of a table's cached rows, with callback registration for row changes.
  *
  * Implementations are generated per-table by the SpacetimeDB code generator. Each generated
- * table class delegates [count] and [iter] to the underlying [ClientCache][dev.sanson.spacetimedb.ClientCache],
+ * table class delegates [count] and [iterator] to the underlying [ClientCache][dev.sanson.spacetimedb.ClientCache],
  * and callback methods to the connection's callback registry.
  */
-public interface Table<Row : Any> {
+public interface Table<Row : Any> : Iterable<Row> {
 
     /** Number of rows currently in the client cache for this table. */
     public val count: Int
 
-    /** Iterate over all cached rows. */
-    public fun iter(): Iterator<Row>
+    override fun iterator(): Iterator<Row>
 
     /**
      * Register a callback invoked whenever a row is inserted into this table.
@@ -60,13 +59,13 @@ public interface TableWithPrimaryKey<Row : Any> : Table<Row> {
  *
  * [count] always returns 0 and [iter] always returns an empty iterator.
  */
-public interface EventTable<Row : Any> {
+public interface EventTable<Row : Any> : Iterable<Row> {
 
     /** Always returns 0 — event tables do not persist rows. */
     public val count: Int get() = 0
 
     /** Always returns an empty iterator — event tables do not persist rows. */
-    public fun iter(): Iterator<Row> = emptyList<Row>().iterator()
+    override fun iterator(): Iterator<Row> = emptyList<Row>().iterator()
 
     /**
      * Register a callback invoked whenever an event row is received.

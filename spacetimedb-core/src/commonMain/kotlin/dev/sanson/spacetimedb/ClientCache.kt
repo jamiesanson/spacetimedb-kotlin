@@ -45,15 +45,14 @@ public class ClientCache {
  *
  * @param Row the deserialized row type
  */
-public class TableCache<Row : Any> {
+public class TableCache<Row : Any> : Iterable<Row> {
     private val entries = LinkedHashMap<RowKey, RowEntry<Row>>()
     private val uniqueIndexes = mutableListOf<UniqueIndex<Row, *>>()
 
     /** Number of distinct rows currently cached. */
     public val count: Int get() = entries.size
 
-    /** Iterate over all cached rows. */
-    public fun iter(): Iterator<Row> =
+    override fun iterator(): Iterator<Row> =
         entries.values.asSequence().map { it.row }.iterator()
 
     /**

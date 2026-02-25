@@ -47,7 +47,7 @@ class ClientCacheTest {
         cache.insert(byteArrayOf(2), "b")
         cache.insert(byteArrayOf(3), "c")
 
-        val rows = cache.iter().asSequence().toSet()
+        val rows = cache.toSet()
         assertEquals(setOf("a", "b", "c"), rows)
     }
 
@@ -221,7 +221,7 @@ class ClientCacheTest {
         assertEquals(1, cache.count)
 
         // Iter should yield the row once
-        assertEquals(listOf("shared"), cache.iter().asSequence().toList())
+        assertEquals(listOf("shared"), cache.toList())
     }
 
     @Test
