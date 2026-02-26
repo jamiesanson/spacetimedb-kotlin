@@ -23,7 +23,7 @@ import kotlinx.serialization.KSerializer
  *
  * @see SpacetimeDbConnection
  */
-public class SpacetimeDbConnectionBuilder internal constructor() {
+public class SpacetimeDbConnectionBuilder() {
     private var uri: String? = null
     private var databaseName: String? = null
     private var token: String? = null

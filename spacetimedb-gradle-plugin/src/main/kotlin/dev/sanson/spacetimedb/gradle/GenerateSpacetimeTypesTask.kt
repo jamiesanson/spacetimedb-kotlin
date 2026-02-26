@@ -70,6 +70,8 @@ public abstract class GenerateSpacetimeTypesTask : DefaultTask() {
 
             add(moduleGenerator.generateDeserializerMapFile())
             add(moduleGenerator.generateBuilderExtensionFile())
+            add(moduleGenerator.generateDbConnectionFile())
+            add(moduleGenerator.generateDbConnectionBuilderFile())
         }
 
         for (file in files) {
