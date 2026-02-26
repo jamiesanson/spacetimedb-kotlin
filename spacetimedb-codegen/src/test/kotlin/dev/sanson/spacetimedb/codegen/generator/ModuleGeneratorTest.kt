@@ -125,6 +125,8 @@ class ModuleGeneratorTest {
         // Module wiring
         sources.add(SourceFile.kotlin("TableDeserializerMap.kt", moduleGen.generateDeserializerMapFile().toString()))
         sources.add(SourceFile.kotlin("BuilderExtensions.kt", moduleGen.generateBuilderExtensionFile().toString()))
+        sources.add(SourceFile.kotlin("DbConnection.kt", moduleGen.generateDbConnectionFile().toString()))
+        sources.add(SourceFile.kotlin("DbConnectionBuilder.kt", moduleGen.generateDbConnectionBuilderFile().toString()))
 
         val result = KotlinCompilation().apply {
             this.sources = sources
@@ -136,5 +138,45 @@ class ModuleGeneratorTest {
             result.exitCode,
             "Full end-to-end generated code failed to compile:\n${result.messages}",
         )
+    }
+
+    @Test
+    fun `generates DbConnection implementing DbContext`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = ModuleGenerator(schema, "com.example")
+
+        val file = gen.generateDbConnectionFile()
+        val output = file.toString()
+
+        assertContains(output, "class DbConnection")
+        assertContains(output, "DbContext<RemoteTables, RemoteReducers>")
+        assertContains(output, "override val db: RemoteTables")
+        assertContains(output, "override val reducers: RemoteReducers")
+        assertContains(output, "override val identity: Identity?")
+        assertContains(output, "override val connectionId: ConnectionId?")
+        assertContains(output, "override val isActive: Boolean")
+        assertContains(output, "override fun subscriptionBuilder()")
+        assertContains(output, "override fun disconnect()")
+        assertContains(output, "fun builder()")
+    }
+
+    @Test
+    fun `generates DbConnectionBuilder with fluent API`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = ModuleGenerator(schema, "com.example")
+
+        val file = gen.generateDbConnectionBuilderFile()
+        val output = file.toString()
+
+        assertContains(output, "class DbConnectionBuilder")
+        assertContains(output, "fun withUri(uri: String): DbConnectionBuilder")
+        assertContains(output, "fun withDatabaseName(name: String): DbConnectionBuilder")
+        assertContains(output, "fun withToken(token: String?): DbConnectionBuilder")
+        assertContains(output, "fun onConnect(")
+        assertContains(output, "fun onDisconnect(")
+        assertContains(output, "fun onConnectError(")
+        assertContains(output, "suspend fun build(scope: CoroutineScope): DbConnection")
+        // Auto-configures deserializers
+        assertContains(output, "withModuleDeserializers()")
     }
 }
