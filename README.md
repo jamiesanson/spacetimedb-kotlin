@@ -59,7 +59,6 @@ From the module above, the codegen produces:
 
 **Row types** — `@Serializable` classes matching your tables:
 ```kotlin
-// Player.kt (generated)
 @Serializable
 public class Player(
     public val id: ULong,
@@ -68,46 +67,62 @@ public class Player(
 )
 ```
 
-**Table handles** — typed access to the client cache, with `findBy` methods for unique columns:
+**Table handles** — typed access to the client cache with `findBy` for unique columns:
 ```kotlin
-// PlayerTableHandle.kt (generated)
 public interface PlayerTableHandle : TableWithPrimaryKey<Player> {
     public fun findById(id: ULong): Player?
     public fun findByName(name: String): Player?
-}
-
-// RemoteTables.kt (generated)
-public interface RemoteTables {
-    public val player: PlayerTableHandle
 }
 ```
 
 **Reducer wrappers** — typed methods for calling server-side reducers:
 ```kotlin
-// RemoteReducers.kt (generated)
 public interface RemoteReducers {
     public fun addPlayer(name: String)
     public fun setScore(playerId: ULong, score: UInt)
 }
 ```
 
-**Module wiring** — a `withModuleDeserializers()` extension that registers all table serializers with the connection builder.
+**`DbConnection`** — the entry point that ties everything together, implementing `DbContext<RemoteTables, RemoteReducers>`:
+```kotlin
+public class DbConnection : DbContext<RemoteTables, RemoteReducers> {
+    override val db: RemoteTables        // ctx.db.player.findByName("Alice")
+    override val reducers: RemoteReducers // ctx.reducers.addPlayer("Bob")
+    override val identity: Identity?
+    override val connectionId: ConnectionId?
+    override val isActive: Boolean
+
+    companion object {
+        fun builder(): DbConnectionBuilder
+    }
+}
+```
 
 ### 3. Connect and use
 
 ```kotlin
-val connection = DbConnection.builder()
+val ctx = DbConnection.builder()
     .withUri("http://localhost:3000")
     .withDatabaseName("my-game")
-    .withModuleDeserializers()  // generated — registers table serializers
     .onConnect { identity, token, connectionId ->
         println("Connected as $identity")
     }
     .build(scope)
 
 // Subscribe to tables
-connection.subscriptionBuilder()
+ctx.subscriptionBuilder()
     .subscribe("SELECT * FROM player")
+
+// Query the client cache
+val alice = ctx.db.player.findByName("Alice")
+
+// Call reducers
+ctx.reducers.addPlayer("Bob")
+
+// Observe table changes
+ctx.db.player.onInsert { event, player ->
+    println("Player joined: ${player.name}")
+}
 ```
 
 ## Modules
@@ -137,7 +152,7 @@ Client-side connection management, caching, and protocol handling.
 
 | Area | Types |
 |------|-------|
-| Connection | `DbConnectionBuilder`, `DbConnection` |
+| Connection | `SpacetimeDbConnectionBuilder`, `SpacetimeDbConnection`, `DbContext` |
 | Subscriptions | `SubscriptionBuilder`, `SubscriptionHandle` |
 | Identity & auth | `Identity`, `ConnectionId`, `CredentialFile` |
 | Table cache | `Table<Row>`, `TableWithPrimaryKey<Row>`, `ClientCache` |
@@ -150,9 +165,9 @@ Generates typed Kotlin client bindings from a SpacetimeDB module schema.
 | Generator | Output |
 |-----------|--------|
 | `TypeGenerator` | `@Serializable` row classes + custom algebraic types |
-| `TableHandleGenerator` | `{Table}TableHandle` interfaces, `findByX()` for unique columns, `RemoteTables` |
-| `ReducerGenerator` | `Reducer` sealed class + `RemoteReducers` interface |
-| `ModuleGenerator` | `tableDeserializerMap()` + `withModuleDeserializers()` builder extension |
+| `TableHandleGenerator` | `{Table}TableHandle` interfaces + impls, `RemoteTables` / `RemoteTablesImpl` |
+| `ReducerGenerator` | `Reducer` sealed class, `RemoteReducers` / `RemoteReducersImpl` |
+| `ModuleGenerator` | `DbConnection`, `DbConnectionBuilder`, deserializer map, builder extension |
 
 **Standalone CLI usage** (without the Gradle plugin):
 ```bash

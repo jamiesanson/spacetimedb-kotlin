@@ -26,7 +26,6 @@ private val CONNECTION_ID = ClassName("dev.sanson.spacetimedb", "ConnectionId")
 private val SPACETIME_ERROR = ClassName("dev.sanson.spacetimedb", "SpacetimeError")
 private val SUBSCRIPTION_BUILDER = ClassName("dev.sanson.spacetimedb", "SubscriptionBuilder")
 private val COMPRESSION = ClassName("dev.sanson.spacetimedb.protocol", "Compression")
-private val HTTP_CLIENT = ClassName("io.ktor.client", "HttpClient")
 private val COROUTINE_SCOPE = ClassName("kotlinx.coroutines", "CoroutineScope")
 private val K_SERIALIZER = ClassName("kotlinx.serialization", "KSerializer")
 
@@ -260,12 +259,6 @@ public class ModuleGenerator(
                 builderDelegate("withCompression", dbConnectionBuilder,
                     ParameterSpec.builder("compression", COMPRESSION).build(),
                     "inner.withCompression(compression)")
-            )
-            // withHttpClient
-            .addFunction(
-                builderDelegate("withHttpClient", dbConnectionBuilder,
-                    ParameterSpec.builder("client", HTTP_CLIENT).build(),
-                    "inner.withHttpClient(client)")
             )
             // onConnect
             .addFunction(

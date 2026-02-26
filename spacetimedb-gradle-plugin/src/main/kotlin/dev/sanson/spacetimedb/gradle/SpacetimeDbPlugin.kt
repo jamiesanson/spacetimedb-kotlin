@@ -60,7 +60,7 @@ public class SpacetimeDbPlugin : Plugin<Project> {
                 .srcDir(generateTask.flatMap { it.outputDirectory })
 
             if (sdkVersion != null) {
-                project.dependencies.add("implementation", "dev.sanson.spacetimedb:spacetimedb-core-jvm:$sdkVersion")
+                project.dependencies.add("implementation", "dev.sanson.spacetimedb:spacetimedb-core:$sdkVersion")
             }
         }
 

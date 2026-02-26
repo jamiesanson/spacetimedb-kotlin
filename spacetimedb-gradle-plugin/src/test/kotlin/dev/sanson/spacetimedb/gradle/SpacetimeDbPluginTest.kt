@@ -102,8 +102,8 @@ class SpacetimeDbPluginTest {
             .build()
 
         assertTrue(
-            result.output.contains("dev.sanson.spacetimedb:spacetimedb-core-jvm"),
-            "Expected spacetimedb-core-jvm dependency in:\n${result.output}"
+            result.output.contains("dev.sanson.spacetimedb:spacetimedb-core"),
+            "Expected spacetimedb-core dependency in:\n${result.output}"
         )
     }
 
