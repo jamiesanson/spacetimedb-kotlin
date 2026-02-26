@@ -208,15 +208,42 @@ public class SpacetimeDbConnection internal constructor(
                     Event.Transaction
                 }
                 handleTransactionUpdate(result.transactionUpdate, event)
+                if (reducerName != null) {
+                    callbacks.invokeReducerCallbacks(
+                        reducerName,
+                        (event as Event.Reducer).event,
+                    )
+                }
             }
             is ReducerOutcome.OkEmpty -> {
-                // Reducer committed but produced no row changes
+                if (reducerName != null) {
+                    val event = ReducerEvent(
+                        timestamp = msg.timestamp,
+                        status = Status.Committed,
+                        reducer = reducerName,
+                    )
+                    callbacks.invokeReducerCallbacks(reducerName, event)
+                }
             }
             is ReducerOutcome.Err -> {
-                // Reducer returned an error — no cache changes (transaction rolled back)
+                if (reducerName != null) {
+                    val event = ReducerEvent(
+                        timestamp = msg.timestamp,
+                        status = Status.Failed(result.error.decodeToString()),
+                        reducer = reducerName,
+                    )
+                    callbacks.invokeReducerCallbacks(reducerName, event)
+                }
             }
             is ReducerOutcome.InternalError -> {
-                // Internal error — no cache changes
+                if (reducerName != null) {
+                    val event = ReducerEvent(
+                        timestamp = msg.timestamp,
+                        status = Status.Panic(result.message),
+                        reducer = reducerName,
+                    )
+                    callbacks.invokeReducerCallbacks(reducerName, event)
+                }
             }
         }
     }

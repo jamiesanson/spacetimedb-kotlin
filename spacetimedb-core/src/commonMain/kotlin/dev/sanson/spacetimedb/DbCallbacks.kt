@@ -117,12 +117,47 @@ public class DbCallbacks {
     private fun getOrCreateTableCallbacks(tableName: String): TableCallbacks {
         return tableCallbacks.getOrPut(tableName) { TableCallbacks() }
     }
+
+    // -- Reducer callbacks --
+
+    private val reducerCallbacks = mutableMapOf<String, LinkedHashMap<CallbackId, ReducerCallback>>()
+
+    /**
+     * Register a callback for a specific reducer by [reducerName].
+     *
+     * The [callback] will be invoked with the [ReducerEvent] whenever the server
+     * responds to a call to this reducer (committed, failed, or panicked).
+     */
+    public fun registerOnReducer(
+        reducerName: String,
+        callback: (event: ReducerEvent<*>) -> Unit,
+    ): CallbackId {
+        val id = nextCallbackId()
+        reducerCallbacks.getOrPut(reducerName) { LinkedHashMap() }[id] = callback
+        return id
+    }
+
+    /** Remove a previously registered reducer callback. */
+    public fun removeOnReducer(reducerName: String, id: CallbackId) {
+        reducerCallbacks[reducerName]?.remove(id)
+    }
+
+    /**
+     * Invoke all registered callbacks for a reducer result.
+     */
+    public fun invokeReducerCallbacks(reducerName: String, event: ReducerEvent<*>) {
+        val callbacks = reducerCallbacks[reducerName] ?: return
+        for (cb in callbacks.values) {
+            cb(event)
+        }
+    }
 }
 
 // -- Internal types --
 
 internal typealias RowCallback = (Event<*>, Any) -> Unit
 internal typealias UpdateCallback = (Event<*>, Any, Any) -> Unit
+internal typealias ReducerCallback = (ReducerEvent<*>) -> Unit
 
 internal class TableCallbacks {
     val onInsert = LinkedHashMap<CallbackId, RowCallback>()
