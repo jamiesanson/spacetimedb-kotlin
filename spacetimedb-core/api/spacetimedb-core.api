@@ -242,8 +242,6 @@ public final class dev/sanson/spacetimedb/RowWithBsatn {
 
 public abstract class dev/sanson/spacetimedb/ScheduleAt {
 	public static final field Companion Ldev/sanson/spacetimedb/ScheduleAt$Companion;
-	public synthetic fun <init> (ILkotlinx/serialization/internal/SerializationConstructorMarker;)V
-	public static final synthetic fun write$Self (Ldev/sanson/spacetimedb/ScheduleAt;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
 public final class dev/sanson/spacetimedb/ScheduleAt$Companion {
@@ -253,9 +251,6 @@ public final class dev/sanson/spacetimedb/ScheduleAt$Companion {
 public final class dev/sanson/spacetimedb/ScheduleAt$Interval : dev/sanson/spacetimedb/ScheduleAt {
 	public static final field Companion Ldev/sanson/spacetimedb/ScheduleAt$Interval$Companion;
 	public synthetic fun <init> (JLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-zW-2OS4 ()J
-	public final fun copy-72ik6Bw (J)Ldev/sanson/spacetimedb/ScheduleAt$Interval;
-	public static synthetic fun copy-72ik6Bw$default (Ldev/sanson/spacetimedb/ScheduleAt$Interval;JILjava/lang/Object;)Ldev/sanson/spacetimedb/ScheduleAt$Interval;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDuration-zW-2OS4 ()J
 	public fun hashCode ()I
@@ -280,9 +275,6 @@ public final class dev/sanson/spacetimedb/ScheduleAt$Interval$Companion {
 public final class dev/sanson/spacetimedb/ScheduleAt$Time : dev/sanson/spacetimedb/ScheduleAt {
 	public static final field Companion Ldev/sanson/spacetimedb/ScheduleAt$Time$Companion;
 	public synthetic fun <init> (Lkotlin/time/Instant;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-Jr5MCI8 ()Lkotlin/time/Instant;
-	public final fun copy-RXdleCA (Lkotlin/time/Instant;)Ldev/sanson/spacetimedb/ScheduleAt$Time;
-	public static synthetic fun copy-RXdleCA$default (Ldev/sanson/spacetimedb/ScheduleAt$Time;Lkotlin/time/Instant;ILjava/lang/Object;)Ldev/sanson/spacetimedb/ScheduleAt$Time;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getTimestamp-Jr5MCI8 ()Lkotlin/time/Instant;
 	public fun hashCode ()I
