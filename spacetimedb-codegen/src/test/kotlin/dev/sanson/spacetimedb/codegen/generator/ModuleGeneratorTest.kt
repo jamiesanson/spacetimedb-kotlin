@@ -120,6 +120,7 @@ class ModuleGeneratorTest {
         // Reducers
         sources.add(SourceFile.kotlin("Reducer.kt", reducerGen.generateReducerFile().toString()))
         sources.add(SourceFile.kotlin("RemoteReducers.kt", reducerGen.generateRemoteReducersFile().toString()))
+        sources.add(SourceFile.kotlin("RemoteReducersImpl.kt", reducerGen.generateRemoteReducersImplFile().toString()))
 
         // Module wiring
         sources.add(SourceFile.kotlin("TableDeserializerMap.kt", moduleGen.generateDeserializerMapFile().toString()))

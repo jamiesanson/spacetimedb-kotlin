@@ -66,6 +66,7 @@ public abstract class GenerateSpacetimeTypesTask : DefaultTask() {
 
             add(reducerGenerator.generateReducerFile())
             add(reducerGenerator.generateRemoteReducersFile())
+            add(reducerGenerator.generateRemoteReducersImplFile())
 
             add(moduleGenerator.generateDeserializerMapFile())
             add(moduleGenerator.generateBuilderExtensionFile())

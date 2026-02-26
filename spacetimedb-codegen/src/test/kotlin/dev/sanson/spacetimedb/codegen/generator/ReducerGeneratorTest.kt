@@ -111,6 +111,87 @@ class ReducerGeneratorTest {
         assertTrue(!output.contains("fun repeatingTest("))
     }
 
+    @Test
+    fun `generates RemoteReducersImpl with connection constructor`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = ReducerGenerator(schema, "com.example")
+
+        val file = gen.generateRemoteReducersImplFile()
+        val output = file.toString()
+
+        assertContains(output, "class RemoteReducersImpl")
+        assertContains(output, ": RemoteReducers")
+        assertContains(output, "connection: SpacetimeDbConnection")
+    }
+
+    @Test
+    fun `generates args classes for reducers with parameters`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = ReducerGenerator(schema, "com.example")
+
+        val file = gen.generateRemoteReducersImplFile()
+        val output = file.toString()
+
+        // add(name: String, age: UByte) → AddArgs
+        assertContains(output, "private class AddArgs")
+        assertContains(output, "@Serializable")
+        // add_player(name: String) → AddPlayerArgs
+        assertContains(output, "private class AddPlayerArgs")
+    }
+
+    @Test
+    fun `no-arg reducers call with empty byte array`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = ReducerGenerator(schema, "com.example")
+
+        val file = gen.generateRemoteReducersImplFile()
+        val output = file.toString()
+
+        assertContains(output, "connection.callReducer(\"say_hello\", byteArrayOf())")
+    }
+
+    @Test
+    fun `reducers with args BSATN-encode via args class`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = ReducerGenerator(schema, "com.example")
+
+        val file = gen.generateRemoteReducersImplFile()
+        val output = file.toString()
+
+        assertContains(output, "Bsatn.encodeToByteArray(serializer<AddArgs>(), args)")
+        assertContains(output, "connection.callReducer(\"add\"")
+    }
+
+    @OptIn(ExperimentalCompilerApi::class)
+    @Test
+    fun `generated RemoteReducersImpl compiles`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val pkg = "com.example"
+        val typeGen = TypeGenerator(schema, pkg)
+        val reducerGen = ReducerGenerator(schema, pkg)
+
+        val sources = mutableListOf<SourceFile>()
+
+        for (file in typeGen.generateTypeFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+
+        sources.add(SourceFile.kotlin("Reducer.kt", reducerGen.generateReducerFile().toString()))
+        sources.add(SourceFile.kotlin("RemoteReducers.kt", reducerGen.generateRemoteReducersFile().toString()))
+        sources.add(SourceFile.kotlin("RemoteReducersImpl.kt", reducerGen.generateRemoteReducersImplFile().toString()))
+
+        val result = KotlinCompilation().apply {
+            this.sources = sources
+            inheritClassPath = true
+        }.compile()
+
+        assertEquals(
+            KotlinCompilation.ExitCode.OK,
+            result.exitCode,
+            "Generated RemoteReducersImpl failed to compile:\n${result.messages}",
+        )
+    }
+
     @OptIn(ExperimentalCompilerApi::class)
     @Test
     fun `generated reducer code compiles`() {
