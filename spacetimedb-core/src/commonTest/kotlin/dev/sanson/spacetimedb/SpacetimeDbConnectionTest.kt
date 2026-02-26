@@ -5,6 +5,7 @@ import dev.sanson.spacetimedb.bsatn.U128
 import dev.sanson.spacetimedb.bsatn.U256
 import dev.sanson.spacetimedb.protocol.BsatnRowList
 import dev.sanson.spacetimedb.protocol.ClientMessage
+import dev.sanson.spacetimedb.protocol.ProcedureStatus
 import dev.sanson.spacetimedb.protocol.QueryRows
 import dev.sanson.spacetimedb.protocol.QuerySetId
 import dev.sanson.spacetimedb.protocol.QuerySetUpdate
@@ -19,10 +20,12 @@ import dev.sanson.spacetimedb.transport.WebSocketConnection
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.serializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -30,6 +33,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class SpacetimeDbConnectionTest {
@@ -751,5 +755,141 @@ class SpacetimeDbConnectionTest {
         assertEquals(0, conn.cache.getTable<User>("users")!!.count)
         assertTrue(handle.isEnded)
 
+    }
+
+    // -- ProcedureResult --
+
+    @Test
+    fun `procedure call returns Returned outcome`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val resultDeferred = launch {
+            val outcome = conn.callProcedure("get_count", byteArrayOf())
+            assertIs<ProcedureOutcome.Returned>(outcome)
+            assertEquals("42", outcome.value.decodeToString())
+            assertEquals(Timestamp.UNIX_EPOCH, outcome.timestamp)
+        }
+
+        // Capture the outgoing CallProcedure message
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallProcedure>(outgoing)
+        assertEquals("get_count", outgoing.procedure)
+
+        // Server responds
+        fake.sendToClient(
+            ServerMessage.ProcedureResult(
+                requestId = outgoing.requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                totalHostExecutionDuration = TimeDuration(Duration.ZERO),
+                status = ProcedureStatus.Returned("42".encodeToByteArray()),
+            )
+        )
+
+        resultDeferred.join()
+    }
+
+    @Test
+    fun `procedure call returns InternalError outcome`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val resultDeferred = launch {
+            val outcome = conn.callProcedure("bad_proc", byteArrayOf())
+            assertIs<ProcedureOutcome.InternalError>(outcome)
+            assertEquals("wasm trap", outcome.message)
+        }
+
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallProcedure>(outgoing)
+
+        fake.sendToClient(
+            ServerMessage.ProcedureResult(
+                requestId = outgoing.requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                totalHostExecutionDuration = TimeDuration(Duration.ZERO),
+                status = ProcedureStatus.InternalError("wasm trap"),
+            )
+        )
+
+        resultDeferred.join()
+    }
+
+    @Test
+    fun `procedure result for unknown request ID is ignored`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        createConnection(fake, backgroundScope)
+
+        // Send a ProcedureResult without a matching call — should not throw
+        fake.sendToClient(
+            ServerMessage.ProcedureResult(
+                requestId = 9999u,
+                timestamp = Timestamp.UNIX_EPOCH,
+                totalHostExecutionDuration = TimeDuration(Duration.ZERO),
+                status = ProcedureStatus.Returned(byteArrayOf()),
+            )
+        )
+
+        // If we get here without an exception, the test passes
+    }
+
+    @Test
+    fun `typed procedure call deserializes return value`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val resultDeferred = launch {
+            val count: UInt = conn.callProcedure("get_count", byteArrayOf(), UInt.serializer())
+            assertEquals(42u, count)
+        }
+
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallProcedure>(outgoing)
+
+        fake.sendToClient(
+            ServerMessage.ProcedureResult(
+                requestId = outgoing.requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                totalHostExecutionDuration = TimeDuration(Duration.ZERO),
+                status = ProcedureStatus.Returned(Bsatn.encodeToByteArray(UInt.serializer(), 42u)),
+            )
+        )
+
+        resultDeferred.join()
+    }
+
+    @Test
+    fun `typed procedure call throws on server error`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val resultDeferred = launch {
+            val error = try {
+                conn.callProcedure("bad_proc", byteArrayOf(), UInt.serializer())
+                null
+            } catch (e: SpacetimeError.Internal) {
+                e
+            }
+            assertNotNull(error)
+            assertEquals("wasm trap", error.message)
+        }
+
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallProcedure>(outgoing)
+
+        fake.sendToClient(
+            ServerMessage.ProcedureResult(
+                requestId = outgoing.requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                totalHostExecutionDuration = TimeDuration(Duration.ZERO),
+                status = ProcedureStatus.InternalError("wasm trap"),
+            )
+        )
+
+        resultDeferred.join()
     }
 }

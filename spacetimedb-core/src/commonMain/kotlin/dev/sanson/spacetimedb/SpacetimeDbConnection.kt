@@ -2,12 +2,14 @@ package dev.sanson.spacetimedb
 
 import dev.sanson.spacetimedb.bsatn.Bsatn
 import dev.sanson.spacetimedb.protocol.ClientMessage
+import dev.sanson.spacetimedb.protocol.ProcedureStatus
 import dev.sanson.spacetimedb.protocol.QuerySetId
 import dev.sanson.spacetimedb.protocol.ReducerOutcome
 import dev.sanson.spacetimedb.protocol.ServerMessage
 import dev.sanson.spacetimedb.protocol.TransactionUpdate
 import dev.sanson.spacetimedb.transport.WebSocketConnection
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -37,6 +39,7 @@ public class SpacetimeDbConnection internal constructor(
 ) {
     private val subscriptions = mutableMapOf<QuerySetId, SubscriptionHandle>()
     private val reducerNames = mutableMapOf<UInt, String>()
+    private val pendingProcedures = mutableMapOf<UInt, CompletableDeferred<ProcedureOutcome>>()
     private val outgoing = Channel<ClientMessage>(Channel.UNLIMITED)
 
     /** The identity assigned by the server, available after the initial handshake. */
@@ -84,6 +87,59 @@ public class SpacetimeDbConnection internal constructor(
             args = args,
         )
         outgoing.trySend(msg)
+    }
+
+    /**
+     * Call a procedure on the server and suspend until the result arrives.
+     *
+     * Procedures are non-transactional server functions that return values
+     * directly, unlike reducers which produce side effects via subscriptions.
+     *
+     * @param procedureName Name of the procedure to call.
+     * @param args BSATN-encoded arguments.
+     * @return The [ProcedureOutcome] containing the return value or error.
+     */
+    public suspend fun callProcedure(procedureName: String, args: ByteArray): ProcedureOutcome {
+        val requestId = nextRequestId()
+        val deferred = CompletableDeferred<ProcedureOutcome>()
+        pendingProcedures[requestId] = deferred
+        val msg = ClientMessage.CallProcedure(
+            requestId = requestId,
+            flags = dev.sanson.spacetimedb.protocol.CallProcedureFlags.Default,
+            procedure = procedureName,
+            args = args,
+        )
+        outgoing.trySend(msg)
+        return deferred.await()
+    }
+
+    /**
+     * Call a procedure on the server and deserialize the return value.
+     *
+     * Suspends until the server responds. If the procedure returns a value,
+     * it is decoded from BSATN using the provided [serializer]. If the server
+     * reports an internal error, a [SpacetimeError.Internal] is thrown.
+     *
+     * @param T The expected return type.
+     * @param procedureName Name of the procedure to call.
+     * @param args BSATN-encoded arguments.
+     * @param serializer Deserializer for the return value.
+     * @return The deserialized return value.
+     * @throws SpacetimeError.Internal if the procedure failed server-side.
+     */
+    public suspend fun <T> callProcedure(
+        procedureName: String,
+        args: ByteArray,
+        serializer: KSerializer<T>,
+    ): T {
+        val outcome = callProcedure(procedureName, args)
+        return when (outcome) {
+            is ProcedureOutcome.Returned ->
+                Bsatn.decodeFromByteArray(serializer, outcome.value)
+            is ProcedureOutcome.InternalError ->
+                throw SpacetimeError.Internal(outcome.message)
+            else -> error("Unknown ProcedureOutcome: $outcome")
+        }
     }
 
     /**
@@ -142,6 +198,11 @@ public class SpacetimeDbConnection internal constructor(
                 logger.error("Connection error", e)
                 onDisconnect?.invoke(SpacetimeError.Internal("Connection error", e))
             } finally {
+                // Cancel any pending procedure calls
+                val disconnectError = CancellationException("Connection closed")
+                pendingProcedures.values.forEach { it.cancel(disconnectError) }
+                pendingProcedures.clear()
+
                 try {
                     conn.close()
                 } catch (_: Exception) {
@@ -160,7 +221,7 @@ public class SpacetimeDbConnection internal constructor(
             is ServerMessage.TransactionUpdateMsg -> handleTransactionUpdate(message.update, event = Event.Transaction)
             is ServerMessage.ReducerResult -> handleReducerResult(message)
             is ServerMessage.OneOffQueryResult -> { /* TODO: one-off query support */ }
-            is ServerMessage.ProcedureResult -> { /* TODO: procedure result support */ }
+            is ServerMessage.ProcedureResult -> handleProcedureResult(message)
         }
     }
 
@@ -267,6 +328,23 @@ public class SpacetimeDbConnection internal constructor(
                 }
             }
         }
+    }
+
+    private fun handleProcedureResult(msg: ServerMessage.ProcedureResult) {
+        val deferred = pendingProcedures.remove(msg.requestId) ?: return
+        val outcome = when (val status = msg.status) {
+            is ProcedureStatus.Returned -> ProcedureOutcome.Returned(
+                value = status.value,
+                timestamp = msg.timestamp,
+                executionDuration = msg.totalHostExecutionDuration,
+            )
+            is ProcedureStatus.InternalError -> ProcedureOutcome.InternalError(
+                message = status.message,
+                timestamp = msg.timestamp,
+                executionDuration = msg.totalHostExecutionDuration,
+            )
+        }
+        deferred.complete(outcome)
     }
 
     @Suppress("UNCHECKED_CAST")
