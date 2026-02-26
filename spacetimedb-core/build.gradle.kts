@@ -7,6 +7,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":spacetimedb-bsatn"))
             api(libs.okio)
+            api(libs.kotlinx.coroutines.core)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.websockets)
         }
@@ -15,6 +16,7 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.okio.fakefilesystem)
+            implementation(libs.turbine)
         }
 
         jvmMain.dependencies {
