@@ -13,12 +13,10 @@ import java.time.Duration
 class SpacetimeDbContainer : GenericContainer<SpacetimeDbContainer>("clockworklabs/spacetime:latest") {
 
     init {
-        withExposedPorts(3000, 80)
+        withExposedPorts(3000)
         withCommand("start")
         waitingFor(
-            Wait.forHttp("/database/dns/system/system")
-                .forPort(80)
-                .forStatusCode(200)
+            Wait.forListeningPort()
                 .withStartupTimeout(Duration.ofSeconds(60))
         )
     }
@@ -27,13 +25,13 @@ class SpacetimeDbContainer : GenericContainer<SpacetimeDbContainer>("clockworkla
      * The WebSocket URL for SDK connections.
      */
     val wsUrl: String
-        get() = "ws://${host}:${getMappedPort(80)}"
+        get() = "ws://${host}:${getMappedPort(3000)}"
 
     /**
      * The HTTP URL for the SpacetimeDB REST API.
      */
     val httpUrl: String
-        get() = "http://${host}:${getMappedPort(80)}"
+        get() = "http://${host}:${getMappedPort(3000)}"
 
     /**
      * Publish a SpacetimeDB module to this container.
