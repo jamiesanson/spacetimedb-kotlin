@@ -63,10 +63,11 @@ val conn = DbConnection.builder()
 | `withUri(uri: String)` | URI of the SpacetimeDB instance (e.g. `"http://localhost:3000"`) |
 | `withDatabaseName(name: String)` | Name or identity of the database |
 | `withToken(token: String?)` | Auth token from a previous `onConnect` callback. Pass `null` for anonymous. |
-| `withCompression(compression: Compression)` | Preferred compression (`Compression.None` or `Compression.Gzip` on JVM) |
+| `withCompression(compression: Compression)` | Preferred compression (`Compression.None`, `Compression.Brotli`, or `Compression.Gzip`). Brotli and Gzip are JVM-only. |
 | `onConnect(callback)` | Called when connection is established. Receives `(identity: Identity, token: String, connectionId: ConnectionId)`. Save the `token` to reconnect as the same identity later. |
 | `onDisconnect(callback)` | Called when connection ends. Receives `(error: SpacetimeError?)` — null for clean disconnect. |
 | `onConnectError(callback)` | Called if connection fails. Receives `(error: SpacetimeError)`. |
+| `withReconnect(config: ReconnectConfig)` | Enable auto-reconnect with exponential backoff on abnormal disconnects. |
 | `build(scope: CoroutineScope)` | Finalize and connect. Suspending function — the connection runs within the given scope. |
 
 ## Subscribe to queries
@@ -231,3 +232,161 @@ An opaque identifier for a specific connection session, distinguishing multiple 
 ```
 
 Opaque handle returned by all callback registration methods (`onInsert`, `onUpdate`, `onDelete`, `on<Reducer>`). Pass to the corresponding `remove*` method to deregister the callback.
+
+## One-off queries
+
+Use `remoteQuery()` to execute a single-shot SQL query and get results back directly, without creating a persistent subscription. Useful for ad-hoc queries, dashboards, and data exploration.
+
+```kotlin
+// Reified — serializer inferred from type parameter
+val topPlayers: List<Player> = conn.remoteQuery("SELECT * FROM player WHERE score > 100")
+
+// Explicit serializer
+val players = conn.remoteQuery("SELECT * FROM player", Player.serializer())
+```
+
+`remoteQuery` is a suspend function — it sends the query to the server and suspends until the result arrives. If the server rejects the query, a `SpacetimeError.QueryError` is thrown.
+
+| Overload | Description |
+|----------|-------------|
+| `suspend fun <T> remoteQuery(sql: String, serializer: KSerializer<T>): List<T>` | Query with an explicit serializer |
+| `suspend inline fun <reified T> remoteQuery(sql: String): List<T>` | Query with an inferred serializer |
+
+## Procedure calls
+
+Procedures are non-transactional server functions that return values directly, unlike reducers which produce side effects via subscription updates.
+
+```kotlin
+// Reified — serializer inferred from type parameter
+val count: UInt = conn.callProcedure("get_count", byteArrayOf())
+
+// Explicit serializer
+val count = conn.callProcedure("get_count", byteArrayOf(), UInt.serializer())
+
+// Low-level — returns ProcedureOutcome with raw bytes
+val outcome = conn.callProcedure("get_count", byteArrayOf())
+when (outcome) {
+    is ProcedureOutcome.Returned -> println("Result: ${outcome.value.size} bytes")
+    is ProcedureOutcome.InternalError -> println("Error: ${outcome.message}")
+}
+```
+
+| Overload | Description |
+|----------|-------------|
+| `suspend fun callProcedure(name: String, args: ByteArray): ProcedureOutcome` | Low-level call returning raw outcome |
+| `suspend fun <T> callProcedure(name: String, args: ByteArray, serializer: KSerializer<T>): T` | Deserializes the return value; throws `SpacetimeError.Internal` on error |
+| `suspend inline fun <reified T> callProcedure(name: String, args: ByteArray): T` | Reified convenience overload |
+
+### `ProcedureOutcome`
+
+| Variant | Fields | Description |
+|---------|--------|-------------|
+| `ProcedureOutcome.Returned` | `value: ByteArray`, `timestamp`, `executionDuration` | The procedure returned a value successfully |
+| `ProcedureOutcome.InternalError` | `message: String`, `timestamp`, `executionDuration` | The procedure failed with a server-side error |
+
+## Flow extensions
+
+The SDK provides `Flow`-based extensions for observing table state reactively. These are cold flows — they begin observing when collected and clean up when the collector is cancelled.
+
+### Per-event flows
+
+Observe individual table events as they happen:
+
+```kotlin
+conn.db.player.insertFlow()
+    .collect { (event, player) -> println("Inserted: ${player.name}") }
+
+conn.db.player.deleteFlow()
+    .collect { (event, player) -> println("Deleted: ${player.name}") }
+
+// Only available on tables with a primary key
+conn.db.player.updateFlow()
+    .collect { (event, old, new) -> println("${new.name}: ${old.score} → ${new.score}") }
+```
+
+### `rowsFlow()` — live table snapshots
+
+Emits the complete list of rows whenever the table changes (insert, delete, or update). Ideal for driving UI state.
+
+```kotlin
+conn.db.player.rowsFlow()
+    .collect { players ->
+        println("${players.size} players online")
+        updatePlayerList(players)
+    }
+```
+
+Results are **conflated** — if multiple changes arrive faster than the collector processes them, intermediate snapshots are dropped and only the latest state is delivered.
+
+| Extension | Available on | Description |
+|-----------|-------------|-------------|
+| `Table<Row>.rowsFlow(): Flow<List<Row>>` | All tables | Emits on insert/delete |
+| `TableWithPrimaryKey<Row>.rowsFlow(): Flow<List<Row>>` | Primary key tables | Emits on insert/delete/update |
+
+## Auto-reconnect
+
+Configure automatic reconnection with exponential backoff when the WebSocket connection drops unexpectedly (network change, server restart, etc.). User-initiated disconnects via `disconnect()` are never retried.
+
+```kotlin
+val conn = DbConnection.builder()
+    .withUri("wss://my-server.com")
+    .withDatabaseName("my-db")
+    .withReconnect(ReconnectConfig(
+        maxAttempts = 10,
+        initialDelay = 1.seconds,
+        maxDelay = 30.seconds,
+    ))
+    .onConnect { identity, token, connectionId ->
+        println("Connected as $identity")
+    }
+    .onDisconnect { error ->
+        if (error != null) println("Disconnected permanently: $error")
+    }
+    .build(scope)
+```
+
+On reconnect, the SDK automatically re-subscribes to all active subscriptions and re-authenticates with the existing token. The client cache is cleared and repopulated from the fresh subscription snapshot.
+
+### `ReconnectConfig`
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `maxAttempts` | `Int` | `5` | Maximum number of reconnection attempts before giving up |
+| `initialDelay` | `Duration` | `1.seconds` | Delay before the first reconnection attempt |
+| `maxDelay` | `Duration` | `30.seconds` | Maximum delay between attempts (caps exponential growth) |
+
+If all attempts are exhausted, `onDisconnect` is called with a `SpacetimeError`.
+
+## DSL builder
+
+As an alternative to the method-chaining builder, a Kotlin DSL is available:
+
+```kotlin
+val conn = SpacetimeDbConnection(scope) {
+    uri = "http://localhost:3000"
+    databaseName = "my-db"
+    token = savedToken
+    compression = Compression.Brotli
+    reconnect = ReconnectConfig(maxAttempts = 10)
+    onConnect { identity, token, connectionId ->
+        println("Connected as $identity")
+    }
+    onDisconnect { error ->
+        println("Disconnected: $error")
+    }
+}
+```
+
+## Errors
+
+All SDK errors extend `SpacetimeError`:
+
+| Variant | Description |
+|---------|-------------|
+| `SpacetimeError.Disconnected` | The connection is already disconnected |
+| `SpacetimeError.FailedToConnect` | Failed to establish a WebSocket connection |
+| `SpacetimeError.SubscriptionError` | The server rejected a subscription query |
+| `SpacetimeError.QueryError` | The server rejected a one-off query (`remoteQuery`) |
+| `SpacetimeError.AlreadyEnded` | The subscription has already ended |
+| `SpacetimeError.AlreadyUnsubscribed` | Unsubscribe was already called |
+| `SpacetimeError.Internal` | An internal or unexpected SDK error |
