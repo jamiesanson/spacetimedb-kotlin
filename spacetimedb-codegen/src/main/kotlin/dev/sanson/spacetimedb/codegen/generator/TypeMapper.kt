@@ -118,10 +118,40 @@ public class TypeMapper(
 }
 
 /**
+ * Known acronyms that should be treated as separate words within a
+ * snake_case segment (e.g. "webrtc" → "web" + "rtc" → "WebRtc").
+ */
+private val KNOWN_ACRONYMS = listOf(
+    "https", "http", "api", "db", "rtc", "sql", "tcp", "udp", "url",
+)
+
+/**
+ * Split a single segment on known acronym boundaries.
+ * E.g. "webrtc" → ["web", "rtc"], "api" → ["api"].
+ */
+private fun String.splitOnAcronyms(): List<String> {
+    val lower = lowercase()
+    for (acronym in KNOWN_ACRONYMS) {
+        if (lower.length > acronym.length) {
+            if (lower.endsWith(acronym)) {
+                val prefix = substring(0, length - acronym.length)
+                return prefix.splitOnAcronyms() + listOf(acronym)
+            }
+            if (lower.startsWith(acronym)) {
+                val suffix = substring(acronym.length)
+                return listOf(acronym) + suffix.splitOnAcronyms()
+            }
+        }
+    }
+    return listOf(this)
+}
+
+/**
  * Convert a snake_case or camelCase string to PascalCase.
  */
 internal fun String.toPascalCase(): String =
     split("_", "-")
+        .flatMap { it.splitOnAcronyms() }
         .joinToString("") { segment ->
             segment.replaceFirstChar { it.uppercase() }
         }
