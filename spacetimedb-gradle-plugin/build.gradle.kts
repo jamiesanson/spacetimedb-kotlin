@@ -10,7 +10,7 @@ kotlin {
 // Generate a version class at build time so the plugin knows its own version
 // without requiring gradle.properties in the consuming project.
 val generateVersion = tasks.register("generateVersionClass") {
-    val versionProp = project.property("dev.sanson.spacetimedb.version") as String
+    val versionProp = project.version.toString()
     val outputDir = layout.buildDirectory.dir("generated/version/kotlin")
     outputs.dir(outputDir)
     inputs.property("version", versionProp)
