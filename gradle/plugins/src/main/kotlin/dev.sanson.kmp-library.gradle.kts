@@ -9,6 +9,22 @@ plugins {
 group = property("dev.sanson.spacetimedb.group") as String
 version = property("dev.sanson.spacetimedb.version") as String
 
+publishing {
+    repositories {
+        val ghToken = providers.environmentVariable("GITHUB_TOKEN")
+        if (ghToken.isPresent) {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/jamiesanson/spacetimedb-kotlin")
+                credentials {
+                    username = "jamiesanson"
+                    password = ghToken.get()
+                }
+            }
+        }
+    }
+}
+
 apiValidation {
     @OptIn(kotlinx.validation.ExperimentalBCVApi::class)
     klib {

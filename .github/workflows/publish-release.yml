@@ -1,0 +1,77 @@
+name: "Publish Release"
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    name: "Publish to GitHub Packages"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: "Setup Java"
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 21
+
+      - name: "Setup Gradle"
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: "Publish"
+        shell: bash
+        run: ./gradlew publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  bump-version:
+    name: "Bump version on main"
+    runs-on: ubuntu-latest
+    needs: publish
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Calculate next version"
+        id: next
+        shell: bash
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          # Strip v prefix
+          current="${tag#v}"
+          # Split into major.minor.patch
+          IFS='.' read -r major minor patch <<< "$current"
+          # Bump minor, reset patch
+          next="${major}.$((minor + 1)).0"
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+          echo "Bumping: $current → $next"
+
+      - name: "Update gradle.properties"
+        shell: bash
+        run: |
+          sed -i "s/^dev.sanson.spacetimedb.version=.*/dev.sanson.spacetimedb.version=${{ steps.next.outputs.version }}/" gradle.properties
+
+      - name: "Commit and push"
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gradle.properties
+          git commit -m "Bump version to ${{ steps.next.outputs.version }}
+
+          Automated version bump after releasing ${{ github.event.release.tag_name }}."
+          git push
