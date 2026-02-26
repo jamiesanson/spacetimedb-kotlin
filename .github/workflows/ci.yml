@@ -42,3 +42,44 @@ jobs:
           name: android-reports
           path: |
             **/build/reports/*
+
+  integration-test:
+    name: "Integration Tests"
+    runs-on: ubuntu-latest
+    # Only run on main or when explicitly labeled
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'integration-test')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Setup Java"
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 21
+
+      - name: "Setup Rust"
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: "Install SpacetimeDB CLI"
+        shell: bash
+        run: curl -sSf https://install.spacetimedb.com | bash
+
+      - name: "Setup Gradle"
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: "Run integration tests"
+        shell: bash
+        run: cd integration-tests && ../gradlew test
+
+      - name: "Upload reports"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-reports
+          path: |
+            integration-tests/build/reports/*
