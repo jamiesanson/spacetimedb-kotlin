@@ -65,32 +65,14 @@ public final class dev/sanson/spacetimedb/DbCallbacks {
 	public final fun removeOnUpdate-xXx09qQ (Ljava/lang/String;J)V
 }
 
-public final class dev/sanson/spacetimedb/DbConnection {
-	public static final field Companion Ldev/sanson/spacetimedb/DbConnection$Companion;
-	public final fun callReducer (Ljava/lang/String;[B)V
-	public final fun disconnect ()V
-	public final fun getConnectionId-mxq1o8M ()Ldev/sanson/spacetimedb/bsatn/U128;
-	public final fun getIdentity-SSl6x40 ()Ldev/sanson/spacetimedb/bsatn/U256;
-	public final fun getToken ()Ljava/lang/String;
-	public final fun isActive ()Z
-	public final fun subscriptionBuilder ()Ldev/sanson/spacetimedb/SubscriptionBuilder;
-}
-
-public final class dev/sanson/spacetimedb/DbConnection$Companion {
-	public final fun builder ()Ldev/sanson/spacetimedb/DbConnectionBuilder;
-}
-
-public final class dev/sanson/spacetimedb/DbConnectionBuilder {
-	public final fun build (Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun onConnect (Lkotlin/jvm/functions/Function3;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
-	public final fun onConnectError (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
-	public final fun onDisconnect (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
-	public final fun withCompression (Ldev/sanson/spacetimedb/protocol/Compression;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
-	public final fun withDatabaseName (Ljava/lang/String;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
-	public final fun withHttpClient (Lio/ktor/client/HttpClient;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
-	public final fun withTableDeserializers (Ljava/util/Map;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
-	public final fun withToken (Ljava/lang/String;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
-	public final fun withUri (Ljava/lang/String;)Ldev/sanson/spacetimedb/DbConnectionBuilder;
+public abstract interface class dev/sanson/spacetimedb/DbContext {
+	public abstract fun disconnect ()V
+	public abstract fun getConnectionId-mxq1o8M ()Ldev/sanson/spacetimedb/bsatn/U128;
+	public abstract fun getDb ()Ljava/lang/Object;
+	public abstract fun getIdentity-SSl6x40 ()Ldev/sanson/spacetimedb/bsatn/U256;
+	public abstract fun getReducers ()Ljava/lang/Object;
+	public abstract fun isActive ()Z
+	public abstract fun subscriptionBuilder ()Ldev/sanson/spacetimedb/SubscriptionBuilder;
 }
 
 public abstract class dev/sanson/spacetimedb/Event {
@@ -265,6 +247,36 @@ public final synthetic class dev/sanson/spacetimedb/ScheduleAt$Time$$serializer 
 
 public final class dev/sanson/spacetimedb/ScheduleAt$Time$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeDbConnection {
+	public static final field Companion Ldev/sanson/spacetimedb/SpacetimeDbConnection$Companion;
+	public final fun callReducer (Ljava/lang/String;[B)V
+	public final fun disconnect ()V
+	public final fun getCache ()Ldev/sanson/spacetimedb/ClientCache;
+	public final fun getCallbacks ()Ldev/sanson/spacetimedb/DbCallbacks;
+	public final fun getConnectionId-mxq1o8M ()Ldev/sanson/spacetimedb/bsatn/U128;
+	public final fun getIdentity-SSl6x40 ()Ldev/sanson/spacetimedb/bsatn/U256;
+	public final fun getToken ()Ljava/lang/String;
+	public final fun isActive ()Z
+	public final fun subscriptionBuilder ()Ldev/sanson/spacetimedb/SubscriptionBuilder;
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeDbConnection$Companion {
+	public final fun builder ()Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeDbConnectionBuilder {
+	public final fun build (Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun onConnect (Lkotlin/jvm/functions/Function3;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun onConnectError (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun onDisconnect (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun withCompression (Ldev/sanson/spacetimedb/protocol/Compression;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun withDatabaseName (Ljava/lang/String;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun withHttpClient (Lio/ktor/client/HttpClient;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun withTableDeserializers (Ljava/util/Map;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun withToken (Ljava/lang/String;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun withUri (Ljava/lang/String;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 }
 
 public abstract class dev/sanson/spacetimedb/SpacetimeError : java/lang/Exception {

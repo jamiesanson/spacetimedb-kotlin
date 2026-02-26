@@ -14,8 +14,8 @@ import com.squareup.kotlinpoet.WildcardTypeName
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
 
 // SDK types for module wiring
-private val DB_CONNECTION = ClassName("dev.sanson.spacetimedb", "DbConnection")
-private val DB_CONNECTION_BUILDER = ClassName("dev.sanson.spacetimedb", "DbConnectionBuilder")
+private val DB_CONNECTION = ClassName("dev.sanson.spacetimedb", "SpacetimeDbConnection")
+private val DB_CONNECTION_BUILDER = ClassName("dev.sanson.spacetimedb", "SpacetimeDbConnectionBuilder")
 private val K_SERIALIZER = ClassName("kotlinx.serialization", "KSerializer")
 
 /**
@@ -73,7 +73,7 @@ public class ModuleGenerator(
     }
 
     /**
-     * Generate a `configureDeserializers()` extension on `DbConnectionBuilder`
+     * Generate a `configureDeserializers()` extension on `SpacetimeDbConnectionBuilder`
      * that calls `withTableDeserializers(tableDeserializerMap())`.
      */
     public fun generateBuilderExtensionFile(): FileSpec {
