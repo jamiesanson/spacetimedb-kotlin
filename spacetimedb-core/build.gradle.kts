@@ -17,10 +17,24 @@ kotlin {
             implementation(libs.okio.fakefilesystem)
         }
 
+        jvmMain.dependencies {
+            implementation(libs.ktor.client.cio)
+        }
+
         jsMain.dependencies {
-            // okio-nodefilesystem could be added for Node.js filesystem support,
-            // but it breaks browser compilation. Users needing credential persistence
-            // on JS/Node should pass their own FileSystem to CredentialFile.
+            implementation(libs.ktor.client.js)
+        }
+
+        appleMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+        }
+
+        linuxMain.dependencies {
+            implementation(libs.ktor.client.cio)
+        }
+
+        mingwMain.dependencies {
+            implementation(libs.ktor.client.winhttp)
         }
     }
 }
