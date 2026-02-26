@@ -7,7 +7,10 @@ plugins {
 }
 
 group = property("dev.sanson.spacetimedb.group") as String
-version = property("dev.sanson.spacetimedb.version") as String
+version = buildString {
+    append(property("dev.sanson.spacetimedb.version") as String)
+    if (!providers.environmentVariable("GITHUB_TOKEN").isPresent) append("-SNAPSHOT")
+}
 
 publishing {
     repositories {
