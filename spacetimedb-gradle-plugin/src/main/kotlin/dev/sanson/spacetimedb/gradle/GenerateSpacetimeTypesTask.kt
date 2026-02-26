@@ -61,6 +61,8 @@ public abstract class GenerateSpacetimeTypesTask : DefaultTask() {
 
             addAll(tableHandleGenerator.generateTableHandleFiles())
             add(tableHandleGenerator.generateRemoteTablesFile())
+            addAll(tableHandleGenerator.generateTableHandleImplFiles())
+            add(tableHandleGenerator.generateRemoteTablesImplFile())
 
             add(reducerGenerator.generateReducerFile())
             add(reducerGenerator.generateRemoteReducersFile())

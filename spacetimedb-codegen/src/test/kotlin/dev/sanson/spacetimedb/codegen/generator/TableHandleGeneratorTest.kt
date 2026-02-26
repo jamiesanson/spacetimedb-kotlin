@@ -131,4 +131,110 @@ class TableHandleGeneratorTest {
             "Generated table handles failed to compile:\n${result.messages}",
         )
     }
+
+    @Test
+    fun `generates table handle impl for table with primary key`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = TableHandleGenerator(schema, "com.example")
+
+        val playerTable = schema.publicTables.first { it.sourceName == "player" }
+        val productType = schema.tableProductType(playerTable)
+        val file = gen.generateTableHandleImplFile(playerTable, productType)
+        val output = file.toString()
+
+        assertContains(output, "class PlayerTableHandleImpl")
+        assertContains(output, ": PlayerTableHandle")
+        assertContains(output, "cache: ClientCache")
+        assertContains(output, "callbacks: DbCallbacks")
+        assertContains(output, "cache.getOrCreateTable<Player>(tableName)")
+        // Unique indexes
+        assertContains(output, "identityIndex")
+        assertContains(output, "playerIdIndex")
+        assertContains(output, "nameIndex")
+        // PK table methods
+        assertContains(output, "override fun onUpdate")
+        assertContains(output, "override fun removeOnUpdate")
+        // findBy methods
+        assertContains(output, "override fun findByIdentity")
+        assertContains(output, "override fun findByPlayerId")
+        assertContains(output, "override fun findByName")
+    }
+
+    @Test
+    fun `generates table handle impl for table without primary key`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = TableHandleGenerator(schema, "com.example")
+
+        val testFTable = schema.publicTables.first { it.sourceName == "test_f" }
+        val productType = schema.tableProductType(testFTable)
+        val file = gen.generateTableHandleImplFile(testFTable, productType)
+        val output = file.toString()
+
+        assertContains(output, "class TestFTableHandleImpl")
+        assertContains(output, ": TestFTableHandle")
+        // No PK → no onUpdate
+        assertTrue(!output.contains("onUpdate"))
+        assertTrue(!output.contains("findBy"))
+    }
+
+    @Test
+    fun `generates RemoteTablesImpl with lazy properties`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val gen = TableHandleGenerator(schema, "com.example")
+
+        val file = gen.generateRemoteTablesImplFile()
+        val output = file.toString()
+
+        assertContains(output, "class RemoteTablesImpl")
+        assertContains(output, ": RemoteTables")
+        assertContains(output, "cache: ClientCache")
+        assertContains(output, "callbacks: DbCallbacks")
+        // Lazy delegation
+        assertContains(output, "PlayerTableHandleImpl(cache, callbacks)")
+        assertContains(output, "PersonTableHandleImpl(cache, callbacks)")
+    }
+
+    @OptIn(ExperimentalCompilerApi::class)
+    @Test
+    fun `generated table handle impls compile against SDK types`() {
+        val schema = ModuleSchema.fromJson(fixture)
+        val pkg = "com.example"
+        val typeGen = TypeGenerator(schema, pkg)
+        val tableHandleGen = TableHandleGenerator(schema, pkg)
+
+        val sources = mutableListOf<SourceFile>()
+
+        // Row types
+        for (file in typeGen.generateTypeFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+        for (table in schema.publicTables) {
+            val productType = schema.tableProductType(table)
+            val file = typeGen.generateTableRowFile(table.sourceName, productType)
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+
+        // Table handle interfaces + RemoteTables
+        for (file in tableHandleGen.generateTableHandleFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+        sources.add(SourceFile.kotlin("RemoteTables.kt", tableHandleGen.generateRemoteTablesFile().toString()))
+
+        // Table handle impls + RemoteTablesImpl
+        for (file in tableHandleGen.generateTableHandleImplFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+        sources.add(SourceFile.kotlin("RemoteTablesImpl.kt", tableHandleGen.generateRemoteTablesImplFile().toString()))
+
+        val result = KotlinCompilation().apply {
+            this.sources = sources
+            inheritClassPath = true
+        }.compile()
+
+        assertEquals(
+            KotlinCompilation.ExitCode.OK,
+            result.exitCode,
+            "Generated table handle impls failed to compile:\n${result.messages}",
+        )
+    }
 }
