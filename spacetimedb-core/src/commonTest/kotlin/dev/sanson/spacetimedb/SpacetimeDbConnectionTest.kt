@@ -97,16 +97,18 @@ class SpacetimeDbConnectionTest {
         scope: kotlinx.coroutines.CoroutineScope,
         onConnect: ((Identity, String, ConnectionId) -> Unit)? = null,
         onDisconnect: ((SpacetimeError?) -> Unit)? = null,
+        reconnectConfig: ReconnectConfig? = null,
     ): SpacetimeDbConnection {
         val connection = SpacetimeDbConnection(
             cache = ClientCache(),
             callbacks = DbCallbacks(),
-            connector = { fake.asWebSocketConnection() },
+            connector = { _ -> fake.asWebSocketConnection() },
             scope = scope,
             onConnect = onConnect,
             onConnectError = null,
             onDisconnect = onDisconnect,
             tableDeserializers = mapOf("users" to User.serializer()),
+            reconnectConfig = reconnectConfig,
         )
         connection.start()
         return connection
@@ -891,5 +893,244 @@ class SpacetimeDbConnectionTest {
         )
 
         resultDeferred.join()
+    }
+
+    // -- Reconnect --
+
+    @Test
+    fun `reconnects after abnormal disconnect`() = runTest(UnconfinedTestDispatcher()) {
+        // Use a channel of fake connections so we can supply a fresh one on reconnect
+        val fakeConnections = Channel<FakeWebSocketConnection>(Channel.UNLIMITED)
+        val fake1 = FakeWebSocketConnection()
+        val fake2 = FakeWebSocketConnection()
+        fakeConnections.trySend(fake1)
+        fakeConnections.trySend(fake2)
+
+        val connectCount = mutableListOf<Int>()
+        var connectCounter = 0
+
+        val connection = SpacetimeDbConnection(
+            cache = ClientCache(),
+            callbacks = DbCallbacks(),
+            connector = { _ -> fakeConnections.receive().asWebSocketConnection() },
+            scope = backgroundScope,
+            onConnect = { _, _, _ -> connectCounter++; connectCount.add(connectCounter) },
+            onConnectError = null,
+            onDisconnect = null,
+            tableDeserializers = mapOf("users" to User.serializer()),
+            reconnectConfig = ReconnectConfig(
+                maxAttempts = 3,
+                initialDelay = Duration.ZERO, // no delay in tests
+                maxDelay = Duration.ZERO,
+            ),
+        )
+        connection.start()
+
+        // First connection: handshake
+        val identity = Identity(U256(1u, 0u, 0u, 0u))
+        val connId = ConnectionId(U128(4u, 3u))
+        fake1.sendToClient(ServerMessage.InitialConnection(identity, connId, "token-1"))
+
+        assertEquals(1, connectCount.size)
+
+        // Simulate abnormal disconnect (server closes the channel)
+        fake1.closeServer()
+        yield()
+
+        // Second connection: handshake
+        fake2.sendToClient(ServerMessage.InitialConnection(identity, connId, "token-2"))
+        yield()
+
+        assertEquals(2, connectCount.size)
+        assertTrue(connection.isActive)
+    }
+
+    @Test
+    fun `re-subscribes after reconnect`() = runTest(UnconfinedTestDispatcher()) {
+        val fakeConnections = Channel<FakeWebSocketConnection>(Channel.UNLIMITED)
+        val fake1 = FakeWebSocketConnection()
+        val fake2 = FakeWebSocketConnection()
+        fakeConnections.trySend(fake1)
+        fakeConnections.trySend(fake2)
+
+        val connection = SpacetimeDbConnection(
+            cache = ClientCache(),
+            callbacks = DbCallbacks(),
+            connector = { _ -> fakeConnections.receive().asWebSocketConnection() },
+            scope = backgroundScope,
+            onConnect = null,
+            onConnectError = null,
+            onDisconnect = null,
+            tableDeserializers = mapOf("users" to User.serializer()),
+            reconnectConfig = ReconnectConfig(
+                maxAttempts = 3,
+                initialDelay = Duration.ZERO,
+                maxDelay = Duration.ZERO,
+            ),
+        )
+        connection.start()
+
+        // First connection
+        val identity = Identity(U256(1u, 0u, 0u, 0u))
+        val connId = ConnectionId(U128(4u, 3u))
+        fake1.sendToClient(ServerMessage.InitialConnection(identity, connId, "token"))
+
+        // Subscribe
+        connection.subscriptionBuilder()
+            .subscribe("SELECT * FROM users")
+
+        // Drain the Subscribe message from fake1's outgoing
+        val sub1 = fake1.outgoing.tryReceive().getOrNull()
+        assertNotNull(sub1)
+        assertIs<ClientMessage.Subscribe>(sub1)
+
+        // Disconnect and reconnect
+        fake1.closeServer()
+        yield()
+
+        // Second connection
+        fake2.sendToClient(ServerMessage.InitialConnection(identity, connId, "token"))
+
+        // Should see a re-subscribe message on the new connection
+        val sub2 = fake2.outgoing.tryReceive().getOrNull()
+        assertNotNull(sub2)
+        assertIs<ClientMessage.Subscribe>(sub2)
+        assertEquals(sub1.queryStrings, sub2.queryStrings)
+    }
+
+    @Test
+    fun `cache is cleared on reconnect`() = runTest(UnconfinedTestDispatcher()) {
+        val fakeConnections = Channel<FakeWebSocketConnection>(Channel.UNLIMITED)
+        val fake1 = FakeWebSocketConnection()
+        val fake2 = FakeWebSocketConnection()
+        fakeConnections.trySend(fake1)
+        fakeConnections.trySend(fake2)
+
+        val cache = ClientCache()
+        val connection = SpacetimeDbConnection(
+            cache = cache,
+            callbacks = DbCallbacks(),
+            connector = { _ -> fakeConnections.receive().asWebSocketConnection() },
+            scope = backgroundScope,
+            onConnect = null,
+            onConnectError = null,
+            onDisconnect = null,
+            tableDeserializers = mapOf("users" to User.serializer()),
+            reconnectConfig = ReconnectConfig(
+                maxAttempts = 3,
+                initialDelay = Duration.ZERO,
+                maxDelay = Duration.ZERO,
+            ),
+        )
+        connection.start()
+
+        // Populate cache
+        val identity = Identity(U256(1u, 0u, 0u, 0u))
+        val connId = ConnectionId(U128(4u, 3u))
+        fake1.sendToClient(ServerMessage.InitialConnection(identity, connId, "token"))
+
+        val handle = connection.subscriptionBuilder()
+            .subscribe("SELECT * FROM users")
+        fake1.outgoing.tryReceive() // drain
+
+        val alice = User(1u, "alice")
+        fake1.sendToClient(
+            ServerMessage.SubscribeApplied(
+                requestId = 1u,
+                querySetId = handle.querySetId,
+                rows = QueryRows(
+                    tables = listOf(
+                        SingleTableRows(table = "users", rows = bsatnRowList(encodeUser(alice)))
+                    )
+                ),
+            )
+        )
+        assertEquals(1, cache.getTable<User>("users")?.count)
+
+        // Disconnect
+        fake1.closeServer()
+        yield()
+
+        // Cache should be cleared after disconnect
+        assertEquals(0, cache.getTable<User>("users")?.count)
+    }
+
+    @Test
+    fun `user disconnect does not reconnect`() = runTest(UnconfinedTestDispatcher()) {
+        val fakeConnections = Channel<FakeWebSocketConnection>(Channel.UNLIMITED)
+        val fake1 = FakeWebSocketConnection()
+        fakeConnections.trySend(fake1)
+
+        var disconnected = false
+        val connection = SpacetimeDbConnection(
+            cache = ClientCache(),
+            callbacks = DbCallbacks(),
+            connector = { _ -> fakeConnections.receive().asWebSocketConnection() },
+            scope = backgroundScope,
+            onConnect = null,
+            onConnectError = null,
+            onDisconnect = { disconnected = true },
+            tableDeserializers = mapOf("users" to User.serializer()),
+            reconnectConfig = ReconnectConfig(
+                maxAttempts = 3,
+                initialDelay = Duration.ZERO,
+                maxDelay = Duration.ZERO,
+            ),
+        )
+        connection.start()
+
+        val identity = Identity(U256(1u, 0u, 0u, 0u))
+        val connId = ConnectionId(U128(4u, 3u))
+        fake1.sendToClient(ServerMessage.InitialConnection(identity, connId, "token"))
+
+        // User-initiated disconnect
+        connection.disconnect()
+        yield()
+
+        assertTrue(disconnected)
+        assertFalse(connection.isActive)
+    }
+
+    @Test
+    fun `gives up after max reconnect attempts`() = runTest(UnconfinedTestDispatcher()) {
+        var connectAttempts = 0
+        var disconnectError: SpacetimeError? = null
+
+        val connection = SpacetimeDbConnection(
+            cache = ClientCache(),
+            callbacks = DbCallbacks(),
+            connector = { _ ->
+                connectAttempts++
+                if (connectAttempts == 1) {
+                    // First connect succeeds
+                    val fake = FakeWebSocketConnection()
+                    // Immediately close to trigger reconnect
+                    fake.closeServer()
+                    fake.asWebSocketConnection()
+                } else {
+                    // All reconnects fail
+                    throw RuntimeException("connection refused")
+                }
+            },
+            scope = backgroundScope,
+            onConnect = null,
+            onConnectError = null,
+            onDisconnect = { disconnectError = it },
+            tableDeserializers = emptyMap(),
+            reconnectConfig = ReconnectConfig(
+                maxAttempts = 2,
+                initialDelay = Duration.ZERO,
+                maxDelay = Duration.ZERO,
+            ),
+        )
+        connection.start()
+        yield()
+        yield()
+        yield()
+
+        // 1 initial + 2 retries = 3
+        assertEquals(3, connectAttempts)
+        assertNotNull(disconnectError)
+        assertFalse(connection.isActive)
     }
 }

@@ -5,6 +5,7 @@ import dev.sanson.spacetimedb.transport.WebSocketTransport
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.KSerializer
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Fluent builder for establishing a [SpacetimeDbConnection].
@@ -35,6 +36,7 @@ public class SpacetimeDbConnectionBuilder() {
     private var pkExtractors: Map<String, (Any) -> Any> = emptyMap()
     private var httpClient: HttpClient? = null
     private var logger: SpacetimeLogger = NoOpLogger
+    private var reconnectConfig: ReconnectConfig? = null
 
     /** Set the SpacetimeDB host URI (e.g. "http://localhost:3000"). */
     public fun withUri(uri: String): SpacetimeDbConnectionBuilder = apply {
@@ -95,6 +97,27 @@ public class SpacetimeDbConnectionBuilder() {
     }
 
     /**
+     * Enable automatic reconnection with exponential backoff.
+     *
+     * When the connection drops unexpectedly, the SDK will retry up to [maxAttempts]
+     * times with exponential backoff starting at [initialDelay] and capped at [maxDelay].
+     *
+     * User-initiated disconnects via [SpacetimeDbConnection.disconnect] are never retried.
+     * On reconnect, the cache is cleared and all previous subscriptions are re-established.
+     */
+    public fun withReconnect(
+        maxAttempts: Int = 5,
+        initialDelay: kotlin.time.Duration = 1.seconds,
+        maxDelay: kotlin.time.Duration = 30.seconds,
+    ): SpacetimeDbConnectionBuilder = apply {
+        this.reconnectConfig = ReconnectConfig(
+            maxAttempts = maxAttempts,
+            initialDelay = initialDelay,
+            maxDelay = maxDelay,
+        )
+    }
+
+    /**
      * Callback invoked when the connection is established and the server sends
      * the initial identity, token, and connection ID.
      */
@@ -141,12 +164,12 @@ public class SpacetimeDbConnectionBuilder() {
         val connection = SpacetimeDbConnection(
             cache = ClientCache(),
             callbacks = DbCallbacks(),
-            connector = {
+            connector = { tokenOverride ->
                 transport.connect(
                     host = uri,
                     databaseName = dbName,
                     compression = compression,
-                    token = token,
+                    token = tokenOverride ?: token,
                 )
             },
             scope = scope,
@@ -156,6 +179,7 @@ public class SpacetimeDbConnectionBuilder() {
             tableDeserializers = tableDeserializers,
             pkExtractors = pkExtractors,
             logger = logger,
+            reconnectConfig = reconnectConfig,
         )
 
         connection.start()
