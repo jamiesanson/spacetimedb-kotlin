@@ -97,9 +97,10 @@ class SpacetimeDbConnectionTest {
         val connection = SpacetimeDbConnection(
             cache = ClientCache(),
             callbacks = DbCallbacks(),
-            connection = fake.asWebSocketConnection(),
+            connector = { fake.asWebSocketConnection() },
             scope = scope,
             onConnect = onConnect,
+            onConnectError = null,
             onDisconnect = onDisconnect,
             tableDeserializers = mapOf("users" to User.serializer()),
         )

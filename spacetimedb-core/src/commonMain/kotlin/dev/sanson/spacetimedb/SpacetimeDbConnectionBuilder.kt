@@ -109,16 +109,16 @@ public class SpacetimeDbConnectionBuilder() {
     }
 
     /**
-     * Establishes the WebSocket connection and starts the message loop.
+     * Creates the connection and starts connecting asynchronously.
      *
-     * The message loop runs as a child coroutine of the provided [scope].
-     * Cancel the scope or call [DbConnection.disconnect] to shut down.
+     * The WebSocket connection is established in a coroutine launched in the
+     * provided [scope]. If the connection fails, [onConnectError] is invoked.
+     * Cancel the scope or call [SpacetimeDbConnection.disconnect] to shut down.
      *
-     * @param scope The [CoroutineScope] in which to run the message loop.
-     * @return A connected [SpacetimeDbConnection] instance.
-     * @throws SpacetimeError.FailedToConnect if the WebSocket connection fails.
+     * @param scope The [CoroutineScope] in which to run the connection and message loop.
+     * @return A [SpacetimeDbConnection] instance that is connecting in the background.
      */
-    public suspend fun build(scope: CoroutineScope): SpacetimeDbConnection {
+    public fun build(scope: CoroutineScope): SpacetimeDbConnection {
         val uri = requireNotNull(uri) { "URI is required. Call withUri() before build()." }
         val dbName = requireNotNull(databaseName) { "Database name is required. Call withDatabaseName() before build()." }
 
@@ -128,25 +128,20 @@ public class SpacetimeDbConnectionBuilder() {
             WebSocketTransport()
         }
 
-        val wsConnection = try {
-            transport.connect(
-                host = uri,
-                databaseName = dbName,
-                compression = compression,
-                token = token,
-            )
-        } catch (e: Exception) {
-            val error = SpacetimeError.FailedToConnect(e)
-            onConnectError?.invoke(error)
-            throw error
-        }
-
         val connection = SpacetimeDbConnection(
             cache = ClientCache(),
             callbacks = DbCallbacks(),
-            connection = wsConnection,
+            connector = {
+                transport.connect(
+                    host = uri,
+                    databaseName = dbName,
+                    compression = compression,
+                    token = token,
+                )
+            },
             scope = scope,
             onConnect = onConnect,
+            onConnectError = onConnectError,
             onDisconnect = onDisconnect,
             tableDeserializers = tableDeserializers,
             pkExtractors = pkExtractors,

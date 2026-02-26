@@ -350,7 +350,7 @@ public class ModuleGenerator(
             // build — auto-configures deserializers and wraps result
             .addFunction(
                 FunSpec.builder("build")
-                    .addModifiers(KModifier.PUBLIC, KModifier.SUSPEND)
+                    .addModifiers(KModifier.PUBLIC)
                     .addParameter("scope", COROUTINE_SCOPE)
                     .returns(dbConnection)
                     .addCode(
