@@ -89,6 +89,13 @@ fun main() = runBlocking {
         println("${newPlayer.name} score: ${oldPlayer.score} → ${newPlayer.score}")
     }
 
+    // One-off queries (single-shot, no subscription)
+    val topPlayers: List<Player> = conn.remoteQuery("SELECT * FROM player WHERE score > 100")
+
+    // Observe table state as a Flow
+    conn.db.player.rowsFlow()
+        .collect { players -> println("${players.size} players online") }
+
     // Observe reducer completions
     conn.reducers.onAddPlayer { reducerEvent ->
         when (reducerEvent.status) {
@@ -106,7 +113,7 @@ fun main() = runBlocking {
 
 | Document | Description |
 |----------|-------------|
-| [SDK Reference](docs/sdk-reference.md) | Full API reference — `DbConnection`, subscriptions, client cache, table callbacks, reducer callbacks, identity types |
+| [SDK Reference](docs/sdk-reference.md) | Full API reference — `DbConnection`, subscriptions, client cache, callbacks, one-off queries, procedures, Flow extensions, auto-reconnect |
 | [Generated Code](docs/codegen.md) | What the codegen produces — row types, table handles, reducers, `DbConnection`, algebraic types |
 | [Type Mappings](docs/type-mappings.md) | SpacetimeDB ↔ Kotlin type mapping table |
 | [Gradle Plugin](docs/gradle-plugin.md) | Plugin configuration, tasks, `includeBuild` setup |
@@ -126,6 +133,7 @@ fun main() = runBlocking {
 |---------|-----|--------------------|--------|
 | WebSocket transport | ✅ | ✅ | ✅ |
 | Gzip compression | ✅ | ❌ | ❌ |
+| Brotli compression | ✅ | ❌ | ❌ |
 | Credential persistence | ✅ | Node only¹ | ✅ |
 
 ¹ Node.js requires passing an Okio `FileSystem` instance. Browser has no filesystem access.
