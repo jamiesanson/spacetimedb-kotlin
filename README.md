@@ -6,13 +6,33 @@ A Kotlin Multiplatform client SDK for [SpacetimeDB](https://spacetimedb.com), ta
 
 ## Quick Start
 
+Given a SpacetimeDB module with a `player` table and some reducers:
+
+```rust
+#[spacetimedb::table(name = player, public)]
+pub struct Player {
+    #[primary_key]
+    #[auto_inc]
+    pub id: u64,
+    #[unique]
+    pub name: String,
+    pub score: u32,
+}
+
+#[spacetimedb::reducer]
+pub fn add_player(ctx: &ReducerContext, name: String) { /* ... */ }
+
+#[spacetimedb::reducer]
+pub fn set_score(ctx: &ReducerContext, player_id: u64, score: u32) { /* ... */ }
+```
+
 ### 1. Add the Gradle plugin
 
 ```kotlin
 // settings.gradle.kts
 pluginManagement {
     repositories {
-        mavenLocal() // for 0.1.0 snapshot
+        mavenLocal() // during pre-release
         gradlePluginPortal()
         mavenCentral()
     }
@@ -26,49 +46,78 @@ plugins {
 }
 
 spacetimedb {
-    modulePath.set(file("server"))               // path to your SpacetimeDB module project
-    packageName.set("com.example.mymodule")      // package for generated Kotlin code
-    // buildOptions.set(listOf("--debug"))        // optional: extra flags for `spacetime build`
+    modulePath.set(file("server"))          // your SpacetimeDB module project
+    packageName.set("com.example.game")     // package for generated code
 }
 ```
 
-The plugin will:
-1. Run `spacetime build` to compile your module to `.wasm`
-2. Extract the schema via `spacetimedb-standalone extract-schema`
-3. Generate typed Kotlin sources (table handles, reducers, serialization) into `build/generated/spacetimedb/kotlin/`
+The plugin builds your module, extracts the schema, and generates typed Kotlin bindings into `build/generated/spacetimedb/kotlin/`. The `spacetimedb-core` runtime dependency is added automatically.
 
-### 2. Connect and subscribe
+### 2. What gets generated
+
+From the module above, the codegen produces:
+
+**Row types** — `@Serializable` classes matching your tables:
+```kotlin
+// Player.kt (generated)
+@Serializable
+public class Player(
+    public val id: ULong,
+    public val name: String,
+    public val score: UInt,
+)
+```
+
+**Table handles** — typed access to the client cache, with `findBy` methods for unique columns:
+```kotlin
+// PlayerTableHandle.kt (generated)
+public interface PlayerTableHandle : TableWithPrimaryKey<Player> {
+    public fun findById(id: ULong): Player?
+    public fun findByName(name: String): Player?
+}
+
+// RemoteTables.kt (generated)
+public interface RemoteTables {
+    public val player: PlayerTableHandle
+}
+```
+
+**Reducer wrappers** — typed methods for calling server-side reducers:
+```kotlin
+// RemoteReducers.kt (generated)
+public interface RemoteReducers {
+    public fun addPlayer(name: String)
+    public fun setScore(playerId: ULong, score: UInt)
+}
+```
+
+**Module wiring** — a `withModuleDeserializers()` extension that registers all table serializers with the connection builder.
+
+### 3. Connect and use
 
 ```kotlin
 val connection = DbConnection.builder()
-    .withUri("ws://localhost:3000")
-    .withDatabase("my-database")
-    .withModuleDeserializers()  // generated extension — registers table deserializers
-    .onConnect { conn, identity, connectionId ->
+    .withUri("http://localhost:3000")
+    .withDatabaseName("my-game")
+    .withModuleDeserializers()  // generated — registers table serializers
+    .onConnect { identity, token, connectionId ->
         println("Connected as $identity")
-        conn.subscriptionBuilder()
-            .subscribe("SELECT * FROM player")
     }
-    .build()
+    .build(scope)
+
+// Subscribe to tables
+connection.subscriptionBuilder()
+    .subscribe("SELECT * FROM player")
 ```
-
-### 3. Use generated types
-
-The codegen produces:
-
-- **Row types** — `@Serializable` data classes for each table (e.g. `Player`, `Person`)
-- **Table handles** — `PlayerTableHandle`, `RemoteTables` with typed queries (`findByPlayerId()`)
-- **Reducer wrappers** — `Reducer` sealed class + `RemoteReducers` interface with typed invoke methods
-- **Module wiring** — `withModuleDeserializers()` extension on `DbConnectionBuilder`
 
 ## Modules
 
 | Module | Coordinates | Description |
 |--------|-------------|-------------|
-| `spacetimedb-bsatn` | `dev.sanson.spacetimedb:spacetimedb-bsatn` | BSATN binary serialization format (kotlinx.serialization `BinaryFormat`) |
-| `spacetimedb-core` | `dev.sanson.spacetimedb:spacetimedb-core` | Core SDK: connection, client cache, protocol, transport, credentials |
-| `spacetimedb-codegen` | `dev.sanson.spacetimedb:spacetimedb-codegen` | Code generator CLI and library (schema → Kotlin sources via KotlinPoet) |
-| `spacetimedb-gradle-plugin` | Plugin ID: `dev.sanson.spacetimedb` | Gradle plugin wrapping build + extract-schema + codegen |
+| `spacetimedb-bsatn` | `dev.sanson.spacetimedb:spacetimedb-bsatn` | BSATN binary serialization (`kotlinx.serialization` format) |
+| `spacetimedb-core` | `dev.sanson.spacetimedb:spacetimedb-core` | Connection, client cache, subscriptions, protocol |
+| `spacetimedb-codegen` | `dev.sanson.spacetimedb:spacetimedb-codegen` | Schema → Kotlin source generation (KotlinPoet) |
+| `spacetimedb-gradle-plugin` | Plugin ID: `dev.sanson.spacetimedb` | Gradle plugin wrapping build + codegen |
 
 ### spacetimedb-bsatn
 
@@ -82,45 +131,30 @@ val bytes = Bsatn.encodeToByteArray(Player(1u, "Alice"))
 val player = Bsatn.decodeFromByteArray<Player>(bytes)
 ```
 
-Key types: `Bsatn`, `BsatnEncoder`, `BsatnDecoder`
-
 ### spacetimedb-core
 
 Client-side connection management, caching, and protocol handling.
 
-**Connection lifecycle:**
-- `DbConnectionBuilder` — configure URI, database, auth token, compression, callbacks
-- `DbConnection` — active connection; call reducers, subscribe to tables
-- `SubscriptionBuilder` / `SubscriptionHandle` — manage SQL subscriptions
-
-**Identity & auth:**
-- `Identity` — 256-bit user identity (`@JvmInline value class`)
-- `ConnectionId` — server-assigned connection ID
-- `CredentialFile` — persist auth tokens to `~/.spacetimedb_client_credentials/`
-
-**Table cache:**
-- `Table<Row>` — read-only cached table with insert/delete callbacks
-- `TableWithPrimaryKey<Row>` — adds update callbacks and `UniqueIndex` lookups
-- `ClientCache` — manages all table caches for a connection
-
-**Events:**
-- `Event<R>` — hierarchy: `TransactionUpdate`, `SubscribeApplied`, `UnsubscribeApplied`
-- `ReducerEvent<R>` — reducer-specific event with `Status` (committed/failed/out-of-energy)
-- `TableUpdate<Row>` / `TableAppliedDiff<Row>` — row-level change sets
+| Area | Types |
+|------|-------|
+| Connection | `DbConnectionBuilder`, `DbConnection` |
+| Subscriptions | `SubscriptionBuilder`, `SubscriptionHandle` |
+| Identity & auth | `Identity`, `ConnectionId`, `CredentialFile` |
+| Table cache | `Table<Row>`, `TableWithPrimaryKey<Row>`, `ClientCache` |
+| Events | `Event<R>`, `ReducerEvent<R>`, `TableUpdate<Row>`, `TableAppliedDiff<Row>` |
 
 ### spacetimedb-codegen
 
-Generates typed Kotlin client bindings from a SpacetimeDB module schema (`RawModuleDefV10` JSON).
+Generates typed Kotlin client bindings from a SpacetimeDB module schema.
 
-**Generators:**
 | Generator | Output |
 |-----------|--------|
-| `TypeGenerator` | `@Serializable` row classes + custom algebraic types (enums, sum types) |
+| `TypeGenerator` | `@Serializable` row classes + custom algebraic types |
 | `TableHandleGenerator` | `{Table}TableHandle` interfaces, `findByX()` for unique columns, `RemoteTables` |
-| `ReducerGenerator` | `Reducer` sealed class (one subtype per client-callable reducer), `RemoteReducers` |
-| `ModuleGenerator` | `tableDeserializerMap()` + `DbConnectionBuilder.withModuleDeserializers()` extension |
+| `ReducerGenerator` | `Reducer` sealed class + `RemoteReducers` interface |
+| `ModuleGenerator` | `tableDeserializerMap()` + `withModuleDeserializers()` builder extension |
 
-**CLI usage** (standalone, without Gradle plugin):
+**Standalone CLI usage** (without the Gradle plugin):
 ```bash
 java -jar spacetimedb-codegen.jar \
   --schema schema.json \
@@ -132,24 +166,20 @@ java -jar spacetimedb-codegen.jar \
 
 Wraps the codegen into a Gradle build pipeline.
 
-**Extension properties:**
-
 | Property | Type | Description |
 |----------|------|-------------|
-| `modulePath` | `DirectoryProperty` | Path to SpacetimeDB module project (runs `spacetime build`) |
+| `modulePath` | `DirectoryProperty` | Path to your SpacetimeDB module project |
 | `packageName` | `Property<String>` | Target package for generated Kotlin sources |
 | `buildOptions` | `ListProperty<String>` | Extra CLI flags for `spacetime build` (e.g. `--debug`) |
 
-**Registered tasks:**
-
 | Task | Description |
 |------|-------------|
-| `buildSpacetimeModule` | Runs `spacetime build`, then `spacetimedb-standalone extract-schema` |
+| `buildSpacetimeModule` | Runs `spacetime build` → `spacetimedb-standalone extract-schema` |
 | `generateSpacetimeTypes` | Generates Kotlin sources from the extracted schema |
 
-Generated sources are automatically wired into Kotlin JVM and KMP `commonMain` source sets.
+Generated sources are automatically wired into Kotlin JVM or KMP `commonMain` source sets. The `spacetimedb-core` dependency is added automatically.
 
-**Prerequisites:** The `spacetime` CLI must be installed and on your PATH. Install from [spacetimedb.com](https://spacetimedb.com).
+**Prerequisite:** The `spacetime` CLI must be installed and on your PATH. Install from [spacetimedb.com](https://spacetimedb.com).
 
 ## Platform Support
 
