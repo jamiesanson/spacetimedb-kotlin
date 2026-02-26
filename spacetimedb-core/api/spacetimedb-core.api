@@ -337,6 +337,32 @@ public final class dev/sanson/spacetimedb/SpacetimeDbConnectionBuilder {
 	public final fun withUri (Ljava/lang/String;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 }
 
+public final class dev/sanson/spacetimedb/SpacetimeDbConnectionDsl {
+	public final fun getCompression ()Ldev/sanson/spacetimedb/protocol/Compression;
+	public final fun getDatabaseName ()Ljava/lang/String;
+	public final fun getHttpClient ()Lio/ktor/client/HttpClient;
+	public final fun getLogger ()Ldev/sanson/spacetimedb/SpacetimeLogger;
+	public final fun getPkExtractors ()Ljava/util/Map;
+	public final fun getTableDeserializers ()Ljava/util/Map;
+	public final fun getToken ()Ljava/lang/String;
+	public final fun getUri ()Ljava/lang/String;
+	public final fun onConnect (Lkotlin/jvm/functions/Function3;)V
+	public final fun onConnectError (Lkotlin/jvm/functions/Function1;)V
+	public final fun onDisconnect (Lkotlin/jvm/functions/Function1;)V
+	public final fun setCompression (Ldev/sanson/spacetimedb/protocol/Compression;)V
+	public final fun setDatabaseName (Ljava/lang/String;)V
+	public final fun setHttpClient (Lio/ktor/client/HttpClient;)V
+	public final fun setLogger (Ldev/sanson/spacetimedb/SpacetimeLogger;)V
+	public final fun setPkExtractors (Ljava/util/Map;)V
+	public final fun setTableDeserializers (Ljava/util/Map;)V
+	public final fun setToken (Ljava/lang/String;)V
+	public final fun setUri (Ljava/lang/String;)V
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeDbConnectionDslKt {
+	public static final fun SpacetimeDbConnection (Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/SpacetimeDbConnection;
+}
+
 public abstract class dev/sanson/spacetimedb/SpacetimeError : java/lang/Exception {
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
