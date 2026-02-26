@@ -67,7 +67,7 @@ class IntegrationTest {
                 ?: error("Could not find example/server module. Searched: ${candidates.map { it.absolutePath }}")
         }
 
-        private suspend fun connect(
+        private fun connect(
             scope: CoroutineScope,
             onConnect: CompletableDeferred<Unit> = CompletableDeferred(),
         ): DbConnection {

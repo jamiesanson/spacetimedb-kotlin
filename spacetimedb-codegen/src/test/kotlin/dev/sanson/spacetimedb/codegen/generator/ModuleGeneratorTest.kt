@@ -178,7 +178,7 @@ class ModuleGeneratorTest {
         assertContains(output, "fun onConnect(")
         assertContains(output, "fun onDisconnect(")
         assertContains(output, "fun onConnectError(")
-        assertContains(output, "suspend fun build(scope: CoroutineScope): DbConnection")
+        assertContains(output, "fun build(scope: CoroutineScope): DbConnection")
         // Auto-configures deserializers
         assertContains(output, "withModuleDeserializers()")
     }

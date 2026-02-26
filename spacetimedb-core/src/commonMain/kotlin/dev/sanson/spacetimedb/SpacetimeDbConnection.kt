@@ -2,18 +2,15 @@ package dev.sanson.spacetimedb
 
 import dev.sanson.spacetimedb.bsatn.Bsatn
 import dev.sanson.spacetimedb.protocol.ClientMessage
-import dev.sanson.spacetimedb.protocol.Compression
 import dev.sanson.spacetimedb.protocol.QuerySetId
 import dev.sanson.spacetimedb.protocol.ReducerOutcome
 import dev.sanson.spacetimedb.protocol.ServerMessage
 import dev.sanson.spacetimedb.protocol.TransactionUpdate
 import dev.sanson.spacetimedb.transport.WebSocketConnection
-import dev.sanson.spacetimedb.transport.WebSocketTransport
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
 
@@ -29,9 +26,10 @@ import kotlinx.serialization.KSerializer
 public class SpacetimeDbConnection internal constructor(
     public val cache: ClientCache,
     public val callbacks: DbCallbacks,
-    private val connection: WebSocketConnection,
+    private val connector: suspend () -> WebSocketConnection,
     private val scope: CoroutineScope,
     private val onConnect: ((Identity, String, ConnectionId) -> Unit)?,
+    private val onConnectError: ((SpacetimeError) -> Unit)?,
     private val onDisconnect: ((SpacetimeError?) -> Unit)?,
     private val tableDeserializers: Map<String, KSerializer<out Any>>,
     private val pkExtractors: Map<String, (Any) -> Any> = emptyMap(),
@@ -95,22 +93,33 @@ public class SpacetimeDbConnection internal constructor(
     }
 
     /**
-     * Starts the message loop. Called internally by [SpacetimeDbConnectionBuilder].
+     * Starts the connection and message loop. Called internally by [SpacetimeDbConnectionBuilder].
+     *
+     * Connects to the server asynchronously. If the connection fails,
+     * [onConnectError] is invoked and the connection becomes inactive.
      */
     internal fun start() {
         isActive = true
 
         messageLoopJob = scope.launch {
+            val conn = try {
+                connector()
+            } catch (e: Exception) {
+                isActive = false
+                onConnectError?.invoke(SpacetimeError.FailedToConnect(e))
+                return@launch
+            }
+
             try {
                 // Launch sender coroutine to forward queued messages
                 val senderJob = launch {
                     for (msg in outgoing) {
-                        connection.send(msg)
+                        conn.send(msg)
                     }
                 }
 
                 // Process incoming messages
-                connection.serverMessages.collect { message ->
+                conn.serverMessages.collect { message ->
                     processMessage(message)
                 }
 
@@ -126,7 +135,7 @@ public class SpacetimeDbConnection internal constructor(
                 onDisconnect?.invoke(SpacetimeError.Internal("Connection error", e))
             } finally {
                 try {
-                    connection.close()
+                    conn.close()
                 } catch (_: Exception) {
                     // Best-effort close
                 }
