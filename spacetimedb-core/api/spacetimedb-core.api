@@ -182,6 +182,25 @@ public final class dev/sanson/spacetimedb/ReducerEvent {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/sanson/spacetimedb/RowEvent {
+	public fun <init> (Ldev/sanson/spacetimedb/Event;Ljava/lang/Object;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvent ()Ldev/sanson/spacetimedb/Event;
+	public final fun getRow ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/RowUpdateEvent {
+	public fun <init> (Ldev/sanson/spacetimedb/Event;Ljava/lang/Object;Ljava/lang/Object;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvent ()Ldev/sanson/spacetimedb/Event;
+	public final fun getNewRow ()Ljava/lang/Object;
+	public final fun getOldRow ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/sanson/spacetimedb/RowWithBsatn {
 	public fun <init> ([BLjava/lang/Object;)V
 	public final fun getBsatn ()[B
@@ -394,6 +413,13 @@ public final class dev/sanson/spacetimedb/TableCache : java/lang/Iterable, kotli
 	public final fun insert ([BLjava/lang/Object;)Ljava/lang/Object;
 	public fun iterator ()Ljava/util/Iterator;
 	public final fun registerUniqueIndex (Ldev/sanson/spacetimedb/UniqueIndex;)Ldev/sanson/spacetimedb/UniqueIndex;
+}
+
+public final class dev/sanson/spacetimedb/TableFlowExtensionsKt {
+	public static final fun deleteFlow (Ldev/sanson/spacetimedb/Table;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun eventFlow (Ldev/sanson/spacetimedb/EventTable;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun insertFlow (Ldev/sanson/spacetimedb/Table;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun updateFlow (Ldev/sanson/spacetimedb/TableWithPrimaryKey;)Lkotlinx/coroutines/flow/Flow;
 }
 
 public final class dev/sanson/spacetimedb/TableUpdate {
