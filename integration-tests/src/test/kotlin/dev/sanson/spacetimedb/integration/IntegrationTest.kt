@@ -13,10 +13,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.MethodOrderer
-import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestMethodOrder
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.io.File
@@ -28,16 +25,11 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Integration tests that verify the SDK against a real SpacetimeDB instance.
  *
- * Tests are ordered to build on each other:
- * 1. Connect
- * 2. Subscribe
- * 3. Call reducer and observe insert
- * 4. Observe reducer callbacks
- * 5. Observe updates
- * 6. Multi-client interaction
+ * Each test is self-contained: it creates its own connection, subscribes,
+ * performs operations, and disconnects. Tests use unique player names to
+ * avoid conflicts when running in any order.
  */
 @Testcontainers
-@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class IntegrationTest {
 
     companion object {
@@ -89,7 +81,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Order(1)
     fun `connect fires onConnect with identity and token`() = runBlocking {
         withTimeout(30.seconds) {
             val connected = CompletableDeferred<Unit>()
@@ -106,7 +97,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Order(2)
     fun `subscribe fires onApplied`() = runBlocking {
         withTimeout(30.seconds) {
             val connected = CompletableDeferred<Unit>()
@@ -125,7 +115,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Order(3)
     fun `addPlayer inserts row and fires onInsert`() = runBlocking {
         withTimeout(30.seconds) {
             val connected = CompletableDeferred<Unit>()
@@ -161,7 +150,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Order(4)
     fun `reducer callback fires with committed status`() = runBlocking {
         withTimeout(30.seconds) {
             val connected = CompletableDeferred<Unit>()
@@ -190,7 +178,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Order(5)
     fun `setScore fires onUpdate with old and new row`() = runBlocking {
         withTimeout(30.seconds) {
             val connected = CompletableDeferred<Unit>()
@@ -233,7 +220,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Order(6)
     fun `second client observes changes via Event Transaction`() = runBlocking {
         withTimeout(30.seconds) {
             // Client 1: subscribe and add a player
