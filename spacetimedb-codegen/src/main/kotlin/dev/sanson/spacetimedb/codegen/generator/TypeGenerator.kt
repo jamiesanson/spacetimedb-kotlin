@@ -138,10 +138,25 @@ public class TypeGenerator(
             .addModifiers(KModifier.PUBLIC)
 
         for (variant in sumType.variants) {
-            val variantName = variant.name
+            val originalName = variant.name
                 ?: throw IllegalArgumentException("Enum '$name' has unnamed variant")
 
-            enumBuilder.addEnumConstant(variantName)
+            val kotlinName = originalName.replaceFirstChar { it.uppercase() }
+
+            if (kotlinName != originalName) {
+                enumBuilder.addEnumConstant(
+                    kotlinName,
+                    TypeSpec.anonymousClassBuilder()
+                        .addAnnotation(
+                            AnnotationSpec.builder(SERIAL_NAME)
+                                .addMember("%S", originalName)
+                                .build()
+                        )
+                        .build()
+                )
+            } else {
+                enumBuilder.addEnumConstant(kotlinName)
+            }
         }
 
         return enumBuilder.build()

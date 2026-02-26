@@ -73,6 +73,34 @@ class TypeGeneratorTest {
     }
 
     @Test
+    fun `generates PascalCase enum entries with SerialName for lowercase variants`() {
+        val schema = schemaWith(
+            types = listOf(
+                AlgebraicType.Sum(
+                    SumType(
+                        listOf(
+                            SumTypeVariant("text", AlgebraicType.Product(ProductType(emptyList()))),
+                            SumTypeVariant("voice", AlgebraicType.Product(ProductType(emptyList()))),
+                        )
+                    )
+                )
+            ),
+            namedTypes = listOf(TypeNameEntry("ChannelKind", 0)),
+        )
+        val gen = TypeGenerator(schema, "com.example")
+        val typeDef = schema.types.first()
+        val file = gen.generateTypeFile(typeDef)
+
+        assertNotNull(file)
+        val output = file.toString()
+        assertContains(output, "enum class ChannelKind")
+        assertContains(output, "Text")
+        assertContains(output, "Voice")
+        assertContains(output, "@SerialName(\"text\")")
+        assertContains(output, "@SerialName(\"voice\")")
+    }
+
+    @Test
     fun `generates sealed class for data sum type`() {
         val schema = schemaWith(
             types = listOf(
