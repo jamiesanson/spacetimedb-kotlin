@@ -2,6 +2,7 @@
 java-toolchain = "21"
 
 binary-compatibility-validator = "0.18.1"
+brotli-dec = "0.1.2"
 clikt = "5.1.0"
 foojay = "0.8.0"
 kotlin = "2.3.10"
@@ -15,6 +16,7 @@ poko = "0.21.1"
 turbine = "1.2.1"
 
 [libraries]
+brotli-dec = { module = "org.brotli:dec", version.ref = "brotli-dec" }
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 kotlin-compile-testing = { module = "dev.zacsweers.kctfork:core", version.ref = "kotlin-compile-testing" }
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }

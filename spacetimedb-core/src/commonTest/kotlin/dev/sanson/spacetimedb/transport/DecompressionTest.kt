@@ -33,13 +33,4 @@ class DecompressionTest {
             decompressServerMessage(raw)
         }
     }
-
-    @Test
-    fun `brotli tag delegates to decompressBrotli`() {
-        // On platforms without Brotli support, this should throw UnsupportedOperationException
-        val raw = byteArrayOf(Compression.Brotli.tag, 1, 2, 3)
-        assertFailsWith<UnsupportedOperationException> {
-            decompressServerMessage(raw)
-        }
-    }
 }

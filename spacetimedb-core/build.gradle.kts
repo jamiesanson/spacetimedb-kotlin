@@ -21,6 +21,7 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(libs.ktor.client.cio)
+            implementation(libs.brotli.dec)
         }
 
         jsMain.dependencies {
