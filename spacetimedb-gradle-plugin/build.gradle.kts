@@ -7,6 +7,37 @@ kotlin {
     explicitApi()
 }
 
+// Generate a version class at build time so the plugin knows its own version
+// without requiring gradle.properties in the consuming project.
+val generateVersion = tasks.register("generateVersionClass") {
+    val versionProp = project.property("dev.sanson.spacetimedb.version") as String
+    val outputDir = layout.buildDirectory.dir("generated/version/kotlin")
+    outputs.dir(outputDir)
+    inputs.property("version", versionProp)
+
+    doLast {
+        val dir = outputDir.get().asFile.resolve("dev/sanson/spacetimedb/gradle")
+        dir.mkdirs()
+        dir.resolve("SpacetimeDbBuildConfig.kt").writeText(
+            """
+            |package dev.sanson.spacetimedb.gradle
+            |
+            |internal object SpacetimeDbBuildConfig {
+            |    const val VERSION: String = "$versionProp"
+            |}
+            """.trimMargin()
+        )
+    }
+}
+
+sourceSets.main {
+    java.srcDir(generateVersion.map { it.outputs.files.singleFile })
+}
+
+tasks.named("compileKotlin") {
+    dependsOn(generateVersion)
+}
+
 dependencies {
     implementation(project(":spacetimedb-codegen"))
     implementation(libs.kotlinpoet)
