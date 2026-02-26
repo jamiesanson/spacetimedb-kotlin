@@ -1,12 +1,12 @@
 # SpacetimeDB Kotlin Multiplatform SDK
 
-A Kotlin Multiplatform client SDK for [SpacetimeDB](https://spacetimedb.com), targeting JVM, JS, and Native platforms.
+A Kotlin Multiplatform client SDK for [SpacetimeDB](https://spacetimedb.com), targeting JVM, JS, and Native platforms. Provides the same functionality as the [Rust client SDK](https://spacetimedb.com/docs/sdks/rust) with idiomatic Kotlin APIs (coroutines, `kotlinx.serialization`).
 
 > **Status**: Work in progress — not yet ready for production use.
 
 ## Quick Start
 
-Given a SpacetimeDB module with a `player` table and some reducers:
+Given a SpacetimeDB module with tables and reducers:
 
 ```rust
 #[spacetimedb::table(name = player, public)]
@@ -51,178 +51,84 @@ spacetimedb {
 }
 ```
 
-The plugin builds your module, extracts the schema, and generates typed Kotlin bindings into `build/generated/spacetimedb/kotlin/`. The `spacetimedb-core` runtime dependency is added automatically.
+The plugin builds your module, extracts the schema, and generates typed Kotlin bindings. See [Gradle Plugin docs](docs/gradle-plugin.md) for full configuration.
 
-### 2. What gets generated
+### 2. Connect and use
 
-From the module above, the codegen produces:
-
-**Row types** — `@Serializable` classes matching your tables:
 ```kotlin
-@Serializable
-public class Player(
-    public val id: ULong,
-    public val name: String,
-    public val score: UInt,
-)
-```
+import com.example.game.DbConnection
+import com.example.game.Player
+import kotlinx.coroutines.runBlocking
 
-**Table handles** — typed access to the client cache with `findBy` for unique columns:
-```kotlin
-public interface PlayerTableHandle : TableWithPrimaryKey<Player> {
-    public fun findById(id: ULong): Player?
-    public fun findByName(name: String): Player?
-}
-```
+fun main() = runBlocking {
+    val conn = DbConnection.builder()
+        .withUri("http://localhost:3000")
+        .withDatabaseName("my-game")
+        .onConnect { identity, token, connectionId ->
+            println("Connected as $identity")
+        }
+        .build(this)
 
-**Reducer wrappers** — typed methods for calling server-side reducers:
-```kotlin
-public interface RemoteReducers {
-    public fun addPlayer(name: String)
-    public fun setScore(playerId: ULong, score: UInt)
-}
-```
+    // Subscribe to tables — rows sync into the local client cache
+    conn.subscriptionBuilder()
+        .onApplied { println("Initial data synced") }
+        .subscribe("SELECT * FROM player")
 
-**`DbConnection`** — the entry point that ties everything together, implementing `DbContext<RemoteTables, RemoteReducers>`:
-```kotlin
-public class DbConnection : DbContext<RemoteTables, RemoteReducers> {
-    override val db: RemoteTables        // ctx.db.player.findByName("Alice")
-    override val reducers: RemoteReducers // ctx.reducers.addPlayer("Bob")
-    override val identity: Identity?
-    override val connectionId: ConnectionId?
-    override val isActive: Boolean
+    // Query the client cache (local, instant, no network)
+    val alice = conn.db.player.findByName("Alice")
 
-    companion object {
-        fun builder(): DbConnectionBuilder
+    // Call reducers (sends request to server)
+    conn.reducers.addPlayer("Bob")
+
+    // Observe table changes in real-time
+    conn.db.player.onInsert { event, player ->
+        println("Player joined: ${player.name}")
     }
-}
-```
 
-### 3. Connect and use
-
-```kotlin
-val ctx = DbConnection.builder()
-    .withUri("http://localhost:3000")
-    .withDatabaseName("my-game")
-    .onConnect { identity, token, connectionId ->
-        println("Connected as $identity")
+    conn.db.player.onUpdate { event, oldPlayer, newPlayer ->
+        println("${newPlayer.name} score: ${oldPlayer.score} → ${newPlayer.score}")
     }
-    .build(scope)
 
-// Subscribe to tables
-ctx.subscriptionBuilder()
-    .subscribe("SELECT * FROM player")
+    // Observe reducer completions
+    conn.reducers.onAddPlayer { reducerEvent ->
+        when (reducerEvent.status) {
+            is Status.Committed -> println("add_player succeeded")
+            is Status.Failed -> println("add_player failed: ${reducerEvent.status.message}")
+            is Status.Panic -> println("add_player panicked: ${reducerEvent.status.message}")
+        }
+    }
 
-// Query the client cache
-val alice = ctx.db.player.findByName("Alice")
-
-// Call reducers
-ctx.reducers.addPlayer("Bob")
-
-// Observe table changes
-ctx.db.player.onInsert { event, player ->
-    println("Player joined: ${player.name}")
+    conn.disconnect()
 }
 ```
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [SDK Reference](docs/sdk-reference.md) | Full API reference — `DbConnection`, subscriptions, client cache, table callbacks, reducer callbacks, identity types |
+| [Generated Code](docs/codegen.md) | What the codegen produces — row types, table handles, reducers, `DbConnection`, algebraic types |
+| [Type Mappings](docs/type-mappings.md) | SpacetimeDB ↔ Kotlin type mapping table |
+| [Gradle Plugin](docs/gradle-plugin.md) | Plugin configuration, tasks, `includeBuild` setup |
 
 ## Modules
 
 | Module | Coordinates | Description |
 |--------|-------------|-------------|
 | `spacetimedb-bsatn` | `dev.sanson.spacetimedb:spacetimedb-bsatn` | BSATN binary serialization (`kotlinx.serialization` format) |
-| `spacetimedb-core` | `dev.sanson.spacetimedb:spacetimedb-core` | Connection, client cache, subscriptions, protocol |
+| `spacetimedb-core` | `dev.sanson.spacetimedb:spacetimedb-core` | Connection, client cache, subscriptions, protocol, events |
 | `spacetimedb-codegen` | `dev.sanson.spacetimedb:spacetimedb-codegen` | Schema → Kotlin source generation (KotlinPoet) |
 | `spacetimedb-gradle-plugin` | Plugin ID: `dev.sanson.spacetimedb` | Gradle plugin wrapping build + codegen |
 
-### spacetimedb-bsatn
-
-BSATN (Binary SpacetimeDB Algebraic Type Notation) serialization, implementing `kotlinx.serialization.BinaryFormat`.
-
-```kotlin
-@Serializable
-data class Player(val id: ULong, val name: String)
-
-val bytes = Bsatn.encodeToByteArray(Player(1u, "Alice"))
-val player = Bsatn.decodeFromByteArray<Player>(bytes)
-```
-
-### spacetimedb-core
-
-Client-side connection management, caching, and protocol handling.
-
-| Area | Types |
-|------|-------|
-| Connection | `SpacetimeDbConnectionBuilder`, `SpacetimeDbConnection`, `DbContext` |
-| Subscriptions | `SubscriptionBuilder`, `SubscriptionHandle` |
-| Identity & auth | `Identity`, `ConnectionId`, `CredentialFile` |
-| Table cache | `Table<Row>`, `TableWithPrimaryKey<Row>`, `ClientCache` |
-| Events | `Event<R>`, `ReducerEvent<R>`, `TableUpdate<Row>`, `TableAppliedDiff<Row>` |
-
-### spacetimedb-codegen
-
-Generates typed Kotlin client bindings from a SpacetimeDB module schema.
-
-| Generator | Output |
-|-----------|--------|
-| `TypeGenerator` | `@Serializable` row classes + custom algebraic types |
-| `TableHandleGenerator` | `{Table}TableHandle` interfaces + impls, `RemoteTables` / `RemoteTablesImpl` |
-| `ReducerGenerator` | `Reducer` sealed class, `RemoteReducers` / `RemoteReducersImpl` |
-| `ModuleGenerator` | `DbConnection`, `DbConnectionBuilder`, deserializer map, builder extension |
-
-**Standalone CLI usage** (without the Gradle plugin):
-```bash
-java -jar spacetimedb-codegen.jar \
-  --schema schema.json \
-  --out-dir src/generated \
-  --package com.example.mymodule
-```
-
-### spacetimedb-gradle-plugin
-
-Wraps the codegen into a Gradle build pipeline.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `modulePath` | `DirectoryProperty` | Path to your SpacetimeDB module project |
-| `packageName` | `Property<String>` | Target package for generated Kotlin sources |
-| `buildOptions` | `ListProperty<String>` | Extra CLI flags for `spacetime build` (e.g. `--debug`) |
-
-| Task | Description |
-|------|-------------|
-| `buildSpacetimeModule` | Runs `spacetime build` → `spacetimedb-standalone extract-schema` |
-| `generateSpacetimeTypes` | Generates Kotlin sources from the extracted schema |
-
-Generated sources are automatically wired into Kotlin JVM or KMP `commonMain` source sets. The `spacetimedb-core` dependency is added automatically.
-
-**Prerequisite:** The `spacetime` CLI must be installed and on your PATH. Install from [spacetimedb.com](https://spacetimedb.com).
-
 ## Platform Support
 
-### Transport & Compression
+| Feature | JVM | JS (Node/Browser) | Native |
+|---------|-----|--------------------|--------|
+| WebSocket transport | ✅ | ✅ | ✅ |
+| Gzip compression | ✅ | ❌ | ❌ |
+| Credential persistence | ✅ | Node only¹ | ✅ |
 
-The SDK communicates with SpacetimeDB over WebSocket using the v2 BSATN protocol. Server messages may be compressed; the client specifies its preferred compression when connecting.
-
-| Feature | JVM | JS (Node.js) | JS (Browser) | Native |
-|---------|-----|--------------|--------------|--------|
-| WebSocket transport | ✅ | ✅ | ✅ | ✅ |
-| Compression: None | ✅ | ✅ | ✅ | ✅ |
-| Compression: Gzip | ✅ | ❌ | ❌ | ❌ |
-| Compression: Brotli | ❌ | ❌ | ❌ | ❌ |
-
-> **Note**: Brotli is the default compression in the Rust SDK. JVM Brotli support is planned. On platforms without compression support, use `Compression.None` when connecting.
-
-### Credential Persistence
-
-The SDK can persist authentication tokens to disk at `~/.spacetimedb_client_credentials/`.
-
-| Feature | JVM | JS (Node.js) | JS (Browser) | Native |
-|---------|-----|--------------|--------------|--------|
-| `CredentialFile.create()` | ✅ | ❌ | ❌ | ✅ |
-| `CredentialFile(key, fs, dir)` | ✅ | ✅¹ | ❌ | ✅ |
-
-¹ Node.js users can pass an Okio `FileSystem` instance directly to the `CredentialFile` constructor.
-
-Browser JS has no filesystem access. On Node.js, the convenience `CredentialFile.create()` factory is unavailable because `okio-nodefilesystem` breaks browser compilation; pass your own `FileSystem` instead.
+¹ Node.js requires passing an Okio `FileSystem` instance. Browser has no filesystem access.
 
 ## Dependencies
 
@@ -230,15 +136,14 @@ Browser JS has no filesystem access. On Node.js, the convenience `CredentialFile
 - [Ktor](https://ktor.io/) — WebSocket client
 - [Okio](https://square.github.io/okio/) — Cross-platform file I/O
 - [KotlinPoet](https://square.github.io/kotlinpoet/) — Kotlin source generation (codegen only)
-- [Clikt](https://ajalt.github.io/clikt/) — CLI argument parsing (codegen only)
 
 ## Building
 
 ```bash
-./gradlew check                          # full build + tests (all modules, all targets)
+./gradlew check                          # full build + tests
 ./gradlew :spacetimedb-codegen:test      # codegen tests only
 ./gradlew :spacetimedb-gradle-plugin:test # plugin tests only
-./gradlew publishToMavenLocal            # publish all artifacts to ~/.m2/repository
+./gradlew publishToMavenLocal            # publish all artifacts to ~/.m2
 ```
 
 ## Architecture

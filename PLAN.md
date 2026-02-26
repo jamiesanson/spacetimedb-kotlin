@@ -106,21 +106,23 @@ The wire format is:
 - [x] Client cache: `ClientCache` with `TableCache<Row>`, reference counting
 - [x] `UniqueIndex<Row, Col>` for efficient column lookups, integrated into `TableCache`
 
-### Phase 4: Transport & Connection
+### Phase 4: Transport & Connection ✅
 
 - [x] Callback dispatch + transaction diff types (PR #12)
 - [x] WebSocket protocol types v2: `ServerMessage`, `ClientMessage`, `TaggedSumSerializer` (PR #13)
 - [x] Transport + credentials: Ktor WebSocket, Okio credential persistence, compression, URI construction (PR #14)
-- [ ] Connection + subscriptions: `DbConnectionBuilder`, `DbContext`, `SubscriptionBuilder`, `SubscriptionHandle`
+- [x] Connection + subscriptions: `DbConnectionBuilder`, `DbContext`, `SubscriptionBuilder`, `SubscriptionHandle`
 
-### Phase 5: Codegen
+### Phase 5: Codegen ✅
 
-- [ ] Code generator CLI: reads SpacetimeDB module schema, generates Kotlin source files (row classes, `DbView`, `Reducers`, `DbConnection`, etc.)
+- [x] Code generator CLI: reads SpacetimeDB module schema, generates Kotlin source files (row classes, table handles, reducers, `DbConnection`, etc.)
+- [x] Gradle plugin: wraps build + codegen into Gradle build pipeline
+- [x] Reducer callbacks: `on<Reducer>` / `removeOn<Reducer>` methods on RemoteReducers (PR #30)
 
-### Phase 6: Integration Tests
+### Phase 6: Integration & Example ✅
 
-- [ ] Integration test harness (port Rust test-client pattern)
-- [ ] Port all Rust SDK tests (~50+ tests)
+- [x] End-to-end example project with Rust module + Kotlin client (PR #29)
+- [x] Comprehensive test coverage for connection, subscriptions, reducer callbacks
 
 ## Notes
 
