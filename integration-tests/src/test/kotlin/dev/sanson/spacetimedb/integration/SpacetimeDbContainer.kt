@@ -54,6 +54,7 @@ class SpacetimeDbContainer : GenericContainer<SpacetimeDbContainer>("clockworkla
             add("--server")
             add(httpUrl)
             add("--delete-data=always")
+            add("--yes")
             if (skipClippy) {
                 add("--build-options=--lint-dir=")
             }
