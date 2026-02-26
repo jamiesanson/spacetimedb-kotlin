@@ -407,6 +407,267 @@ class SpacetimeDbConnectionTest {
 
     }
 
+    // -- Reducer callbacks --
+
+    @Test
+    fun `reducer result Ok fires reducer callback with Committed`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val receivedEvents = mutableListOf<ReducerEvent<*>>()
+        conn.callbacks.registerOnReducer("create_user") { receivedEvents.add(it) }
+
+        // Call reducer to register request ID mapping
+        conn.callReducer("create_user", byteArrayOf())
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallReducer>(outgoing)
+
+        fake.sendToClient(
+            ServerMessage.ReducerResult(
+                requestId = outgoing.requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                result = ReducerOutcome.Ok(
+                    retValue = byteArrayOf(),
+                    transactionUpdate = TransactionUpdate(querySets = emptyList()),
+                ),
+            )
+        )
+
+        assertEquals(1, receivedEvents.size)
+        assertEquals(Status.Committed, receivedEvents.first().status)
+        assertEquals("create_user", receivedEvents.first().reducer)
+    }
+
+    @Test
+    fun `reducer result Ok fires row callbacks then reducer callback`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val callOrder = mutableListOf<String>()
+        conn.callbacks.registerOnInsert<User>("users") { _, _ -> callOrder.add("row") }
+        conn.callbacks.registerOnReducer("create_user") { callOrder.add("reducer") }
+
+        conn.callReducer("create_user", byteArrayOf())
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallReducer>(outgoing)
+
+        val alice = User(1u, "alice")
+        fake.sendToClient(
+            ServerMessage.ReducerResult(
+                requestId = outgoing.requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                result = ReducerOutcome.Ok(
+                    retValue = byteArrayOf(),
+                    transactionUpdate = TransactionUpdate(
+                        querySets = listOf(
+                            QuerySetUpdate(
+                                querySetId = QuerySetId(99u),
+                                tables = listOf(
+                                    WireTableUpdate(
+                                        tableName = "users",
+                                        rows = listOf(
+                                            TableUpdateRows.PersistentTable(
+                                                inserts = bsatnRowList(encodeUser(alice)),
+                                                deletes = bsatnRowList(),
+                                            )
+                                        ),
+                                    )
+                                ),
+                            )
+                        ),
+                    ),
+                ),
+            )
+        )
+
+        assertEquals(listOf("row", "reducer"), callOrder)
+    }
+
+    @Test
+    fun `reducer result OkEmpty fires reducer callback with Committed`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val receivedEvents = mutableListOf<ReducerEvent<*>>()
+        conn.callbacks.registerOnReducer("noop") { receivedEvents.add(it) }
+
+        conn.callReducer("noop", byteArrayOf())
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallReducer>(outgoing)
+
+        fake.sendToClient(
+            ServerMessage.ReducerResult(
+                requestId = outgoing.requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                result = ReducerOutcome.OkEmpty,
+            )
+        )
+
+        assertEquals(1, receivedEvents.size)
+        assertEquals(Status.Committed, receivedEvents.first().status)
+        assertEquals("noop", receivedEvents.first().reducer)
+    }
+
+    @Test
+    fun `reducer result Err fires reducer callback with Failed`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val receivedEvents = mutableListOf<ReducerEvent<*>>()
+        conn.callbacks.registerOnReducer("bad_reducer") { receivedEvents.add(it) }
+
+        conn.callReducer("bad_reducer", byteArrayOf())
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallReducer>(outgoing)
+
+        fake.sendToClient(
+            ServerMessage.ReducerResult(
+                requestId = outgoing.requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                result = ReducerOutcome.Err("validation failed".encodeToByteArray()),
+            )
+        )
+
+        assertEquals(1, receivedEvents.size)
+        val status = receivedEvents.first().status
+        assertIs<Status.Failed>(status)
+        assertEquals("validation failed", status.message)
+        // Err should not modify cache
+        assertNull(conn.cache.getTable<User>("users"))
+    }
+
+    @Test
+    fun `reducer result InternalError fires reducer callback with Panic`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val receivedEvents = mutableListOf<ReducerEvent<*>>()
+        conn.callbacks.registerOnReducer("panic_reducer") { receivedEvents.add(it) }
+
+        conn.callReducer("panic_reducer", byteArrayOf())
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallReducer>(outgoing)
+
+        fake.sendToClient(
+            ServerMessage.ReducerResult(
+                requestId = outgoing.requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                result = ReducerOutcome.InternalError("wasm trap"),
+            )
+        )
+
+        assertEquals(1, receivedEvents.size)
+        val status = receivedEvents.first().status
+        assertIs<Status.Panic>(status)
+        assertEquals("wasm trap", status.message)
+        // InternalError should not modify cache
+        assertNull(conn.cache.getTable<User>("users"))
+    }
+
+    @Test
+    fun `reducer result without known request ID does not fire reducer callback`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val receivedEvents = mutableListOf<ReducerEvent<*>>()
+        conn.callbacks.registerOnReducer("unknown") { receivedEvents.add(it) }
+
+        // Send a ReducerResult without calling the reducer first (unknown request ID)
+        fake.sendToClient(
+            ServerMessage.ReducerResult(
+                requestId = 9999u,
+                timestamp = Timestamp.UNIX_EPOCH,
+                result = ReducerOutcome.OkEmpty,
+            )
+        )
+
+        assertEquals(0, receivedEvents.size)
+    }
+
+    @Test
+    fun `row callbacks receive Event_Reducer for own reducer and Event_Transaction for others`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val receivedEvents = mutableListOf<Event<*>>()
+        conn.callbacks.registerOnInsert<User>("users") { event, _ -> receivedEvents.add(event) }
+
+        val alice = User(1u, "alice")
+        val bob = User(2u, "bob")
+
+        // Another client's change comes as TransactionUpdate
+        fake.sendToClient(
+            ServerMessage.TransactionUpdateMsg(
+                update = TransactionUpdate(
+                    querySets = listOf(
+                        QuerySetUpdate(
+                            querySetId = QuerySetId(99u),
+                            tables = listOf(
+                                WireTableUpdate(
+                                    tableName = "users",
+                                    rows = listOf(
+                                        TableUpdateRows.PersistentTable(
+                                            inserts = bsatnRowList(encodeUser(alice)),
+                                            deletes = bsatnRowList(),
+                                        )
+                                    ),
+                                )
+                            ),
+                        )
+                    ),
+                )
+            )
+        )
+
+        // Our own reducer's change comes as ReducerResult
+        conn.callReducer("add_user", byteArrayOf())
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.CallReducer>(outgoing)
+
+        fake.sendToClient(
+            ServerMessage.ReducerResult(
+                requestId = outgoing.requestId,
+                timestamp = Timestamp.UNIX_EPOCH,
+                result = ReducerOutcome.Ok(
+                    retValue = byteArrayOf(),
+                    transactionUpdate = TransactionUpdate(
+                        querySets = listOf(
+                            QuerySetUpdate(
+                                querySetId = QuerySetId(99u),
+                                tables = listOf(
+                                    WireTableUpdate(
+                                        tableName = "users",
+                                        rows = listOf(
+                                            TableUpdateRows.PersistentTable(
+                                                inserts = bsatnRowList(encodeUser(bob)),
+                                                deletes = bsatnRowList(),
+                                            )
+                                        ),
+                                    )
+                                ),
+                            )
+                        ),
+                    ),
+                ),
+            )
+        )
+
+        assertEquals(2, receivedEvents.size)
+        // First event is from TransactionUpdate (other client)
+        assertIs<Event.Transaction>(receivedEvents[0])
+        // Second event is from our ReducerResult
+        val reducerEvent = receivedEvents[1]
+        assertIs<Event.Reducer<*>>(reducerEvent)
+        assertEquals("add_user", reducerEvent.event.reducer)
+        assertEquals(Status.Committed, reducerEvent.event.status)
+    }
+
     // -- Disconnect --
 
     @Test
