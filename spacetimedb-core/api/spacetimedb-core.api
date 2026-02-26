@@ -467,6 +467,8 @@ public final class dev/sanson/spacetimedb/TableFlowExtensionsKt {
 	public static final fun deleteFlow (Ldev/sanson/spacetimedb/Table;)Lkotlinx/coroutines/flow/Flow;
 	public static final fun eventFlow (Ldev/sanson/spacetimedb/EventTable;)Lkotlinx/coroutines/flow/Flow;
 	public static final fun insertFlow (Ldev/sanson/spacetimedb/Table;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun rowsFlow (Ldev/sanson/spacetimedb/Table;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun rowsFlow (Ldev/sanson/spacetimedb/TableWithPrimaryKey;)Lkotlinx/coroutines/flow/Flow;
 	public static final fun updateFlow (Ldev/sanson/spacetimedb/TableWithPrimaryKey;)Lkotlinx/coroutines/flow/Flow;
 }
 
