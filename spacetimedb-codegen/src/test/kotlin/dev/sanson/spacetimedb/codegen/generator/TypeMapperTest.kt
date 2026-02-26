@@ -220,4 +220,25 @@ class TypeMapperTest {
             mapper.typeName(scheduleAt),
         )
     }
+
+    @Test
+    fun `toPascalCase handles known acronyms`() {
+        assertEquals("WebRtcSignal", "webrtc_signal".toPascalCase())
+        assertEquals("HttpRequest", "http_request".toPascalCase())
+        assertEquals("MyApiKey", "my_api_key".toPascalCase())
+        assertEquals("DbUrl", "db_url".toPascalCase())
+    }
+
+    @Test
+    fun `toPascalCase handles plain snake_case`() {
+        assertEquals("LoggedOutPlayer", "logged_out_player".toPascalCase())
+        assertEquals("Person", "person".toPascalCase())
+        assertEquals("MyPoint", "my_point".toPascalCase())
+    }
+
+    @Test
+    fun `toCamelCase handles known acronyms`() {
+        assertEquals("webRtcSignal", "webrtc_signal".toCamelCase())
+        assertEquals("httpRequest", "http_request".toCamelCase())
+    }
 }
