@@ -111,6 +111,12 @@ class ModuleGeneratorTest {
         }
         sources.add(SourceFile.kotlin("RemoteTables.kt", tableHandleGen.generateRemoteTablesFile().toString()))
 
+        // Table handle impls + RemoteTablesImpl
+        for (file in tableHandleGen.generateTableHandleImplFiles()) {
+            sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
+        }
+        sources.add(SourceFile.kotlin("RemoteTablesImpl.kt", tableHandleGen.generateRemoteTablesImplFile().toString()))
+
         // Reducers
         sources.add(SourceFile.kotlin("Reducer.kt", reducerGen.generateReducerFile().toString()))
         sources.add(SourceFile.kotlin("RemoteReducers.kt", reducerGen.generateRemoteReducersFile().toString()))
