@@ -57,11 +57,14 @@ public final class dev/sanson/spacetimedb/ConnectionId$Companion {
 public final class dev/sanson/spacetimedb/DbCallbacks {
 	public fun <init> ()V
 	public final fun invokeCallbacks (Ljava/lang/String;Ldev/sanson/spacetimedb/TableAppliedDiff;Ldev/sanson/spacetimedb/Event;)V
+	public final fun invokeReducerCallbacks (Ljava/lang/String;Ldev/sanson/spacetimedb/ReducerEvent;)V
 	public final fun registerOnDelete-HxlT8pA (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)J
 	public final fun registerOnInsert-HxlT8pA (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)J
+	public final fun registerOnReducer-HxlT8pA (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)J
 	public final fun registerOnUpdate-HxlT8pA (Ljava/lang/String;Lkotlin/jvm/functions/Function3;)J
 	public final fun removeOnDelete-xXx09qQ (Ljava/lang/String;J)V
 	public final fun removeOnInsert-xXx09qQ (Ljava/lang/String;J)V
+	public final fun removeOnReducer-xXx09qQ (Ljava/lang/String;J)V
 	public final fun removeOnUpdate-xXx09qQ (Ljava/lang/String;J)V
 }
 
