@@ -6,6 +6,7 @@ import dev.sanson.spacetimedb.bsatn.U256
 import dev.sanson.spacetimedb.protocol.BsatnRowList
 import dev.sanson.spacetimedb.protocol.ClientMessage
 import dev.sanson.spacetimedb.protocol.ProcedureStatus
+import dev.sanson.spacetimedb.protocol.QueryResult
 import dev.sanson.spacetimedb.protocol.QueryRows
 import dev.sanson.spacetimedb.protocol.QuerySetId
 import dev.sanson.spacetimedb.protocol.QuerySetUpdate
@@ -1132,5 +1133,116 @@ class SpacetimeDbConnectionTest {
         assertEquals(3, connectAttempts)
         assertNotNull(disconnectError)
         assertFalse(connection.isActive)
+    }
+
+    // -- OneOffQueryResult --
+
+    @Test
+    fun `remoteQuery returns deserialized rows`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val user1 = User(1u, "Alice")
+        val user2 = User(2u, "Bob")
+
+        val resultDeferred = launch {
+            val results = conn.remoteQuery("SELECT * FROM users", User.serializer())
+            assertEquals(2, results.size)
+            assertEquals(user1, results[0])
+            assertEquals(user2, results[1])
+        }
+
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.OneOffQuery>(outgoing)
+        assertEquals("SELECT * FROM users", outgoing.queryString)
+
+        fake.sendToClient(
+            ServerMessage.OneOffQueryResult(
+                requestId = outgoing.requestId,
+                result = QueryResult.Ok(
+                    QueryRows(
+                        tables = listOf(
+                            SingleTableRows(
+                                table = "users",
+                                rows = bsatnRowList(encodeUser(user1), encodeUser(user2)),
+                            )
+                        )
+                    )
+                ),
+            )
+        )
+
+        resultDeferred.join()
+    }
+
+    @Test
+    fun `remoteQuery with empty result returns empty list`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val resultDeferred = launch {
+            val results = conn.remoteQuery("SELECT * FROM users WHERE id = 999", User.serializer())
+            assertEquals(0, results.size)
+        }
+
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.OneOffQuery>(outgoing)
+
+        fake.sendToClient(
+            ServerMessage.OneOffQueryResult(
+                requestId = outgoing.requestId,
+                result = QueryResult.Ok(QueryRows(tables = emptyList())),
+            )
+        )
+
+        resultDeferred.join()
+    }
+
+    @Test
+    fun `remoteQuery throws QueryError on server error`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        val conn = createConnection(fake, backgroundScope)
+
+        val resultDeferred = launch {
+            val error = try {
+                conn.remoteQuery("INVALID SQL", User.serializer())
+                null
+            } catch (e: SpacetimeError.QueryError) {
+                e
+            }
+            assertNotNull(error)
+            assertEquals("parse error", error.error)
+        }
+
+        val outgoing = fake.outgoing.tryReceive().getOrNull()
+        assertNotNull(outgoing)
+        assertIs<ClientMessage.OneOffQuery>(outgoing)
+
+        fake.sendToClient(
+            ServerMessage.OneOffQueryResult(
+                requestId = outgoing.requestId,
+                result = QueryResult.Err("parse error"),
+            )
+        )
+
+        resultDeferred.join()
+    }
+
+    @Test
+    fun `one-off query result for unknown request ID is ignored`() = runTest(UnconfinedTestDispatcher()) {
+        val fake = FakeWebSocketConnection()
+        createConnection(fake, backgroundScope)
+
+        // Send a OneOffQueryResult without a matching call — should not throw
+        fake.sendToClient(
+            ServerMessage.OneOffQueryResult(
+                requestId = 9999u,
+                result = QueryResult.Ok(QueryRows(tables = emptyList())),
+            )
+        )
+
+        // If we get here without an exception, the test passes
     }
 }

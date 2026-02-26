@@ -35,6 +35,12 @@ public abstract class SpacetimeError private constructor(message: String, cause:
     public data object AlreadyUnsubscribed : SpacetimeError("Unsubscribe already called on subscription")
 
     /**
+     * The server returned an error for a one-off query.
+     */
+    public class QueryError(public val error: String) :
+        SpacetimeError("One-off query failed: $error")
+
+    /**
      * An internal or unexpected error occurred in the SDK.
      */
     public class Internal(message: String, cause: Throwable? = null) :

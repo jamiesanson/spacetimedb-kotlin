@@ -335,6 +335,7 @@ public final class dev/sanson/spacetimedb/SpacetimeDbConnection {
 	public final fun getIdentity-SSl6x40 ()Ldev/sanson/spacetimedb/bsatn/U256;
 	public final fun getToken ()Ljava/lang/String;
 	public final fun isActive ()Z
+	public final fun remoteQuery (Ljava/lang/String;Lkotlinx/serialization/KSerializer;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun subscriptionBuilder ()Ldev/sanson/spacetimedb/SubscriptionBuilder;
 }
 
@@ -422,6 +423,11 @@ public final class dev/sanson/spacetimedb/SpacetimeError$FailedToConnect : dev/s
 public final class dev/sanson/spacetimedb/SpacetimeError$Internal : dev/sanson/spacetimedb/SpacetimeError {
 	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeError$QueryError : dev/sanson/spacetimedb/SpacetimeError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getError ()Ljava/lang/String;
 }
 
 public final class dev/sanson/spacetimedb/SpacetimeError$SubscriptionError : dev/sanson/spacetimedb/SpacetimeError {
