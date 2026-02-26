@@ -60,7 +60,10 @@ public fun <Row : Any> EventTable<Row>.eventFlow(): Flow<RowEvent<Row>> = callba
 public class RowEvent<Row : Any>(
     public val event: Event<*>,
     public val row: Row,
-)
+) {
+    public operator fun component1(): Event<*> = event
+    public operator fun component2(): Row = row
+}
 
 /**
  * An update event with the old and new row values.
@@ -70,4 +73,8 @@ public class RowUpdateEvent<Row : Any>(
     public val event: Event<*>,
     public val oldRow: Row,
     public val newRow: Row,
-)
+) {
+    public operator fun component1(): Event<*> = event
+    public operator fun component2(): Row = oldRow
+    public operator fun component3(): Row = newRow
+}

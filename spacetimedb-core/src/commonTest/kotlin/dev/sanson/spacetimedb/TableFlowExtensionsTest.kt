@@ -14,7 +14,8 @@ class TableFlowExtensionsTest {
 
         table.insertFlow().test {
             callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("a"), deletes = emptyList()), Event.Transaction)
-            assertEquals("a", awaitItem().row)
+            val (_, row) = awaitItem()
+            assertEquals("a", row)
 
             callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()), Event.Transaction)
             assertEquals("b", awaitItem().row)
@@ -53,9 +54,9 @@ class TableFlowExtensionsTest {
                 Event.Transaction,
             )
 
-            val update = awaitItem()
-            assertEquals("old", update.oldRow)
-            assertEquals("new", update.newRow)
+            val (_, oldRow, newRow) = awaitItem()
+            assertEquals("old", oldRow)
+            assertEquals("new", newRow)
 
             cancel()
         }

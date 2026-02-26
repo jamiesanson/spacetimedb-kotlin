@@ -184,6 +184,8 @@ public final class dev/sanson/spacetimedb/ReducerEvent {
 
 public final class dev/sanson/spacetimedb/RowEvent {
 	public fun <init> (Ldev/sanson/spacetimedb/Event;Ljava/lang/Object;)V
+	public final fun component1 ()Ldev/sanson/spacetimedb/Event;
+	public final fun component2 ()Ljava/lang/Object;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEvent ()Ldev/sanson/spacetimedb/Event;
 	public final fun getRow ()Ljava/lang/Object;
@@ -193,6 +195,9 @@ public final class dev/sanson/spacetimedb/RowEvent {
 
 public final class dev/sanson/spacetimedb/RowUpdateEvent {
 	public fun <init> (Ldev/sanson/spacetimedb/Event;Ljava/lang/Object;Ljava/lang/Object;)V
+	public final fun component1 ()Ldev/sanson/spacetimedb/Event;
+	public final fun component2 ()Ljava/lang/Object;
+	public final fun component3 ()Ljava/lang/Object;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEvent ()Ldev/sanson/spacetimedb/Event;
 	public final fun getNewRow ()Ljava/lang/Object;
