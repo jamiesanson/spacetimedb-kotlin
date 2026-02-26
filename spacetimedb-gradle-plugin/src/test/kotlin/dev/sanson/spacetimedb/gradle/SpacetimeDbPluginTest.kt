@@ -91,6 +91,22 @@ class SpacetimeDbPluginTest {
         assertTrue(result.output.contains("buildSpacetimeModule"), "Expected buildSpacetimeModule task")
     }
 
+    @Test
+    fun `adds spacetimedb-core dependency automatically`() {
+        val projectDir = createTestProjectWithKotlinJvm()
+
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .withArguments("dependencies", "--configuration", "compileClasspath")
+            .withPluginClasspath()
+            .build()
+
+        assertTrue(
+            result.output.contains("dev.sanson.spacetimedb:spacetimedb-core-jvm"),
+            "Expected spacetimedb-core-jvm dependency in:\n${result.output}"
+        )
+    }
+
     private fun copyFixture(target: File) {
         val stream = javaClass.classLoader.getResourceAsStream("module-test-v10.json")
             ?: error("Test fixture module-test-v10.json not found on classpath")
@@ -145,6 +161,52 @@ class SpacetimeDbPluginTest {
                 modulePath.set(file("server"))
                 packageName.set("com.example.test")
                 buildOptions.set(listOf("--debug"))
+            }
+        """.trimIndent())
+
+        return projectDir
+    }
+
+    private fun createTestProjectWithKotlinJvm(): File {
+        val projectDir = File.createTempFile("stdb-test-", "").apply {
+            delete()
+            mkdirs()
+        }
+
+        File(projectDir, "server").mkdirs()
+
+        File(projectDir, "gradle.properties").writeText("""
+            dev.sanson.spacetimedb.version=0.1.0
+        """.trimIndent())
+
+        File(projectDir, "settings.gradle.kts").writeText("""
+            pluginManagement {
+                repositories {
+                    mavenLocal()
+                    mavenCentral()
+                    gradlePluginPortal()
+                }
+            }
+            
+            dependencyResolutionManagement {
+                repositories {
+                    mavenLocal()
+                    mavenCentral()
+                }
+            }
+            
+            rootProject.name = "test-project"
+        """.trimIndent())
+
+        File(projectDir, "build.gradle.kts").writeText("""
+            plugins {
+                kotlin("jvm") version "${System.getProperty("kotlinVersion") ?: "2.3.10"}"
+                id("dev.sanson.spacetimedb")
+            }
+            
+            spacetimedb {
+                modulePath.set(file("server"))
+                packageName.set("com.example.test")
             }
         """.trimIndent())
 

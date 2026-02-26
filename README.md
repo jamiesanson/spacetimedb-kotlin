@@ -30,10 +30,6 @@ spacetimedb {
     packageName.set("com.example.mymodule")      // package for generated Kotlin code
     // buildOptions.set(listOf("--debug"))        // optional: extra flags for `spacetime build`
 }
-
-dependencies {
-    implementation("dev.sanson.spacetimedb:spacetimedb-core-jvm:0.1.0")
-}
 ```
 
 The plugin will:

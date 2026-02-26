@@ -3,13 +3,17 @@ package dev.sanson.spacetimedb.gradle
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSetContainer
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
  * Gradle plugin for SpacetimeDB Kotlin code generation.
  *
  * Registers a `spacetimedb` extension and tasks that build a SpacetimeDB module,
  * extract its schema, and generate typed Kotlin sources. Generated sources are
- * automatically added to the main source set.
+ * automatically wired into the Kotlin compilation.
+ *
+ * The plugin also adds `spacetimedb-core` (and transitively `spacetimedb-bsatn`)
+ * as a dependency, so consumers don't need to declare it manually.
  *
  * Usage:
  * ```kotlin
@@ -46,29 +50,31 @@ public class SpacetimeDbPlugin : Plugin<Project> {
             task.dependsOn(buildTask)
         }
 
-        // Wire generated sources into compilation
+        val sdkVersion = javaClass.`package`.implementationVersion ?: project.findProperty("dev.sanson.spacetimedb.version") as? String
+
+        // Kotlin JVM: add generated sources + SDK dependency
         project.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
             project.extensions.getByType(SourceSetContainer::class.java)
                 .getByName("main")
                 .java
                 .srcDir(generateTask.flatMap { it.outputDirectory })
+
+            if (sdkVersion != null) {
+                project.dependencies.add("implementation", "dev.sanson.spacetimedb:spacetimedb-core-jvm:$sdkVersion")
+            }
         }
 
+        // Kotlin Multiplatform: add generated sources to commonMain + SDK dependency
         project.pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
-            project.afterEvaluate {
-                project.extensions.findByName("kotlin")?.let { kotlinExt ->
-                    try {
-                        val method = kotlinExt.javaClass.getMethod("sourceSets")
-                        @Suppress("UNCHECKED_CAST")
-                        val sourceSets = method.invoke(kotlinExt) as org.gradle.api.NamedDomainObjectContainer<*>
-                        sourceSets.findByName("commonMain")?.let { sourceSet ->
-                            val kotlinMethod = sourceSet.javaClass.getMethod("getKotlin")
-                            val kotlinSourceDir = kotlinMethod.invoke(sourceSet)
-                            val srcDirMethod = kotlinSourceDir.javaClass.getMethod("srcDir", Any::class.java)
-                            srcDirMethod.invoke(kotlinSourceDir, generateTask.flatMap { it.outputDirectory })
-                        }
-                    } catch (_: Exception) {
-                        project.logger.warn("SpacetimeDB: could not wire generated sources into KMP commonMain")
+            val kmpExt = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+            kmpExt.sourceSets.getByName("commonMain") { sourceSet ->
+                sourceSet.kotlin.srcDir(generateTask.flatMap { it.outputDirectory })
+            }
+
+            if (sdkVersion != null) {
+                kmpExt.sourceSets.getByName("commonMain") { sourceSet ->
+                    sourceSet.dependencies {
+                        implementation("dev.sanson.spacetimedb:spacetimedb-core:$sdkVersion")
                     }
                 }
             }
@@ -76,7 +82,7 @@ public class SpacetimeDbPlugin : Plugin<Project> {
 
         // Make compileKotlin depend on generation
         project.tasks.configureEach { task ->
-            if (task.name == "compileKotlin" || task.name == "compileKotlinJvm") {
+            if (task.name == "compileKotlin" || task.name == "compileKotlinJvm" || task.name == "compileKotlinMetadata") {
                 task.dependsOn(generateTask)
             }
         }
