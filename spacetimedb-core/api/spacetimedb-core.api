@@ -278,6 +278,7 @@ public final class dev/sanson/spacetimedb/SpacetimeDbConnectionBuilder {
 	public final fun withCompression (Ldev/sanson/spacetimedb/protocol/Compression;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withDatabaseName (Ljava/lang/String;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withHttpClient (Lio/ktor/client/HttpClient;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun withPkExtractors (Ljava/util/Map;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withTableDeserializers (Ljava/util/Map;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withToken (Ljava/lang/String;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withUri (Ljava/lang/String;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;

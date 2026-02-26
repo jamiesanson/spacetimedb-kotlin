@@ -32,6 +32,7 @@ public class SpacetimeDbConnectionBuilder() {
     private var onDisconnect: ((SpacetimeError?) -> Unit)? = null
     private var onConnectError: ((SpacetimeError) -> Unit)? = null
     private var tableDeserializers: Map<String, KSerializer<out Any>> = emptyMap()
+    private var pkExtractors: Map<String, (Any) -> Any> = emptyMap()
     private var httpClient: HttpClient? = null
 
     /** Set the SpacetimeDB host URI (e.g. "http://localhost:3000"). */
@@ -62,6 +63,16 @@ public class SpacetimeDbConnectionBuilder() {
      */
     public fun withTableDeserializers(deserializers: Map<String, KSerializer<out Any>>): SpacetimeDbConnectionBuilder = apply {
         this.tableDeserializers = deserializers
+    }
+
+    /**
+     * Register primary-key extractor functions for tables.
+     *
+     * Maps table names to a function that extracts the primary-key value from a row.
+     * Used to match delete+insert pairs as "update" events. Typically called by generated code.
+     */
+    public fun withPkExtractors(extractors: Map<String, (Any) -> Any>): SpacetimeDbConnectionBuilder = apply {
+        this.pkExtractors = extractors
     }
 
     /**
@@ -138,6 +149,7 @@ public class SpacetimeDbConnectionBuilder() {
             onConnect = onConnect,
             onDisconnect = onDisconnect,
             tableDeserializers = tableDeserializers,
+            pkExtractors = pkExtractors,
         )
 
         connection.start()
