@@ -140,7 +140,7 @@ public class ModuleGenerator(
             .addProperty(
                 PropertySpec.builder("reducers", remoteReducers)
                     .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
-                    .initializer("%T(connection)", remoteReducersImpl)
+                    .initializer("%T(connection, connection.callbacks)", remoteReducersImpl)
                     .build()
             )
             // identity

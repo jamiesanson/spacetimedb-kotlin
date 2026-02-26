@@ -6,12 +6,18 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
 
 private val SPACETIMEDB_CONNECTION = ClassName("dev.sanson.spacetimedb", "SpacetimeDbConnection")
+private val DB_CALLBACKS = ClassName("dev.sanson.spacetimedb", "DbCallbacks")
+private val CALLBACK_ID = ClassName("dev.sanson.spacetimedb", "CallbackId")
+private val REDUCER_EVENT = ClassName("dev.sanson.spacetimedb", "ReducerEvent")
 private val BSATN = ClassName("dev.sanson.spacetimedb.bsatn", "Bsatn")
 
 /**
@@ -92,8 +98,17 @@ public class ReducerGenerator(
      * Generate the `RemoteReducers` interface with a method per reducer.
      *
      * Each method takes the reducer's parameters directly (not a wrapper class).
+     * Also generates `on<Reducer>` / `removeOn<Reducer>` callback methods.
      */
     public fun generateRemoteReducersFile(): FileSpec {
+        val reducerClassName = ClassName(targetPackage, "Reducer")
+        val callbackType = LambdaTypeName.get(
+            parameters = listOf(
+                ParameterSpec.builder("event", REDUCER_EVENT.parameterizedBy(reducerClassName)).build(),
+            ),
+            returnType = com.squareup.kotlinpoet.UNIT,
+        )
+
         val builder = TypeSpec.interfaceBuilder("RemoteReducers")
             .addModifiers(KModifier.PUBLIC)
 
@@ -111,6 +126,25 @@ public class ReducerGenerator(
             }
 
             builder.addFunction(funBuilder.build())
+
+            // on<Reducer>
+            val onName = "on${reducer.sourceName.toPascalCase()}"
+            builder.addFunction(
+                FunSpec.builder(onName)
+                    .addModifiers(KModifier.PUBLIC, KModifier.ABSTRACT)
+                    .addParameter("callback", callbackType)
+                    .returns(CALLBACK_ID)
+                    .build()
+            )
+
+            // removeOn<Reducer>
+            val removeName = "removeOn${reducer.sourceName.toPascalCase()}"
+            builder.addFunction(
+                FunSpec.builder(removeName)
+                    .addModifiers(KModifier.PUBLIC, KModifier.ABSTRACT)
+                    .addParameter("id", CALLBACK_ID)
+                    .build()
+            )
         }
 
         return FileSpec.builder(targetPackage, "RemoteReducers")
@@ -169,17 +203,32 @@ public class ReducerGenerator(
         }
 
         // Generate the impl class
+        val reducerClassName = ClassName(targetPackage, "Reducer")
+        val callbackType = LambdaTypeName.get(
+            parameters = listOf(
+                ParameterSpec.builder("event", REDUCER_EVENT.parameterizedBy(reducerClassName)).build(),
+            ),
+            returnType = com.squareup.kotlinpoet.UNIT,
+        )
+
         val classBuilder = TypeSpec.classBuilder("RemoteReducersImpl")
             .addModifiers(KModifier.PUBLIC)
             .addSuperinterface(remoteReducersInterface)
             .primaryConstructor(
                 FunSpec.constructorBuilder()
                     .addParameter("connection", SPACETIMEDB_CONNECTION)
+                    .addParameter("callbacks", DB_CALLBACKS)
                     .build()
             )
             .addProperty(
                 PropertySpec.builder("connection", SPACETIMEDB_CONNECTION)
                     .initializer("connection")
+                    .addModifiers(KModifier.PRIVATE)
+                    .build()
+            )
+            .addProperty(
+                PropertySpec.builder("callbacks", DB_CALLBACKS)
+                    .initializer("callbacks")
                     .addModifiers(KModifier.PRIVATE)
                     .build()
             )
@@ -224,6 +273,31 @@ public class ReducerGenerator(
             }
 
             classBuilder.addFunction(funBuilder.build())
+
+            // on<Reducer> — delegates to callbacks.registerOnReducer
+            val onName = "on${reducer.sourceName.toPascalCase()}"
+            classBuilder.addFunction(
+                FunSpec.builder(onName)
+                    .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
+                    .addParameter("callback", callbackType)
+                    .returns(CALLBACK_ID)
+                    .addCode(
+                        "return callbacks.registerOnReducer(%S) { callback(it as %T) }",
+                        reducer.sourceName,
+                        REDUCER_EVENT.parameterizedBy(reducerClassName),
+                    )
+                    .build()
+            )
+
+            // removeOn<Reducer>
+            val removeName = "removeOn${reducer.sourceName.toPascalCase()}"
+            classBuilder.addFunction(
+                FunSpec.builder(removeName)
+                    .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
+                    .addParameter("id", CALLBACK_ID)
+                    .addCode("callbacks.removeOnReducer(%S, id)", reducer.sourceName)
+                    .build()
+            )
         }
 
         fileBuilder.addType(classBuilder.build())
