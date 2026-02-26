@@ -3,6 +3,7 @@ package dev.sanson.spacetimedb
 import dev.sanson.spacetimedb.bsatn.Bsatn
 import dev.sanson.spacetimedb.protocol.ClientMessage
 import dev.sanson.spacetimedb.protocol.ProcedureStatus
+import dev.sanson.spacetimedb.protocol.QueryResult
 import dev.sanson.spacetimedb.protocol.QuerySetId
 import dev.sanson.spacetimedb.protocol.ReducerOutcome
 import dev.sanson.spacetimedb.protocol.ServerMessage
@@ -16,6 +17,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
+import org.intellij.lang.annotations.Language
+import kotlin.jvm.JvmName
 
 /**
  * An active connection to a SpacetimeDB database.
@@ -42,6 +46,7 @@ public class SpacetimeDbConnection internal constructor(
     private val subscriptions = mutableMapOf<QuerySetId, SubscriptionHandle>()
     private val reducerNames = mutableMapOf<UInt, String>()
     private val pendingProcedures = mutableMapOf<UInt, CompletableDeferred<ProcedureOutcome>>()
+    private val pendingOneOffQueries = mutableMapOf<UInt, CompletableDeferred<QueryResult>>()
     private val outgoing = Channel<ClientMessage>(Channel.UNLIMITED)
     private val savedSubscriptionQueries = mutableListOf<List<String>>()
 
@@ -146,6 +151,67 @@ public class SpacetimeDbConnection internal constructor(
     }
 
     /**
+     * Call a procedure on the server and deserialize the return value.
+     *
+     * Convenience overload that infers the [KSerializer] from the reified type parameter.
+     *
+     * @see callProcedure
+     */
+    @JvmName("callProcedureTyped")
+    public suspend inline fun <reified T> callProcedure(
+        procedureName: String,
+        args: ByteArray,
+    ): T = callProcedure(procedureName, args, serializer())
+
+    /**
+     * Execute a one-off SQL query against the server and return the results.
+     *
+     * Unlike subscriptions, one-off queries return results immediately without
+     * creating a persistent server-side query. Useful for ad-hoc queries,
+     * dashboards, or data exploration outside the subscription model.
+     *
+     * Suspends until the server responds. If the server reports an error,
+     * a [SpacetimeError.QueryError] is thrown.
+     *
+     * @param T The row type to deserialize results into.
+     * @param sql The SQL query string.
+     * @param serializer Deserializer for the row type.
+     * @return The list of deserialized rows.
+     * @throws SpacetimeError.QueryError if the server rejects the query.
+     */
+    public suspend fun <T> remoteQuery(@Language("SQL") sql: String, serializer: KSerializer<T>): List<T> {
+        val requestId = nextRequestId()
+        val deferred = CompletableDeferred<QueryResult>()
+        pendingOneOffQueries[requestId] = deferred
+        val msg = ClientMessage.OneOffQuery(
+            requestId = requestId,
+            queryString = sql,
+        )
+        outgoing.trySend(msg)
+
+        return when (val result = deferred.await()) {
+            is QueryResult.Ok -> {
+                result.rows.tables.flatMap { table ->
+                    table.rows.rows().map { bytes ->
+                        Bsatn.decodeFromByteArray(serializer, bytes)
+                    }
+                }
+            }
+            is QueryResult.Err -> throw SpacetimeError.QueryError(result.error)
+        }
+    }
+
+    /**
+     * Execute a one-off SQL query against the server and return the results.
+     *
+     * Convenience overload that infers the [KSerializer] from the reified type parameter.
+     *
+     * @see remoteQuery
+     */
+    public suspend inline fun <reified T> remoteQuery(@Language("SQL") sql: String): List<T> =
+        remoteQuery(sql, serializer())
+
+    /**
      * Disconnect from the server and stop the message loop.
      */
     public fun disconnect() {
@@ -234,10 +300,12 @@ public class SpacetimeDbConnection internal constructor(
                     logger.error("Connection error", e)
                     abnormalDisconnect = true
                 } finally {
-                    // Cancel pending procedure calls
+                    // Cancel pending procedure calls and one-off queries
                     val disconnectError = CancellationException("Connection closed")
                     pendingProcedures.values.forEach { it.cancel(disconnectError) }
                     pendingProcedures.clear()
+                    pendingOneOffQueries.values.forEach { it.cancel(disconnectError) }
+                    pendingOneOffQueries.clear()
 
                     try {
                         conn.close()
@@ -324,7 +392,7 @@ public class SpacetimeDbConnection internal constructor(
             is ServerMessage.SubscriptionError -> handleSubscriptionError(message)
             is ServerMessage.TransactionUpdateMsg -> handleTransactionUpdate(message.update, event = Event.Transaction)
             is ServerMessage.ReducerResult -> handleReducerResult(message)
-            is ServerMessage.OneOffQueryResult -> { /* TODO: one-off query support */ }
+            is ServerMessage.OneOffQueryResult -> handleOneOffQueryResult(message)
             is ServerMessage.ProcedureResult -> handleProcedureResult(message)
         }
     }
@@ -449,6 +517,11 @@ public class SpacetimeDbConnection internal constructor(
             )
         }
         deferred.complete(outcome)
+    }
+
+    private fun handleOneOffQueryResult(msg: ServerMessage.OneOffQueryResult) {
+        val deferred = pendingOneOffQueries.remove(msg.requestId) ?: return
+        deferred.complete(msg.result)
     }
 
     @Suppress("UNCHECKED_CAST")

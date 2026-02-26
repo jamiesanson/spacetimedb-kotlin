@@ -3,6 +3,7 @@ package dev.sanson.spacetimedb
 import dev.sanson.spacetimedb.protocol.ClientMessage
 import dev.sanson.spacetimedb.protocol.QuerySetId
 import kotlinx.coroutines.channels.SendChannel
+import org.intellij.lang.annotations.Language
 
 /**
  * Builds a subscription to one or more SQL queries.
@@ -33,7 +34,7 @@ public class SubscriptionBuilder internal constructor(
      * and to unsubscribe later.
      */
     @OptIn(kotlin.concurrent.atomics.ExperimentalAtomicApi::class)
-    public fun subscribe(vararg queries: String): SubscriptionHandle {
+    public fun subscribe(@Language("SQL") vararg queries: String): SubscriptionHandle {
         return subscribe(queries.toList())
     }
 
