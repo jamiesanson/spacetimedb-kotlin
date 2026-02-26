@@ -85,8 +85,67 @@ public class ModuleGenerator(
     }
 
     /**
+     * Generate the PK extractor map file.
+     *
+     * Produces a top-level function `tablePkExtractorMap()` returning
+     * `Map<String, (Any) -> Any>` with one entry per table that has a primary key.
+     */
+    public fun generatePkExtractorMapFile(): FileSpec {
+        val mapType = ClassName("kotlin.collections", "Map")
+            .parameterizedBy(
+                ClassName("kotlin", "String"),
+                LambdaTypeName.get(
+                    parameters = listOf(ParameterSpec.unnamed(ClassName("kotlin", "Any"))),
+                    returnType = ClassName("kotlin", "Any"),
+                ),
+            )
+
+        val tablesWithPk = schema.publicTables.filter { it.primaryKey.isNotEmpty() }
+
+        val mapEntries = CodeBlock.builder()
+            .add("mapOf(\n")
+            .indent()
+
+        for ((i, table) in tablesWithPk.withIndex()) {
+            val rowClass = ClassName(targetPackage, table.sourceName.toPascalCase())
+            val productType = schema.tableProductType(table)
+            // Primary key is a list of column indices; use the first one
+            val pkIndex = table.primaryKey.first()
+            val pkElement = productType.elements[pkIndex]
+            val pkFieldName = pkElement.name?.toCamelCase()
+                ?: error("Primary key column at index $pkIndex has no name for table '${table.sourceName}'")
+
+            mapEntries.add(
+                "%S to { row: %T -> (row as %T).%N as %T }",
+                table.sourceName,
+                ClassName("kotlin", "Any"),
+                rowClass,
+                pkFieldName,
+                ClassName("kotlin", "Any"),
+            )
+            if (i < tablesWithPk.size - 1) {
+                mapEntries.add(",")
+            }
+            mapEntries.add("\n")
+        }
+
+        mapEntries.unindent().add(")")
+
+        val funSpec = FunSpec.builder("tablePkExtractorMap")
+            .addModifiers(KModifier.PUBLIC)
+            .returns(mapType)
+            .addCode("return %L\n", mapEntries.build())
+            .build()
+
+        return FileSpec.builder(targetPackage, "TablePkExtractorMap")
+            .addFunction(funSpec)
+            .build()
+    }
+
+    /**
      * Generate a `withModuleDeserializers()` extension on `SpacetimeDbConnectionBuilder`
-     * that calls `withTableDeserializers(tableDeserializerMap())`.
+     * that calls `withTableDeserializers(tableDeserializerMap())` and
+     * `withPkExtractors(tablePkExtractorMap())`.
      */
     public fun generateBuilderExtensionFile(): FileSpec {
         val funSpec = FunSpec.builder("withModuleDeserializers")
@@ -94,6 +153,7 @@ public class ModuleGenerator(
             .receiver(SPACETIMEDB_CONNECTION_BUILDER)
             .returns(SPACETIMEDB_CONNECTION_BUILDER)
             .addCode("return withTableDeserializers(tableDeserializerMap())\n")
+            .addCode("    .withPkExtractors(tablePkExtractorMap())\n")
             .build()
 
         return FileSpec.builder(targetPackage, "BuilderExtensions")

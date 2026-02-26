@@ -67,6 +67,7 @@ public class GenerateCommand : CliktCommand(
 
             // Module-level wiring
             add(moduleGenerator.generateDeserializerMapFile())
+            add(moduleGenerator.generatePkExtractorMapFile())
             add(moduleGenerator.generateBuilderExtensionFile())
         }
 
