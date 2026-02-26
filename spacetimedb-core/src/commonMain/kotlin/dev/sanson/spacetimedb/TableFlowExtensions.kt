@@ -4,6 +4,7 @@ import dev.drewhamilton.poko.Poko
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.conflate
 
 /**
  * A [Flow] of inserted rows. The callback is automatically unregistered when the
@@ -52,6 +53,62 @@ public fun <Row : Any> EventTable<Row>.eventFlow(): Flow<RowEvent<Row>> = callba
     val id = onEvent { event, row -> trySend(RowEvent(event, row)) }
     awaitClose { removeOnEvent(id) }
 }
+
+/**
+ * A [Flow] of the current list of rows in this table.
+ *
+ * The flow emits the initial snapshot of all cached rows, then re-emits the full
+ * list whenever rows are inserted or deleted. Intermediate snapshots during rapid
+ * changes (e.g. initial subscription apply) are automatically conflated so collectors
+ * always see the latest state without processing every intermediate list.
+ *
+ * For tables with a primary key, prefer the [TableWithPrimaryKey] overload which
+ * also tracks row updates.
+ *
+ * ```kotlin
+ * // One line per table — replaces manual onInsert/onDelete/onApplied boilerplate
+ * val players: Flow<List<Player>> = conn.db.player.rowsFlow()
+ *
+ * // Convert to StateFlow if needed:
+ * val players: StateFlow<List<Player>> = conn.db.player.rowsFlow()
+ *     .stateIn(scope, SharingStarted.Eagerly, emptyList())
+ * ```
+ */
+public fun <Row : Any> Table<Row>.rowsFlow(): Flow<List<Row>> = callbackFlow {
+    send(toList())
+    val insertId = onInsert { _, _ -> trySend(toList()) }
+    val deleteId = onDelete { _, _ -> trySend(toList()) }
+    awaitClose {
+        removeOnInsert(insertId)
+        removeOnDelete(deleteId)
+    }
+}.conflate()
+
+/**
+ * A [Flow] of the current list of rows in this table with primary key.
+ *
+ * Behaves identically to [Table.rowsFlow] but also re-emits when rows are
+ * updated (a PK-matched delete + insert within the same transaction).
+ *
+ * ```kotlin
+ * val messages: Flow<List<Message>> = conn.db.message.rowsFlow()
+ *
+ * // Compose naturally with Flow operators:
+ * val sorted: Flow<List<Message>> = conn.db.message.rowsFlow()
+ *     .map { it.sortedBy { m -> m.createdAt } }
+ * ```
+ */
+public fun <Row : Any> TableWithPrimaryKey<Row>.rowsFlow(): Flow<List<Row>> = callbackFlow {
+    send(toList())
+    val insertId = onInsert { _, _ -> trySend(toList()) }
+    val deleteId = onDelete { _, _ -> trySend(toList()) }
+    val updateId = onUpdate { _, _, _ -> trySend(toList()) }
+    awaitClose {
+        removeOnInsert(insertId)
+        removeOnDelete(deleteId)
+        removeOnUpdate(updateId)
+    }
+}.conflate()
 
 /**
  * An insert or delete event paired with its row.
