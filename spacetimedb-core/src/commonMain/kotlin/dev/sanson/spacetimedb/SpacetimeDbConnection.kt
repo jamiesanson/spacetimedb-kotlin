@@ -34,6 +34,7 @@ public class SpacetimeDbConnection internal constructor(
     private val onConnect: ((Identity, String, ConnectionId) -> Unit)?,
     private val onDisconnect: ((SpacetimeError?) -> Unit)?,
     private val tableDeserializers: Map<String, KSerializer<out Any>>,
+    private val pkExtractors: Map<String, (Any) -> Any> = emptyMap(),
 ) {
     private val subscriptions = mutableMapOf<QuerySetId, SubscriptionHandle>()
     private val reducerNames = mutableMapOf<UInt, String>()
@@ -299,7 +300,10 @@ public class SpacetimeDbConnection internal constructor(
                     val update = TableUpdate(inserts = inserts, deletes = deletes)
                     if (!update.isEmpty) {
                         val diff = tableCache.applyDiff(update)
-                        callbacks.invokeCallbacks(tableName, diff, event)
+                        val refinedDiff = pkExtractors[tableName]?.let { getPk ->
+                            diff.withUpdatesByPk(getPk)
+                        } ?: diff
+                        callbacks.invokeCallbacks(tableName, refinedDiff, event)
                     }
                 }
                 is dev.sanson.spacetimedb.protocol.TableUpdateRows.EventTable -> {

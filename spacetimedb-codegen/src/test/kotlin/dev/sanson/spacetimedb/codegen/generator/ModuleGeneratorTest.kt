@@ -43,6 +43,7 @@ class ModuleGeneratorTest {
         assertContains(output, "fun SpacetimeDbConnectionBuilder.withModuleDeserializers()")
         assertContains(output, "SpacetimeDbConnectionBuilder")
         assertContains(output, "withTableDeserializers(tableDeserializerMap())")
+        assertContains(output, "withPkExtractors(tablePkExtractorMap())")
     }
 
     @OptIn(ExperimentalCompilerApi::class)
@@ -67,6 +68,7 @@ class ModuleGeneratorTest {
 
         // Module wiring
         sources.add(SourceFile.kotlin("TableDeserializerMap.kt", moduleGen.generateDeserializerMapFile().toString()))
+        sources.add(SourceFile.kotlin("TablePkExtractorMap.kt", moduleGen.generatePkExtractorMapFile().toString()))
         sources.add(SourceFile.kotlin("BuilderExtensions.kt", moduleGen.generateBuilderExtensionFile().toString()))
 
         val result = KotlinCompilation().apply {
@@ -124,6 +126,7 @@ class ModuleGeneratorTest {
 
         // Module wiring
         sources.add(SourceFile.kotlin("TableDeserializerMap.kt", moduleGen.generateDeserializerMapFile().toString()))
+        sources.add(SourceFile.kotlin("TablePkExtractorMap.kt", moduleGen.generatePkExtractorMapFile().toString()))
         sources.add(SourceFile.kotlin("BuilderExtensions.kt", moduleGen.generateBuilderExtensionFile().toString()))
         sources.add(SourceFile.kotlin("DbConnection.kt", moduleGen.generateDbConnectionFile().toString()))
         sources.add(SourceFile.kotlin("DbConnectionBuilder.kt", moduleGen.generateDbConnectionBuilderFile().toString()))
