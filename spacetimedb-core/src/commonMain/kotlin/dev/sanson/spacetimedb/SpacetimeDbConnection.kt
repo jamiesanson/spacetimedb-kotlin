@@ -13,6 +13,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
 
@@ -28,7 +29,7 @@ import kotlinx.serialization.KSerializer
 public class SpacetimeDbConnection internal constructor(
     public val cache: ClientCache,
     public val callbacks: DbCallbacks,
-    private val connector: suspend () -> WebSocketConnection,
+    private val connector: suspend (token: String?) -> WebSocketConnection,
     private val scope: CoroutineScope,
     private val onConnect: ((Identity, String, ConnectionId) -> Unit)?,
     private val onConnectError: ((SpacetimeError) -> Unit)?,
@@ -36,11 +37,13 @@ public class SpacetimeDbConnection internal constructor(
     private val tableDeserializers: Map<String, KSerializer<out Any>>,
     private val pkExtractors: Map<String, (Any) -> Any> = emptyMap(),
     private val logger: SpacetimeLogger = NoOpLogger,
+    private val reconnectConfig: ReconnectConfig? = null,
 ) {
     private val subscriptions = mutableMapOf<QuerySetId, SubscriptionHandle>()
     private val reducerNames = mutableMapOf<UInt, String>()
     private val pendingProcedures = mutableMapOf<UInt, CompletableDeferred<ProcedureOutcome>>()
     private val outgoing = Channel<ClientMessage>(Channel.UNLIMITED)
+    private val savedSubscriptionQueries = mutableListOf<List<String>>()
 
     /** The identity assigned by the server, available after the initial handshake. */
     public var identity: Identity? = null
@@ -157,59 +160,160 @@ public class SpacetimeDbConnection internal constructor(
      */
     internal fun start() {
         isActive = true
-        logger.info("Connecting to SpacetimeDB...")
 
         messageLoopJob = scope.launch {
-            val conn = try {
-                connector()
-            } catch (e: Exception) {
-                isActive = false
-                logger.error("Connection failed", e)
-                onConnectError?.invoke(SpacetimeError.FailedToConnect(e))
-                return@launch
-            }
+            var reconnectAttempt = 0
+            var reconnectDelay = reconnectConfig?.initialDelay ?: kotlin.time.Duration.ZERO
+            var isFirstConnect = true
 
-            logger.info("WebSocket connected, starting message loop")
+            connectLoop@ while (true) {
+                if (!isFirstConnect) {
+                    logger.info("Reconnecting to SpacetimeDB (attempt $reconnectAttempt)...")
+                } else {
+                    logger.info("Connecting to SpacetimeDB...")
+                }
 
-            try {
-                // Launch sender coroutine to forward queued messages
-                val senderJob = launch {
-                    for (msg in outgoing) {
-                        conn.send(msg)
+                // Connect — use server-assigned token on reconnect
+                val conn = try {
+                    connector(if (isFirstConnect) null else token)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    if (reconnectConfig != null && reconnectAttempt < reconnectConfig.maxAttempts) {
+                        logger.warn("Connection failed, retrying in $reconnectDelay")
+                        delay(reconnectDelay)
+                        reconnectDelay = minOf(reconnectDelay * 2, reconnectConfig.maxDelay)
+                        reconnectAttempt++
+                        continue@connectLoop
+                    }
+                    isActive = false
+                    logger.error("Connection failed", e)
+                    if (isFirstConnect) {
+                        onConnectError?.invoke(SpacetimeError.FailedToConnect(e))
+                    } else {
+                        onDisconnect?.invoke(SpacetimeError.Internal("Reconnection failed after $reconnectAttempt attempts", e))
+                    }
+                    return@launch
+                }
+
+                // Connected — reset reconnect counters
+                reconnectAttempt = 0
+                reconnectDelay = reconnectConfig?.initialDelay ?: kotlin.time.Duration.ZERO
+
+                logger.info("WebSocket connected, starting message loop")
+
+                // If this is a reconnect, re-subscribe to previous queries
+                if (!isFirstConnect) {
+                    resubscribeAll()
+                }
+                isFirstConnect = false
+
+                // Run the message loop
+                var abnormalDisconnect = false
+                try {
+                    val senderJob = launch {
+                        for (msg in outgoing) {
+                            conn.send(msg)
+                        }
+                    }
+
+                    conn.serverMessages.collect { message ->
+                        processMessage(message)
+                    }
+
+                    // Normal server close
+                    senderJob.cancel()
+                    abnormalDisconnect = true // server closed unexpectedly
+                } catch (e: CancellationException) {
+                    // User-initiated disconnect — never reconnect
+                    isActive = false
+                    logger.info("Connection cancelled")
+                    onDisconnect?.invoke(null)
+                    return@launch
+                } catch (e: Exception) {
+                    logger.error("Connection error", e)
+                    abnormalDisconnect = true
+                } finally {
+                    // Cancel pending procedure calls
+                    val disconnectError = CancellationException("Connection closed")
+                    pendingProcedures.values.forEach { it.cancel(disconnectError) }
+                    pendingProcedures.clear()
+
+                    try {
+                        conn.close()
+                    } catch (_: Exception) {
+                        // Best-effort close
                     }
                 }
 
-                // Process incoming messages
-                conn.serverMessages.collect { message ->
-                    processMessage(message)
+                // Attempt reconnect if configured
+                if (abnormalDisconnect && reconnectConfig != null) {
+                    prepareForReconnect()
+                    reconnectAttempt = 1
+                    reconnectDelay = reconnectConfig.initialDelay
+                    logger.info("Connection lost, reconnecting in $reconnectDelay")
+                    delay(reconnectDelay)
+                    reconnectDelay = minOf(reconnectDelay * 2, reconnectConfig.maxDelay)
+                    continue@connectLoop
                 }
 
-                // Normal close
-                senderJob.cancel()
+                // No reconnect — report disconnect
                 isActive = false
                 logger.info("Connection closed normally")
                 onDisconnect?.invoke(null)
-            } catch (e: CancellationException) {
-                isActive = false
-                logger.info("Connection cancelled")
-                onDisconnect?.invoke(null)
-            } catch (e: Exception) {
-                isActive = false
-                logger.error("Connection error", e)
-                onDisconnect?.invoke(SpacetimeError.Internal("Connection error", e))
-            } finally {
-                // Cancel any pending procedure calls
-                val disconnectError = CancellationException("Connection closed")
-                pendingProcedures.values.forEach { it.cancel(disconnectError) }
-                pendingProcedures.clear()
-
-                try {
-                    conn.close()
-                } catch (_: Exception) {
-                    // Best-effort close
-                }
+                break@connectLoop
             }
         }
+    }
+
+    /**
+     * Prepare internal state for a reconnection attempt.
+     *
+     * Saves active subscription queries, clears the cache and subscription state,
+     * and drains the outgoing message queue.
+     */
+    private fun prepareForReconnect() {
+        // Save queries from all non-ended subscriptions
+        val queries = subscriptions.values
+            .filter { !it.isEnded }
+            .map { it.querySql }
+        savedSubscriptionQueries.clear()
+        savedSubscriptionQueries.addAll(queries)
+
+        // Clear state
+        subscriptions.clear()
+        reducerNames.clear()
+        cache.clear()
+
+        // Drain outgoing channel (old messages are for the previous connection)
+        while (outgoing.tryReceive().isSuccess) { /* drain */ }
+    }
+
+    /**
+     * Re-subscribe to all queries that were active before the connection dropped.
+     */
+    private fun resubscribeAll() {
+        for (queries in savedSubscriptionQueries) {
+            val querySetId = nextQuerySetId()
+            val handle = SubscriptionHandle(
+                querySetId = querySetId,
+                querySql = queries,
+                sendChannel = outgoing,
+                onApplied = null,
+                onError = null,
+            )
+            subscriptions[querySetId] = handle
+            val msg = ClientMessage.Subscribe(
+                requestId = nextRequestId(),
+                querySetId = querySetId,
+                queryStrings = queries,
+            )
+            outgoing.trySend(msg)
+        }
+        if (savedSubscriptionQueries.isNotEmpty()) {
+            logger.info("Re-subscribed to ${savedSubscriptionQueries.size} query set(s)")
+        }
+        savedSubscriptionQueries.clear()
     }
 
     private fun processMessage(message: ServerMessage) {

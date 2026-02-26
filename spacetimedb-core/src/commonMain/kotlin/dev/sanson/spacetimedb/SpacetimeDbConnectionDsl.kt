@@ -56,6 +56,9 @@ public class SpacetimeDbConnectionDsl internal constructor() {
     /** Logger for SDK diagnostic messages. Defaults to [NoOpLogger]. */
     public var logger: SpacetimeLogger = NoOpLogger
 
+    /** Auto-reconnect configuration. Set to enable reconnection with exponential backoff. */
+    public var reconnect: ReconnectConfig? = null
+
     /**
      * Table deserializers for row decoding.
      *
@@ -111,6 +114,9 @@ public class SpacetimeDbConnectionDsl internal constructor() {
                 withPkExtractors(this@SpacetimeDbConnectionDsl.pkExtractors)
                 this@SpacetimeDbConnectionDsl.httpClient?.let { withHttpClient(it) }
                 withLogger(this@SpacetimeDbConnectionDsl.logger)
+                this@SpacetimeDbConnectionDsl.reconnect?.let {
+                    withReconnect(it.maxAttempts, it.initialDelay, it.maxDelay)
+                }
                 this@SpacetimeDbConnectionDsl.onConnect?.let { onConnect(it) }
                 this@SpacetimeDbConnectionDsl.onDisconnect?.let { onDisconnect(it) }
                 this@SpacetimeDbConnectionDsl.onConnectError?.let { onConnectError(it) }
