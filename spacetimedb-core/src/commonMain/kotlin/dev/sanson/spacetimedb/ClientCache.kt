@@ -129,8 +129,12 @@ public class TableCache<Row : Any> : Iterable<Row> {
     /**
      * Apply a [TableUpdate] to this cache, returning the effective diff.
      *
-     * Processes inserts first (so a row appearing in both inserts and deletes
-     * of the same update cancels out via ref counting), then deletes.
+     * Processes deletes first, then inserts. This ensures that for updates
+     * (where a row is deleted then re-inserted with the same primary key),
+     * the old row is removed from unique indexes before the new row is added.
+     *
+     * When the exact same row bytes appear in both inserts and deletes, the
+     * operations cancel out (net no-op for callbacks).
      *
      * @return a [TableAppliedDiff] containing rows that were actually added or removed
      */
@@ -140,20 +144,21 @@ public class TableCache<Row : Any> : Iterable<Row> {
         val actualInserts = mutableListOf<Row>()
         val actualDeletes = mutableListOf<Row>()
 
-        for (ins in update.inserts) {
-            val inserted = insert(ins.bsatn, ins.row)
-            if (inserted != null) {
-                actualInserts.add(inserted)
-            }
-        }
-
         for (del in update.deletes) {
             val deleted = delete(del.bsatn)
             if (deleted != null) {
                 actualDeletes.add(deleted)
-                // If this row was also just inserted in the same update,
-                // remove it from inserts (net no-op for callbacks).
-                actualInserts.remove(deleted)
+            }
+        }
+
+        for (ins in update.inserts) {
+            val inserted = insert(ins.bsatn, ins.row)
+            if (inserted != null) {
+                // If this exact row was also deleted in the same update,
+                // they cancel out (net no-op for callbacks).
+                if (!actualDeletes.remove(inserted)) {
+                    actualInserts.add(inserted)
+                }
             }
         }
 
