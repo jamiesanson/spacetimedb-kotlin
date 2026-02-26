@@ -50,7 +50,7 @@ public class SpacetimeDbPlugin : Plugin<Project> {
             task.dependsOn(buildTask)
         }
 
-        val sdkVersion = javaClass.`package`.implementationVersion ?: project.findProperty("dev.sanson.spacetimedb.version") as? String
+        val sdkVersion = SpacetimeDbBuildConfig.VERSION
 
         // Kotlin JVM: add generated sources + SDK dependency
         project.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
@@ -59,9 +59,7 @@ public class SpacetimeDbPlugin : Plugin<Project> {
                 .java
                 .srcDir(generateTask.flatMap { it.outputDirectory })
 
-            if (sdkVersion != null) {
-                project.dependencies.add("implementation", "dev.sanson.spacetimedb:spacetimedb-core:$sdkVersion")
-            }
+            project.dependencies.add("implementation", "dev.sanson.spacetimedb:spacetimedb-core:$sdkVersion")
         }
 
         // Kotlin Multiplatform: add generated sources to commonMain + SDK dependency
@@ -71,11 +69,9 @@ public class SpacetimeDbPlugin : Plugin<Project> {
                 sourceSet.kotlin.srcDir(generateTask.flatMap { it.outputDirectory })
             }
 
-            if (sdkVersion != null) {
-                kmpExt.sourceSets.getByName("commonMain") { sourceSet ->
-                    sourceSet.dependencies {
-                        implementation("dev.sanson.spacetimedb:spacetimedb-core:$sdkVersion")
-                    }
+            kmpExt.sourceSets.getByName("commonMain") { sourceSet ->
+                sourceSet.dependencies {
+                    implementation("dev.sanson.spacetimedb:spacetimedb-core:$sdkVersion")
                 }
             }
         }
