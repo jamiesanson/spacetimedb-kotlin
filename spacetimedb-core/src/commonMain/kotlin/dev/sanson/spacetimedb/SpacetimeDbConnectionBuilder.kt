@@ -34,6 +34,7 @@ public class SpacetimeDbConnectionBuilder() {
     private var tableDeserializers: Map<String, KSerializer<out Any>> = emptyMap()
     private var pkExtractors: Map<String, (Any) -> Any> = emptyMap()
     private var httpClient: HttpClient? = null
+    private var logger: SpacetimeLogger = NoOpLogger
 
     /** Set the SpacetimeDB host URI (e.g. "http://localhost:3000"). */
     public fun withUri(uri: String): SpacetimeDbConnectionBuilder = apply {
@@ -82,6 +83,15 @@ public class SpacetimeDbConnectionBuilder() {
      */
     public fun withHttpClient(client: HttpClient): SpacetimeDbConnectionBuilder = apply {
         this.httpClient = client
+    }
+
+    /**
+     * Set a [SpacetimeLogger] for SDK diagnostic messages.
+     *
+     * Defaults to [NoOpLogger]. Use [PrintLogger] for quick debugging.
+     */
+    public fun withLogger(logger: SpacetimeLogger): SpacetimeDbConnectionBuilder = apply {
+        this.logger = logger
     }
 
     /**
@@ -145,6 +155,7 @@ public class SpacetimeDbConnectionBuilder() {
             onDisconnect = onDisconnect,
             tableDeserializers = tableDeserializers,
             pkExtractors = pkExtractors,
+            logger = logger,
         )
 
         connection.start()
