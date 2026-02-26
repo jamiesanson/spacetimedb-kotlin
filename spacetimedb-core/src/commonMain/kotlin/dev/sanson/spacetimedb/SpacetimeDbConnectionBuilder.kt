@@ -7,11 +7,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.KSerializer
 
 /**
- * Fluent builder for establishing a [DbConnection].
+ * Fluent builder for establishing a [SpacetimeDbConnection].
  *
  * Example:
  * ```kotlin
- * val connection = DbConnection.builder()
+ * val connection = SpacetimeDbConnection.builder()
  *     .withUri("http://localhost:3000")
  *     .withDatabaseName("my_db")
  *     .withToken(savedToken)
@@ -21,9 +21,9 @@ import kotlinx.serialization.KSerializer
  *     .build(scope)
  * ```
  *
- * @see DbConnection
+ * @see SpacetimeDbConnection
  */
-public class DbConnectionBuilder internal constructor() {
+public class SpacetimeDbConnectionBuilder internal constructor() {
     private var uri: String? = null
     private var databaseName: String? = null
     private var token: String? = null
@@ -35,22 +35,22 @@ public class DbConnectionBuilder internal constructor() {
     private var httpClient: HttpClient? = null
 
     /** Set the SpacetimeDB host URI (e.g. "http://localhost:3000"). */
-    public fun withUri(uri: String): DbConnectionBuilder = apply {
+    public fun withUri(uri: String): SpacetimeDbConnectionBuilder = apply {
         this.uri = uri
     }
 
     /** Set the database name to connect to. */
-    public fun withDatabaseName(name: String): DbConnectionBuilder = apply {
+    public fun withDatabaseName(name: String): SpacetimeDbConnectionBuilder = apply {
         this.databaseName = name
     }
 
     /** Set the auth token for reconnection. */
-    public fun withToken(token: String?): DbConnectionBuilder = apply {
+    public fun withToken(token: String?): SpacetimeDbConnectionBuilder = apply {
         this.token = token
     }
 
     /** Set the preferred compression for server messages. */
-    public fun withCompression(compression: Compression): DbConnectionBuilder = apply {
+    public fun withCompression(compression: Compression): SpacetimeDbConnectionBuilder = apply {
         this.compression = compression
     }
 
@@ -60,7 +60,7 @@ public class DbConnectionBuilder internal constructor() {
      * Maps table names to their kotlinx.serialization [KSerializer].
      * This is typically called by generated code.
      */
-    public fun withTableDeserializers(deserializers: Map<String, KSerializer<out Any>>): DbConnectionBuilder = apply {
+    public fun withTableDeserializers(deserializers: Map<String, KSerializer<out Any>>): SpacetimeDbConnectionBuilder = apply {
         this.tableDeserializers = deserializers
     }
 
@@ -69,7 +69,7 @@ public class DbConnectionBuilder internal constructor() {
      *
      * Useful for testing or configuring custom engines/plugins.
      */
-    public fun withHttpClient(client: HttpClient): DbConnectionBuilder = apply {
+    public fun withHttpClient(client: HttpClient): SpacetimeDbConnectionBuilder = apply {
         this.httpClient = client
     }
 
@@ -77,7 +77,7 @@ public class DbConnectionBuilder internal constructor() {
      * Callback invoked when the connection is established and the server sends
      * the initial identity, token, and connection ID.
      */
-    public fun onConnect(callback: (identity: Identity, token: String, connectionId: ConnectionId) -> Unit): DbConnectionBuilder = apply {
+    public fun onConnect(callback: (identity: Identity, token: String, connectionId: ConnectionId) -> Unit): SpacetimeDbConnectionBuilder = apply {
         this.onConnect = callback
     }
 
@@ -86,14 +86,14 @@ public class DbConnectionBuilder internal constructor() {
      *
      * @param callback Receives `null` for a clean disconnect, or a [SpacetimeError] for errors.
      */
-    public fun onDisconnect(callback: (error: SpacetimeError?) -> Unit): DbConnectionBuilder = apply {
+    public fun onDisconnect(callback: (error: SpacetimeError?) -> Unit): SpacetimeDbConnectionBuilder = apply {
         this.onDisconnect = callback
     }
 
     /**
      * Callback invoked if the initial connection attempt fails.
      */
-    public fun onConnectError(callback: (error: SpacetimeError) -> Unit): DbConnectionBuilder = apply {
+    public fun onConnectError(callback: (error: SpacetimeError) -> Unit): SpacetimeDbConnectionBuilder = apply {
         this.onConnectError = callback
     }
 
@@ -104,10 +104,10 @@ public class DbConnectionBuilder internal constructor() {
      * Cancel the scope or call [DbConnection.disconnect] to shut down.
      *
      * @param scope The [CoroutineScope] in which to run the message loop.
-     * @return A connected [DbConnection] instance.
+     * @return A connected [SpacetimeDbConnection] instance.
      * @throws SpacetimeError.FailedToConnect if the WebSocket connection fails.
      */
-    public suspend fun build(scope: CoroutineScope): DbConnection {
+    public suspend fun build(scope: CoroutineScope): SpacetimeDbConnection {
         val uri = requireNotNull(uri) { "URI is required. Call withUri() before build()." }
         val dbName = requireNotNull(databaseName) { "Database name is required. Call withDatabaseName() before build()." }
 
@@ -130,7 +130,7 @@ public class DbConnectionBuilder internal constructor() {
             throw error
         }
 
-        val connection = DbConnection(
+        val connection = SpacetimeDbConnection(
             cache = ClientCache(),
             callbacks = DbCallbacks(),
             connection = wsConnection,

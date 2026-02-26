@@ -32,7 +32,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-class DbConnectionTest {
+class SpacetimeDbConnectionTest {
 
     @Serializable
     data class User(val id: UInt, val name: String)
@@ -93,8 +93,8 @@ class DbConnectionTest {
         scope: kotlinx.coroutines.CoroutineScope,
         onConnect: ((Identity, String, ConnectionId) -> Unit)? = null,
         onDisconnect: ((SpacetimeError?) -> Unit)? = null,
-    ): DbConnection {
-        val connection = DbConnection(
+    ): SpacetimeDbConnection {
+        val connection = SpacetimeDbConnection(
             cache = ClientCache(),
             callbacks = DbCallbacks(),
             connection = fake.asWebSocketConnection(),

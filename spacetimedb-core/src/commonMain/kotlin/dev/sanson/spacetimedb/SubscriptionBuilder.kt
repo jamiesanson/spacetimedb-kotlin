@@ -7,7 +7,7 @@ import kotlinx.coroutines.channels.SendChannel
 /**
  * Builds a subscription to one or more SQL queries.
  *
- * Obtain via [DbConnection.subscriptionBuilder].
+ * Obtain via [SpacetimeDbConnection.subscriptionBuilder].
  */
 public class SubscriptionBuilder internal constructor(
     private val sendChannel: SendChannel<ClientMessage>,

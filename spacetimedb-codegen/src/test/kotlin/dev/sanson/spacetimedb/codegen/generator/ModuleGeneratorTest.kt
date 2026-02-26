@@ -40,8 +40,8 @@ class ModuleGeneratorTest {
         val file = gen.generateBuilderExtensionFile()
         val output = file.toString()
 
-        assertContains(output, "fun DbConnectionBuilder.withModuleDeserializers()")
-        assertContains(output, "DbConnectionBuilder")
+        assertContains(output, "fun SpacetimeDbConnectionBuilder.withModuleDeserializers()")
+        assertContains(output, "SpacetimeDbConnectionBuilder")
         assertContains(output, "withTableDeserializers(tableDeserializerMap())")
     }
 

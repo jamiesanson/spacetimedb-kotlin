@@ -21,14 +21,14 @@ import kotlinx.serialization.KSerializer
  * An active connection to a SpacetimeDB database.
  *
  * Manages the WebSocket lifecycle, subscription tracking, client cache updates,
- * and callback dispatch. Obtain an instance via [DbConnectionBuilder.build].
+ * and callback dispatch. Obtain an instance via [SpacetimeDbConnectionBuilder.build].
  *
  * The connection runs a message-processing coroutine in the provided [CoroutineScope].
  * Cancel the scope or call [disconnect] to shut down the connection.
  */
-public class DbConnection internal constructor(
-    internal val cache: ClientCache,
-    internal val callbacks: DbCallbacks,
+public class SpacetimeDbConnection internal constructor(
+    public val cache: ClientCache,
+    public val callbacks: DbCallbacks,
     private val connection: WebSocketConnection,
     private val scope: CoroutineScope,
     private val onConnect: ((Identity, String, ConnectionId) -> Unit)?,
@@ -94,7 +94,7 @@ public class DbConnection internal constructor(
     }
 
     /**
-     * Starts the message loop. Called internally by [DbConnectionBuilder].
+     * Starts the message loop. Called internally by [SpacetimeDbConnectionBuilder].
      */
     internal fun start() {
         isActive = true
@@ -291,7 +291,7 @@ public class DbConnection internal constructor(
     }
 
     public companion object {
-        /** Create a new [DbConnectionBuilder]. */
-        public fun builder(): DbConnectionBuilder = DbConnectionBuilder()
+        /** Create a new [SpacetimeDbConnectionBuilder]. */
+        public fun builder(): SpacetimeDbConnectionBuilder = SpacetimeDbConnectionBuilder()
     }
 }
