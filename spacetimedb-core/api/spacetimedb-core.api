@@ -200,6 +200,25 @@ public final class dev/sanson/spacetimedb/PrintLogger$Level : java/lang/Enum {
 	public static fun values ()[Ldev/sanson/spacetimedb/PrintLogger$Level;
 }
 
+public abstract class dev/sanson/spacetimedb/ProcedureOutcome {
+	public abstract fun getExecutionDuration-zW-2OS4 ()J
+	public abstract fun getTimestamp-Jr5MCI8 ()Lkotlin/time/Instant;
+}
+
+public final class dev/sanson/spacetimedb/ProcedureOutcome$InternalError : dev/sanson/spacetimedb/ProcedureOutcome {
+	public fun getExecutionDuration-zW-2OS4 ()J
+	public final fun getMessage ()Ljava/lang/String;
+	public fun getTimestamp-Jr5MCI8 ()Lkotlin/time/Instant;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/sanson/spacetimedb/ProcedureOutcome$Returned : dev/sanson/spacetimedb/ProcedureOutcome {
+	public fun getExecutionDuration-zW-2OS4 ()J
+	public fun getTimestamp-Jr5MCI8 ()Lkotlin/time/Instant;
+	public final fun getValue ()[B
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/sanson/spacetimedb/ReducerEvent {
 	public synthetic fun <init> (Lkotlin/time/Instant;Ldev/sanson/spacetimedb/Status;Ljava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
@@ -298,6 +317,8 @@ public final class dev/sanson/spacetimedb/ScheduleAt$Time$Companion {
 
 public final class dev/sanson/spacetimedb/SpacetimeDbConnection {
 	public static final field Companion Ldev/sanson/spacetimedb/SpacetimeDbConnection$Companion;
+	public final fun callProcedure (Ljava/lang/String;[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun callProcedure (Ljava/lang/String;[BLkotlinx/serialization/KSerializer;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun callReducer (Ljava/lang/String;[B)V
 	public final fun disconnect ()V
 	public final fun getCache ()Ldev/sanson/spacetimedb/ClientCache;
