@@ -1,0 +1,83 @@
+name: "Draft Release"
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  update-draft:
+    name: "Update Draft Release"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Read version from gradle.properties"
+        id: version
+        shell: bash
+        run: |
+          version=$(grep '^dev.sanson.spacetimedb.version=' gradle.properties | cut -d'=' -f2)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: "Generate changelog"
+        id: changelog
+        shell: bash
+        run: |
+          # Find the most recent tag; fall back to first commit if none
+          last_tag=$(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)
+
+          {
+            echo 'body<<CHANGELOG_EOF'
+            echo "## What's Changed"
+            echo ""
+            git log "${last_tag}..HEAD" --pretty=format:"* %s (%h)" --reverse
+            echo ""
+            echo ""
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${last_tag}...v${{ steps.version.outputs.version }}"
+            echo 'CHANGELOG_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: "Create or update draft release"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = '${{ steps.version.outputs.tag }}';
+            const version = '${{ steps.version.outputs.version }}';
+            const body = `${{ steps.changelog.outputs.body }}`;
+
+            // Find existing draft for this tag
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const existing = releases.find(r => r.draft && r.tag_name === tag);
+
+            if (existing) {
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: existing.id,
+                tag_name: tag,
+                name: version,
+                body: body,
+                draft: true,
+              });
+              console.log(`Updated draft release: ${version}`);
+            } else {
+              await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: tag,
+                name: version,
+                body: body,
+                draft: true,
+              });
+              console.log(`Created draft release: ${version}`);
+            }
