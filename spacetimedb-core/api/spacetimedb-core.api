@@ -267,6 +267,7 @@ public final class dev/sanson/spacetimedb/SpacetimeDbConnection$Companion {
 }
 
 public final class dev/sanson/spacetimedb/SpacetimeDbConnectionBuilder {
+	public fun <init> ()V
 	public final fun build (Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun onConnect (Lkotlin/jvm/functions/Function3;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun onConnectError (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
