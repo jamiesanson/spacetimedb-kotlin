@@ -33,6 +33,7 @@ public class SpacetimeDbConnection internal constructor(
     private val onDisconnect: ((SpacetimeError?) -> Unit)?,
     private val tableDeserializers: Map<String, KSerializer<out Any>>,
     private val pkExtractors: Map<String, (Any) -> Any> = emptyMap(),
+    private val logger: SpacetimeLogger = NoOpLogger,
 ) {
     private val subscriptions = mutableMapOf<QuerySetId, SubscriptionHandle>()
     private val reducerNames = mutableMapOf<UInt, String>()
@@ -100,15 +101,19 @@ public class SpacetimeDbConnection internal constructor(
      */
     internal fun start() {
         isActive = true
+        logger.info("Connecting to SpacetimeDB...")
 
         messageLoopJob = scope.launch {
             val conn = try {
                 connector()
             } catch (e: Exception) {
                 isActive = false
+                logger.error("Connection failed", e)
                 onConnectError?.invoke(SpacetimeError.FailedToConnect(e))
                 return@launch
             }
+
+            logger.info("WebSocket connected, starting message loop")
 
             try {
                 // Launch sender coroutine to forward queued messages
@@ -126,12 +131,15 @@ public class SpacetimeDbConnection internal constructor(
                 // Normal close
                 senderJob.cancel()
                 isActive = false
+                logger.info("Connection closed normally")
                 onDisconnect?.invoke(null)
             } catch (e: CancellationException) {
                 isActive = false
+                logger.info("Connection cancelled")
                 onDisconnect?.invoke(null)
             } catch (e: Exception) {
                 isActive = false
+                logger.error("Connection error", e)
                 onDisconnect?.invoke(SpacetimeError.Internal("Connection error", e))
             } finally {
                 try {
@@ -160,10 +168,12 @@ public class SpacetimeDbConnection internal constructor(
         identity = msg.identity
         connectionId = msg.connectionId
         token = msg.token
+        logger.info("Identity: ${msg.identity}, ConnectionId: ${msg.connectionId}")
         onConnect?.invoke(msg.identity, msg.token, msg.connectionId)
     }
 
     private fun handleSubscribeApplied(msg: ServerMessage.SubscribeApplied) {
+        logger.debug("SubscribeApplied for querySet=${msg.querySetId}")
         // Apply the initial row data to the cache
         for (tableRows in msg.rows.tables) {
             applySubscribeRows(tableRows.table, tableRows.rows)
@@ -189,6 +199,7 @@ public class SpacetimeDbConnection internal constructor(
     }
 
     private fun handleSubscriptionError(msg: ServerMessage.SubscriptionError) {
+        logger.warn("SubscriptionError for querySet=${msg.querySetId}: ${msg.error}")
         val handle = subscriptions.remove(msg.querySetId)
         val callback = handle?.notifyError(msg.error)
         callback?.invoke()
@@ -288,7 +299,10 @@ public class SpacetimeDbConnection internal constructor(
         event: Event<*>,
     ) {
         val tableName = wireUpdate.tableName
-        val serializer = tableDeserializers[tableName] ?: return
+        val serializer = tableDeserializers[tableName] ?: run {
+            logger.warn("No deserializer for table '$tableName', skipping update")
+            return
+        }
         val tableCache = cache.getOrCreateTable<Any>(tableName)
 
         for (rows in wireUpdate.rows) {

@@ -172,6 +172,34 @@ public final class dev/sanson/spacetimedb/Identity$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class dev/sanson/spacetimedb/NoOpLogger : dev/sanson/spacetimedb/SpacetimeLogger {
+	public static final field INSTANCE Ldev/sanson/spacetimedb/NoOpLogger;
+	public fun debug (Ljava/lang/String;)V
+	public fun error (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun info (Ljava/lang/String;)V
+	public fun warn (Ljava/lang/String;Ljava/lang/Throwable;)V
+}
+
+public final class dev/sanson/spacetimedb/PrintLogger : dev/sanson/spacetimedb/SpacetimeLogger {
+	public fun <init> ()V
+	public fun <init> (Ldev/sanson/spacetimedb/PrintLogger$Level;)V
+	public synthetic fun <init> (Ldev/sanson/spacetimedb/PrintLogger$Level;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun debug (Ljava/lang/String;)V
+	public fun error (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun info (Ljava/lang/String;)V
+	public fun warn (Ljava/lang/String;Ljava/lang/Throwable;)V
+}
+
+public final class dev/sanson/spacetimedb/PrintLogger$Level : java/lang/Enum {
+	public static final field Debug Ldev/sanson/spacetimedb/PrintLogger$Level;
+	public static final field Error Ldev/sanson/spacetimedb/PrintLogger$Level;
+	public static final field Info Ldev/sanson/spacetimedb/PrintLogger$Level;
+	public static final field Warn Ldev/sanson/spacetimedb/PrintLogger$Level;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/sanson/spacetimedb/PrintLogger$Level;
+	public static fun values ()[Ldev/sanson/spacetimedb/PrintLogger$Level;
+}
+
 public final class dev/sanson/spacetimedb/ReducerEvent {
 	public synthetic fun <init> (Lkotlin/time/Instant;Ldev/sanson/spacetimedb/Status;Ljava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
@@ -302,6 +330,7 @@ public final class dev/sanson/spacetimedb/SpacetimeDbConnectionBuilder {
 	public final fun withCompression (Ldev/sanson/spacetimedb/protocol/Compression;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withDatabaseName (Ljava/lang/String;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withHttpClient (Lio/ktor/client/HttpClient;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun withLogger (Ldev/sanson/spacetimedb/SpacetimeLogger;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withPkExtractors (Ljava/util/Map;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withTableDeserializers (Ljava/util/Map;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withToken (Ljava/lang/String;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
@@ -347,6 +376,20 @@ public final class dev/sanson/spacetimedb/SpacetimeError$Internal : dev/sanson/s
 public final class dev/sanson/spacetimedb/SpacetimeError$SubscriptionError : dev/sanson/spacetimedb/SpacetimeError {
 	public fun <init> (Ljava/lang/String;)V
 	public final fun getError ()Ljava/lang/String;
+}
+
+public abstract interface class dev/sanson/spacetimedb/SpacetimeLogger {
+	public abstract fun debug (Ljava/lang/String;)V
+	public abstract fun error (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public static synthetic fun error$default (Ldev/sanson/spacetimedb/SpacetimeLogger;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
+	public abstract fun info (Ljava/lang/String;)V
+	public abstract fun warn (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public static synthetic fun warn$default (Ldev/sanson/spacetimedb/SpacetimeLogger;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
+}
+
+public final class dev/sanson/spacetimedb/SpacetimeLogger$DefaultImpls {
+	public static synthetic fun error$default (Ldev/sanson/spacetimedb/SpacetimeLogger;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
+	public static synthetic fun warn$default (Ldev/sanson/spacetimedb/SpacetimeLogger;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
 }
 
 public abstract class dev/sanson/spacetimedb/Status {
