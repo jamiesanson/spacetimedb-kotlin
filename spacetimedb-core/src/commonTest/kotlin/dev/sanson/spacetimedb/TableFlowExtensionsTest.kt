@@ -158,6 +158,53 @@ class TableFlowExtensionsTest {
         callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()), Event.Transaction)
     }
 
+    @Test
+    fun `rowsFlow with conflate false preserves all intermediate emissions`() = runTest {
+        val callbacks = DbCallbacks()
+        val table = FakeTable<String>("items", callbacks, mutableListOf("a"))
+
+        table.rowsFlow(conflate = false).test {
+            assertEquals(listOf("a"), awaitItem())
+
+            // Rapid-fire two inserts
+            table.rows.add("b")
+            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()), Event.Transaction)
+            table.rows.add("c")
+            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("c"), deletes = emptyList()), Event.Transaction)
+
+            assertEquals(listOf("a", "b"), awaitItem())
+            assertEquals(listOf("a", "b", "c"), awaitItem())
+
+            cancel()
+        }
+    }
+
+    @Test
+    fun `rowsFlow with conflate false deduplicates identical snapshots`() = runTest {
+        val callbacks = DbCallbacks()
+        val table = FakeTable<String>("items", callbacks, mutableListOf("a"))
+
+        table.rowsFlow(conflate = false).test {
+            assertEquals(listOf("a"), awaitItem())
+
+            // Insert then immediately delete — table returns to same state
+            table.rows.add("b")
+            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()), Event.Transaction)
+            assertEquals(listOf("a", "b"), awaitItem())
+
+            table.rows.remove("b")
+            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = emptyList(), deletes = listOf("b")), Event.Transaction)
+            // Should still emit because it's a distinct list from the previous
+            assertEquals(listOf("a"), awaitItem())
+
+            // Trigger a no-op callback — same list content should be deduplicated
+            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = emptyList(), deletes = emptyList()), Event.Transaction)
+            expectNoEvents()
+
+            cancel()
+        }
+    }
+
     // Minimal fakes that implement the interfaces
     private class FakeTable<Row : Any>(
         private val tableName: String,

@@ -5,6 +5,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * A [Flow] of inserted rows. The callback is automatically unregistered when the
@@ -58,9 +59,13 @@ public fun <Row : Any> EventTable<Row>.eventFlow(): Flow<RowEvent<Row>> = callba
  * A [Flow] of the current list of rows in this table.
  *
  * The flow emits the initial snapshot of all cached rows, then re-emits the full
- * list whenever rows are inserted or deleted. Intermediate snapshots during rapid
- * changes (e.g. initial subscription apply) are automatically conflated so collectors
- * always see the latest state without processing every intermediate list.
+ * list whenever rows are inserted or deleted.
+ *
+ * By default, intermediate snapshots during rapid changes (e.g. initial subscription
+ * apply) are automatically [conflated][conflate] so collectors always see the latest
+ * state without processing every intermediate list. For high-frequency use cases
+ * (e.g. game state at 20Hz) where every intermediate snapshot matters, pass
+ * `conflate = false` to preserve all emissions.
  *
  * For tables with a primary key, prefer the [TableWithPrimaryKey] overload which
  * also tracks row updates.
@@ -69,12 +74,19 @@ public fun <Row : Any> EventTable<Row>.eventFlow(): Flow<RowEvent<Row>> = callba
  * // One line per table — replaces manual onInsert/onDelete/onApplied boilerplate
  * val players: Flow<List<Player>> = conn.db.player.rowsFlow()
  *
+ * // High-frequency table — keep every update:
+ * val positions: Flow<List<PlayerPosition>> = conn.db.playerPosition.rowsFlow(conflate = false)
+ *
  * // Convert to StateFlow if needed:
  * val players: StateFlow<List<Player>> = conn.db.player.rowsFlow()
  *     .stateIn(scope, SharingStarted.Eagerly, emptyList())
  * ```
+ *
+ * @param conflate When `true` (the default), applies [Flow.conflate] so only the
+ *   latest snapshot is delivered when the collector is slower than the producer.
+ *   When `false`, all intermediate snapshots are buffered and delivered in order.
  */
-public fun <Row : Any> Table<Row>.rowsFlow(): Flow<List<Row>> = callbackFlow {
+public fun <Row : Any> Table<Row>.rowsFlow(conflate: Boolean = true): Flow<List<Row>> = callbackFlow {
     send(toList())
     val insertId = onInsert { _, _ -> trySend(toList()) }
     val deleteId = onDelete { _, _ -> trySend(toList()) }
@@ -82,7 +94,7 @@ public fun <Row : Any> Table<Row>.rowsFlow(): Flow<List<Row>> = callbackFlow {
         removeOnInsert(insertId)
         removeOnDelete(deleteId)
     }
-}.conflate()
+}.let { if (conflate) it.conflate() else it.distinctUntilChanged() }
 
 /**
  * A [Flow] of the current list of rows in this table with primary key.
@@ -97,8 +109,12 @@ public fun <Row : Any> Table<Row>.rowsFlow(): Flow<List<Row>> = callbackFlow {
  * val sorted: Flow<List<Message>> = conn.db.message.rowsFlow()
  *     .map { it.sortedBy { m -> m.createdAt } }
  * ```
+ *
+ * @param conflate When `true` (the default), applies [Flow.conflate] so only the
+ *   latest snapshot is delivered when the collector is slower than the producer.
+ *   When `false`, all intermediate snapshots are buffered and delivered in order.
  */
-public fun <Row : Any> TableWithPrimaryKey<Row>.rowsFlow(): Flow<List<Row>> = callbackFlow {
+public fun <Row : Any> TableWithPrimaryKey<Row>.rowsFlow(conflate: Boolean = true): Flow<List<Row>> = callbackFlow {
     send(toList())
     val insertId = onInsert { _, _ -> trySend(toList()) }
     val deleteId = onDelete { _, _ -> trySend(toList()) }
@@ -108,7 +124,7 @@ public fun <Row : Any> TableWithPrimaryKey<Row>.rowsFlow(): Flow<List<Row>> = ca
         removeOnDelete(deleteId)
         removeOnUpdate(updateId)
     }
-}.conflate()
+}.let { if (conflate) it.conflate() else it.distinctUntilChanged() }
 
 /**
  * An insert or delete event paired with its row.
