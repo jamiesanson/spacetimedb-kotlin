@@ -36,6 +36,7 @@ public class SpacetimeDbConnectionBuilder() {
     private var pkExtractors: Map<String, (Any) -> Any> = emptyMap()
     private var httpClient: HttpClient? = null
     private var logger: SpacetimeLogger = NoOpLogger
+    private var confirmedReads: Boolean = false
     private var reconnectConfig: ReconnectConfig? = null
 
     /** Set the SpacetimeDB host URI (e.g. "http://localhost:3000"). */
@@ -56,6 +57,25 @@ public class SpacetimeDbConnectionBuilder() {
     /** Set the preferred compression for server messages. */
     public fun withCompression(compression: Compression): SpacetimeDbConnectionBuilder = apply {
         this.compression = compression
+    }
+
+    /**
+     * Enable or disable confirmed reads.
+     *
+     * When `true`, the server waits for each transaction to be durable on disk before
+     * sending the corresponding subscription update. This adds latency (dependent on
+     * fsync speed) but guarantees that every update the client sees has been persisted.
+     *
+     * When `false` (the default), updates are sent as soon as the transaction commits,
+     * without waiting for durability. This is the recommended setting for real-time
+     * applications where low latency matters more than durability guarantees — clients
+     * will reconnect and receive fresh state if the server crashes.
+     *
+     * Defaults to `false`. The SpacetimeDB server defaults V2 protocol clients to `true`
+     * if this parameter is not specified, so the SDK explicitly opts out.
+     */
+    public fun withConfirmedReads(confirmed: Boolean): SpacetimeDbConnectionBuilder = apply {
+        this.confirmedReads = confirmed
     }
 
     /**
@@ -170,6 +190,7 @@ public class SpacetimeDbConnectionBuilder() {
                     databaseName = dbName,
                     compression = compression,
                     token = tokenOverride ?: token,
+                    confirmed = confirmedReads,
                 )
             },
             scope = scope,
