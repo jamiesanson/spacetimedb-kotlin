@@ -350,6 +350,7 @@ public final class dev/sanson/spacetimedb/SpacetimeDbConnectionBuilder {
 	public final fun onConnectError (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun onDisconnect (Lkotlin/jvm/functions/Function1;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withCompression (Ldev/sanson/spacetimedb/protocol/Compression;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
+	public final fun withConfirmedReads (Z)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withDatabaseName (Ljava/lang/String;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withHttpClient (Lio/ktor/client/HttpClient;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
 	public final fun withLogger (Ldev/sanson/spacetimedb/SpacetimeLogger;)Ldev/sanson/spacetimedb/SpacetimeDbConnectionBuilder;
@@ -363,6 +364,7 @@ public final class dev/sanson/spacetimedb/SpacetimeDbConnectionBuilder {
 
 public final class dev/sanson/spacetimedb/SpacetimeDbConnectionDsl {
 	public final fun getCompression ()Ldev/sanson/spacetimedb/protocol/Compression;
+	public final fun getConfirmedReads ()Z
 	public final fun getDatabaseName ()Ljava/lang/String;
 	public final fun getHttpClient ()Lio/ktor/client/HttpClient;
 	public final fun getLogger ()Ldev/sanson/spacetimedb/SpacetimeLogger;
@@ -375,6 +377,7 @@ public final class dev/sanson/spacetimedb/SpacetimeDbConnectionDsl {
 	public final fun onConnectError (Lkotlin/jvm/functions/Function1;)V
 	public final fun onDisconnect (Lkotlin/jvm/functions/Function1;)V
 	public final fun setCompression (Ldev/sanson/spacetimedb/protocol/Compression;)V
+	public final fun setConfirmedReads (Z)V
 	public final fun setDatabaseName (Ljava/lang/String;)V
 	public final fun setHttpClient (Lio/ktor/client/HttpClient;)V
 	public final fun setLogger (Ldev/sanson/spacetimedb/SpacetimeLogger;)V

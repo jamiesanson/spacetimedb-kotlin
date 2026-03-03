@@ -50,6 +50,17 @@ public class SpacetimeDbConnectionDsl internal constructor() {
     /** Preferred compression for server messages. Defaults to [Compression.None]. */
     public var compression: Compression = Compression.None
 
+    /**
+     * Whether to enable confirmed reads. Defaults to `false`.
+     *
+     * When `true`, the server waits for each transaction to be durable on disk before
+     * sending the subscription update, adding latency. When `false`, updates are sent
+     * immediately after commit — recommended for real-time applications.
+     *
+     * @see SpacetimeDbConnectionBuilder.withConfirmedReads
+     */
+    public var confirmedReads: Boolean = false
+
     /** Custom Ktor [HttpClient] for the WebSocket connection. */
     public var httpClient: HttpClient? = null
 
@@ -110,6 +121,7 @@ public class SpacetimeDbConnectionDsl internal constructor() {
                 this@SpacetimeDbConnectionDsl.databaseName?.let { withDatabaseName(it) }
                 this@SpacetimeDbConnectionDsl.token?.let { withToken(it) }
                 withCompression(this@SpacetimeDbConnectionDsl.compression)
+                withConfirmedReads(this@SpacetimeDbConnectionDsl.confirmedReads)
                 withTableDeserializers(this@SpacetimeDbConnectionDsl.tableDeserializers)
                 withPkExtractors(this@SpacetimeDbConnectionDsl.pkExtractors)
                 this@SpacetimeDbConnectionDsl.httpClient?.let { withHttpClient(it) }
