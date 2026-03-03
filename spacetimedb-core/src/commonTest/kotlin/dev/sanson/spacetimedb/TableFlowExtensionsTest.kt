@@ -205,6 +205,81 @@ class TableFlowExtensionsTest {
         }
     }
 
+    @Test
+    fun `rowsFlow without conflation delivers every update in a high-frequency burst`() = runTest {
+        val callbacks = DbCallbacks()
+        val table = FakeTableWithPk<Position>("pos", callbacks, mutableListOf(Position(0, 0)))
+
+        // Simulate a game loop: 20 rapid position updates (like a 20Hz server tick)
+        val updates = (1..20).map { tick -> Position(tick * 5, tick * 3) }
+
+        table.rowsFlow(conflate = false).test {
+            assertEquals(listOf(Position(0, 0)), awaitItem())
+
+            // Fire all 20 updates synchronously — mimics a burst of TransactionUpdate messages
+            for (newPos in updates) {
+                val oldPos = table.rows[0]
+                table.rows[0] = newPos
+                callbacks.invokeCallbacks(
+                    "pos",
+                    TableAppliedDiff(
+                        inserts = emptyList(),
+                        deletes = emptyList(),
+                        updateDeletes = listOf(oldPos),
+                        updateInserts = listOf(newPos),
+                    ),
+                    Event.Transaction,
+                )
+            }
+
+            // Every single intermediate position must arrive in order
+            for (expected in updates) {
+                assertEquals(listOf(expected), awaitItem())
+            }
+
+            cancel()
+        }
+    }
+
+    @Test
+    fun `rowsFlow with default conflation delivers latest state after a high-frequency burst`() = runTest {
+        val callbacks = DbCallbacks()
+        val table = FakeTableWithPk<Position>("pos", callbacks, mutableListOf(Position(0, 0)))
+
+        val updates = (1..20).map { tick -> Position(tick * 5, tick * 3) }
+
+        table.rowsFlow().test {
+            assertEquals(listOf(Position(0, 0)), awaitItem())
+
+            // Fire all 20 updates — with conflation the collector will see some
+            // subset ending with the final position
+            for (newPos in updates) {
+                val oldPos = table.rows[0]
+                table.rows[0] = newPos
+                callbacks.invokeCallbacks(
+                    "pos",
+                    TableAppliedDiff(
+                        inserts = emptyList(),
+                        deletes = emptyList(),
+                        updateDeletes = listOf(oldPos),
+                        updateInserts = listOf(newPos),
+                    ),
+                    Event.Transaction,
+                )
+            }
+
+            // Drain all available items — the last one must be the final position
+            var last: List<Position> = awaitItem()
+            do {
+                val events = cancelAndConsumeRemainingEvents()
+                val items = events.filterIsInstance<app.cash.turbine.Event.Item<List<Position>>>()
+                if (items.isNotEmpty()) last = items.last().value
+            } while (false)
+
+            assertEquals(listOf(updates.last()), last)
+        }
+    }
+
     // Minimal fakes that implement the interfaces
     private class FakeTable<Row : Any>(
         private val tableName: String,
@@ -247,4 +322,6 @@ class TableFlowExtensionsTest {
             callbacks.registerOnInsert(tableName, callback)
         override fun removeOnEvent(id: CallbackId) = callbacks.removeOnInsert(tableName, id)
     }
+
+    private data class Position(val x: Int, val y: Int)
 }
