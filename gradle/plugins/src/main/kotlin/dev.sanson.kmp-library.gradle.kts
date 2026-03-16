@@ -2,6 +2,7 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.kotlinx.binary-compatibility-validator")
+    id("org.jetbrains.dokka")
     id("dev.drewhamilton.poko")
     `maven-publish`
 }
