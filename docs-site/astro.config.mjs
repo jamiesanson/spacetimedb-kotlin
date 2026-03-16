@@ -27,7 +27,7 @@ export default defineConfig({
 					label: 'Reference',
 					items: [
 						{ label: 'Type Mappings', slug: 'reference/type-mappings' },
-						{ label: 'API Reference (Dokka)', link: '/api/' },
+						{ label: 'API Reference (Dokka)', link: '/spacetimedb-kotlin/api/' },
 					],
 				},
 				{ label: 'Contributing', slug: 'contributing' },

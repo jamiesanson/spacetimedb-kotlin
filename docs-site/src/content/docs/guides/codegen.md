@@ -6,7 +6,7 @@ description: What the SpacetimeDB codegen produces — row types, table handles,
 
 The SpacetimeDB Gradle plugin (or standalone codegen CLI) reads your module's schema and generates typed Kotlin bindings. This page describes what gets generated and how to use it.
 
-For plugin configuration, see [Gradle Plugin](/guides/gradle-plugin). For the full runtime API, see [SDK Reference](/guides/sdk-reference).
+For plugin configuration, see [Gradle Plugin](/spacetimedb-kotlin/guides/gradle-plugin). For the full runtime API, see the [API Reference](/spacetimedb-kotlin/api/).
 
 ## Overview
 
