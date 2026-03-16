@@ -1,6 +1,10 @@
 name: "CI"
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -43,8 +47,6 @@ jobs:
   integration-test:
     name: "Integration Tests"
     runs-on: ubuntu-latest
-    # Only run on main or when explicitly labeled
-    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'integration-test')
 
     steps:
       - uses: actions/checkout@v4
