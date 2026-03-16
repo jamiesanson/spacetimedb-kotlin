@@ -4,6 +4,10 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
+	redirects: {
+		'/api': '/api/index.html',
+		'/api/': '/api/index.html',
+	},
 	integrations: [
 		starlight({
 			title: 'SpacetimeDB Kotlin SDK',
