@@ -3,13 +3,13 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.kotlinx.binary-compatibility-validator")
     id("dev.drewhamilton.poko")
-    `maven-publish`
+    id("com.vanniktech.maven.publish")
 }
 
 group = property("dev.sanson.spacetimedb.group") as String
 version = buildString {
     append(property("dev.sanson.spacetimedb.version") as String)
-    if (!providers.environmentVariable("GITHUB_TOKEN").isPresent) append("-SNAPSHOT")
+    if (!providers.environmentVariable("RELEASE").isPresent) append("-SNAPSHOT")
 }
 
 publishing {

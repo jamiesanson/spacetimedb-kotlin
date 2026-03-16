@@ -13,6 +13,7 @@ kotlinx-serialization = "1.10.0"
 kotlinx-coroutines = "1.10.2"
 ktor = "3.4.0"
 okio = "3.16.4"
+maven-publish = "0.36.0"
 poko = "0.21.1"
 turbine = "1.2.1"
 
@@ -44,4 +45,5 @@ foojay = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref 
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
 poko = { id = "dev.drewhamilton.poko", version.ref = "poko" }

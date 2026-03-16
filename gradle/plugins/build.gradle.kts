@@ -8,6 +8,7 @@ dependencies {
     api(libs.plugins.kotlin.jvm.asDependency())
     api(libs.plugins.kotlin.multiplatform.asDependency())
     api(libs.plugins.kotlin.serialization.asDependency())
+    api(libs.plugins.maven.publish.asDependency())
     api(libs.plugins.poko.asDependency())
 }
 

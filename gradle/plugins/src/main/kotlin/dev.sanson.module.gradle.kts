@@ -1,16 +1,12 @@
 plugins {
     id("org.jetbrains.kotlin.jvm")
-    `maven-publish`
+    id("com.vanniktech.maven.publish")
 }
 
 group = property("dev.sanson.spacetimedb.group") as String
 version = buildString {
     append(property("dev.sanson.spacetimedb.version") as String)
-    if (!providers.environmentVariable("GITHUB_TOKEN").isPresent) append("-SNAPSHOT")
-}
-
-java {
-    withSourcesJar()
+    if (!providers.environmentVariable("RELEASE").isPresent) append("-SNAPSHOT")
 }
 
 publishing {
