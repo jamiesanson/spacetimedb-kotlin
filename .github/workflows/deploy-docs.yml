@@ -3,10 +3,6 @@ name: "Deploy docs"
 on:
   push:
     branches: [main]
-    paths:
-      - "docs-site/**"
-      - "spacetimedb-bsatn/src/**"
-      - "spacetimedb-core/src/**"
   workflow_dispatch:
 
 permissions:
@@ -34,6 +30,8 @@ jobs:
 
       - name: "Setup Gradle"
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: "Generate API docs"
         run: ./gradlew :dokkaGenerate
