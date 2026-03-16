@@ -8,14 +8,14 @@ For plugin configuration, see [Gradle Plugin](gradle-plugin.md). For the full ru
 
 Given a SpacetimeDB module, codegen produces the following files in your configured `packageName`:
 
-| Generated | Description |
-|-----------|-------------|
-| Row types | `@Serializable` classes matching each table |
-| Custom types | Product types (classes), sum types (sealed classes or enums) |
-| Table handles | `{Table}TableHandle` interfaces + `RemoteTables` |
-| Reducer types | `Reducer` sealed class + `RemoteReducers` interface |
-| `DbConnection` | Entry point implementing `DbContext<RemoteTables, RemoteReducers>` |
-| `DbConnectionBuilder` | Builder with auto-configured deserializers |
+| Generated             | Description                                                        |
+|-----------------------|--------------------------------------------------------------------|
+| Row types             | `@Serializable` classes matching each table                        |
+| Custom types          | Product types (classes), sum types (sealed classes or enums)       |
+| Table handles         | `{Table}TableHandle` interfaces + `RemoteTables`                   |
+| Reducer types         | `Reducer` sealed class + `RemoteReducers` interface                |
+| `DbConnection`        | Entry point implementing `DbContext<RemoteTables, RemoteReducers>` |
+| `DbConnectionBuilder` | Builder with auto-configured deserializers                         |
 
 ## Row types
 
