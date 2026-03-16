@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "docs-site/**"
+      - "spacetimedb-bsatn/src/**"
+      - "spacetimedb-core/src/**"
   workflow_dispatch:
 
 permissions:
@@ -24,6 +26,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: "Setup Java"
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 21
+
+      - name: "Setup Gradle"
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: "Generate API docs"
+        run: ./gradlew :dokkaGenerate
+
       - name: "Setup Node"
         uses: actions/setup-node@v4
         with:
@@ -38,6 +52,9 @@ jobs:
       - name: "Build site"
         working-directory: docs-site
         run: npm run build
+
+      - name: "Copy API docs into site"
+        run: cp -r build/dokka/html docs-site/dist/api
 
       - name: "Upload Pages artifact"
         uses: actions/upload-pages-artifact@v3

@@ -22,6 +22,7 @@ export default defineConfig({
 					label: 'Reference',
 					items: [
 						{ label: 'Type Mappings', slug: 'reference/type-mappings' },
+						{ label: 'API Docs (Dokka)', link: '/api/' },
 					],
 				},
 				{ label: 'Contributing', slug: 'contributing' },
