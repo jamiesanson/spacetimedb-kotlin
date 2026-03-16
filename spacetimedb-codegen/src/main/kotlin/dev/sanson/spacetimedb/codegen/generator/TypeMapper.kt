@@ -27,13 +27,10 @@ private val I256_CLASS = ClassName("dev.sanson.spacetimedb.bsatn", "I256")
 /**
  * Maps SpacetimeDB [AlgebraicType]s to KotlinPoet [TypeName]s.
  *
- * Resolves type references through the schema's typespace, detects special
- * types (Identity, ConnectionId, Timestamp, etc.), and maps Options to nullable types.
+ * Resolves type references through the schema's typespace, detects special types (Identity,
+ * ConnectionId, Timestamp, etc.), and maps Options to nullable types.
  */
-public class TypeMapper(
-    private val schema: ModuleSchema,
-    private val targetPackage: String,
-) {
+public class TypeMapper(private val schema: ModuleSchema, private val targetPackage: String) {
     /**
      * Convert an [AlgebraicType] to a KotlinPoet [TypeName].
      *
@@ -101,33 +98,31 @@ public class TypeMapper(
             is AlgebraicType.Product -> {
                 // Anonymous product type — shouldn't happen for named types
                 // (those are caught by the Ref path above)
-                throw IllegalArgumentException("Unnamed product type encountered; expected a Ref to a named type")
+                error("Unnamed product type encountered; expected a Ref to a named type")
             }
 
             is AlgebraicType.Sum -> {
                 // Anonymous sum type — shouldn't happen for named types
-                throw IllegalArgumentException("Unnamed sum type encountered; expected a Ref to a named type")
+                error("Unnamed sum type encountered; expected a Ref to a named type")
             }
 
             is AlgebraicType.Ref -> {
                 // Should not reach here — Refs are resolved at the top of typeName()
-                throw IllegalStateException("Unresolved Ref(${type.id})")
+                error("Unresolved Ref(${type.id})")
             }
         }
     }
 }
 
 /**
- * Known acronyms that should be treated as separate words within a
- * snake_case segment (e.g. "webrtc" → "web" + "rtc" → "WebRtc").
+ * Known acronyms that should be treated as separate words within a snake_case segment (e.g.
+ * "webrtc" → "web" + "rtc" → "WebRtc").
  */
-private val KNOWN_ACRONYMS = listOf(
-    "https", "http", "api", "db", "rtc", "sql", "tcp", "udp", "url",
-)
+private val KNOWN_ACRONYMS = listOf("https", "http", "api", "db", "rtc", "sql", "tcp", "udp", "url")
 
 /**
- * Split a single segment on known acronym boundaries.
- * E.g. "webrtc" → ["web", "rtc"], "api" → ["api"].
+ * Split a single segment on known acronym boundaries. E.g. "webrtc" → ["web", "rtc"], "api" →
+ * ["api"].
  */
 private fun String.splitOnAcronyms(): List<String> {
     val lower = lowercase()
@@ -146,19 +141,13 @@ private fun String.splitOnAcronyms(): List<String> {
     return listOf(this)
 }
 
-/**
- * Convert a snake_case or camelCase string to PascalCase.
- */
+/** Convert a snake_case or camelCase string to PascalCase. */
 internal fun String.toPascalCase(): String =
     split("_", "-")
         .flatMap { it.splitOnAcronyms() }
-        .joinToString("") { segment ->
-            segment.replaceFirstChar { it.uppercase() }
-        }
+        .joinToString("") { segment -> segment.replaceFirstChar { it.uppercase() } }
 
-/**
- * Convert a snake_case string to camelCase.
- */
+/** Convert a snake_case string to camelCase. */
 internal fun String.toCamelCase(): String {
     val pascal = toPascalCase()
     return pascal.replaceFirstChar { it.lowercase() }

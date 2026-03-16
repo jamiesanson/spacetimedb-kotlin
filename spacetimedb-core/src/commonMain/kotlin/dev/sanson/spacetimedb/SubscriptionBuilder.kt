@@ -1,7 +1,6 @@
 package dev.sanson.spacetimedb
 
 import dev.sanson.spacetimedb.protocol.ClientMessage
-import dev.sanson.spacetimedb.protocol.QuerySetId
 import kotlinx.coroutines.channels.SendChannel
 import org.intellij.lang.annotations.Language
 
@@ -10,7 +9,8 @@ import org.intellij.lang.annotations.Language
  *
  * Obtain via [SpacetimeDbConnection.subscriptionBuilder].
  */
-public class SubscriptionBuilder internal constructor(
+public class SubscriptionBuilder
+internal constructor(
     private val sendChannel: SendChannel<ClientMessage>,
     private val registerHandle: (SubscriptionHandle) -> Unit,
 ) {
@@ -18,9 +18,7 @@ public class SubscriptionBuilder internal constructor(
     private var onError: ((String) -> Unit)? = null
 
     /** Callback invoked once the server applies this subscription. */
-    public fun onApplied(callback: () -> Unit): SubscriptionBuilder = apply {
-        onApplied = callback
-    }
+    public fun onApplied(callback: () -> Unit): SubscriptionBuilder = apply { onApplied = callback }
 
     /** Callback invoked if the subscription encounters an error. */
     public fun onError(callback: (String) -> Unit): SubscriptionBuilder = apply {
@@ -30,8 +28,8 @@ public class SubscriptionBuilder internal constructor(
     /**
      * Subscribe to the given SQL queries.
      *
-     * The returned [SubscriptionHandle] can be used to track the subscription state
-     * and to unsubscribe later.
+     * The returned [SubscriptionHandle] can be used to track the subscription state and to
+     * unsubscribe later.
      */
     @OptIn(kotlin.concurrent.atomics.ExperimentalAtomicApi::class)
     public fun subscribe(@Language("SQL") vararg queries: String): SubscriptionHandle {
@@ -41,27 +39,29 @@ public class SubscriptionBuilder internal constructor(
     /**
      * Subscribe to the given SQL queries.
      *
-     * The returned [SubscriptionHandle] can be used to track the subscription state
-     * and to unsubscribe later.
+     * The returned [SubscriptionHandle] can be used to track the subscription state and to
+     * unsubscribe later.
      */
     @OptIn(kotlin.concurrent.atomics.ExperimentalAtomicApi::class)
     public fun subscribe(queries: List<String>): SubscriptionHandle {
         require(queries.isNotEmpty()) { "At least one query is required" }
         val querySetId = nextQuerySetId()
-        val handle = SubscriptionHandle(
-            querySetId = querySetId,
-            querySql = queries,
-            sendChannel = sendChannel,
-            onApplied = onApplied,
-            onError = onError,
-        )
+        val handle =
+            SubscriptionHandle(
+                querySetId = querySetId,
+                querySql = queries,
+                sendChannel = sendChannel,
+                onApplied = onApplied,
+                onError = onError,
+            )
         registerHandle(handle)
         // Queue the Subscribe message immediately
-        val msg = ClientMessage.Subscribe(
-            requestId = nextRequestId(),
-            querySetId = querySetId,
-            queryStrings = queries,
-        )
+        val msg =
+            ClientMessage.Subscribe(
+                requestId = nextRequestId(),
+                querySetId = querySetId,
+                queryStrings = queries,
+            )
         sendChannel.trySend(msg)
         return handle
     }

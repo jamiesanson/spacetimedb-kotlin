@@ -42,18 +42,14 @@ public class TableHandleGenerator(
 ) {
     private val typeMapper = TypeMapper(schema, targetPackage)
 
-    /**
-     * Generate table handle files for all public tables.
-     */
+    /** Generate table handle files for all public tables. */
     public fun generateTableHandleFiles(): List<FileSpec> =
         schema.publicTables.map { table ->
             val productType = schema.tableProductType(table)
             generateTableHandleFile(table, productType)
         }
 
-    /**
-     * Generate a table handle file for a single table.
-     */
+    /** Generate a table handle file for a single table. */
     public fun generateTableHandleFile(table: RawTableDef, productType: ProductType): FileSpec {
         val tablePascal = table.sourceName.toPascalCase()
         val className = "${tablePascal}TableHandle"
@@ -61,9 +57,7 @@ public class TableHandleGenerator(
 
         val typeSpec = generateTableHandle(className, rowClass, table, productType)
 
-        return FileSpec.builder(targetPackage, className)
-            .addType(typeSpec)
-            .build()
+        return FileSpec.builder(targetPackage, className).addType(typeSpec).build()
     }
 
     private fun generateTableHandle(
@@ -76,15 +70,17 @@ public class TableHandleGenerator(
         val isEvent = table.isEvent
 
         // Choose the interface to implement
-        val superInterface = when {
-            isEvent -> EVENT_TABLE.parameterizedBy(rowClass)
-            hasPrimaryKey -> TABLE_WITH_PK.parameterizedBy(rowClass)
-            else -> TABLE.parameterizedBy(rowClass)
-        }
+        val superInterface =
+            when {
+                isEvent -> EVENT_TABLE.parameterizedBy(rowClass)
+                hasPrimaryKey -> TABLE_WITH_PK.parameterizedBy(rowClass)
+                else -> TABLE.parameterizedBy(rowClass)
+            }
 
-        val builder = TypeSpec.interfaceBuilder(className)
-            .addModifiers(KModifier.PUBLIC)
-            .addSuperinterface(superInterface)
+        val builder =
+            TypeSpec.interfaceBuilder(className)
+                .addModifiers(KModifier.PUBLIC)
+                .addSuperinterface(superInterface)
 
         // Add findByX() for each unique constraint
         val uniqueColumns = uniqueColumnIndices(table)
@@ -106,12 +102,9 @@ public class TableHandleGenerator(
         return builder.build()
     }
 
-    /**
-     * Generate the RemoteTables container interface with a property per public table.
-     */
+    /** Generate the RemoteTables container interface with a property per public table. */
     public fun generateRemoteTablesFile(): FileSpec {
-        val builder = TypeSpec.interfaceBuilder("RemoteTables")
-            .addModifiers(KModifier.PUBLIC)
+        val builder = TypeSpec.interfaceBuilder("RemoteTables").addModifiers(KModifier.PUBLIC)
 
         for (table in schema.publicTables) {
             val tablePascal = table.sourceName.toPascalCase()
@@ -125,25 +118,19 @@ public class TableHandleGenerator(
             )
         }
 
-        return FileSpec.builder(targetPackage, "RemoteTables")
-            .addType(builder.build())
-            .build()
+        return FileSpec.builder(targetPackage, "RemoteTables").addType(builder.build()).build()
     }
 
     // -- Implementation generation --
 
-    /**
-     * Generate implementation files for all public table handles.
-     */
+    /** Generate implementation files for all public table handles. */
     public fun generateTableHandleImplFiles(): List<FileSpec> =
         schema.publicTables.map { table ->
             val productType = schema.tableProductType(table)
             generateTableHandleImplFile(table, productType)
         }
 
-    /**
-     * Generate a concrete implementation of a table handle interface.
-     */
+    /** Generate a concrete implementation of a table handle interface. */
     public fun generateTableHandleImplFile(table: RawTableDef, productType: ProductType): FileSpec {
         val tablePascal = table.sourceName.toPascalCase()
         val className = "${tablePascal}TableHandleImpl"
@@ -154,38 +141,42 @@ public class TableHandleGenerator(
         val isEvent = table.isEvent
         val uniqueColumns = uniqueColumnIndices(table)
 
-        val classBuilder = TypeSpec.classBuilder(className)
-            .addModifiers(KModifier.PUBLIC)
-            .addSuperinterface(handleInterface)
-            .primaryConstructor(
-                FunSpec.constructorBuilder()
-                    .addParameter("cache", CLIENT_CACHE)
-                    .addParameter("callbacks", DB_CALLBACKS)
-                    .build()
-            )
-            .addProperty(
-                PropertySpec.builder("cache", CLIENT_CACHE)
-                    .initializer("cache")
-                    .addModifiers(KModifier.PRIVATE)
-                    .build()
-            )
-            .addProperty(
-                PropertySpec.builder("callbacks", DB_CALLBACKS)
-                    .initializer("callbacks")
-                    .addModifiers(KModifier.PRIVATE)
-                    .build()
-            )
-            .addProperty(
-                PropertySpec.builder("tableName", String::class)
-                    .initializer("%S", table.sourceName)
-                    .addModifiers(KModifier.PRIVATE)
-                    .build()
-            )
+        val classBuilder =
+            TypeSpec.classBuilder(className)
+                .addModifiers(KModifier.PUBLIC)
+                .addSuperinterface(handleInterface)
+                .primaryConstructor(
+                    FunSpec.constructorBuilder()
+                        .addParameter("cache", CLIENT_CACHE)
+                        .addParameter("callbacks", DB_CALLBACKS)
+                        .build()
+                )
+                .addProperty(
+                    PropertySpec.builder("cache", CLIENT_CACHE)
+                        .initializer("cache")
+                        .addModifiers(KModifier.PRIVATE)
+                        .build()
+                )
+                .addProperty(
+                    PropertySpec.builder("callbacks", DB_CALLBACKS)
+                        .initializer("callbacks")
+                        .addModifiers(KModifier.PRIVATE)
+                        .build()
+                )
+                .addProperty(
+                    PropertySpec.builder("tableName", String::class)
+                        .initializer("%S", table.sourceName)
+                        .addModifiers(KModifier.PRIVATE)
+                        .build()
+                )
 
         if (!isEvent) {
             // Non-event tables get a tableCache property
             classBuilder.addProperty(
-                PropertySpec.builder("tableCache", ClassName("dev.sanson.spacetimedb", "TableCache").parameterizedBy(rowClass))
+                PropertySpec.builder(
+                        "tableCache",
+                        ClassName("dev.sanson.spacetimedb", "TableCache").parameterizedBy(rowClass),
+                    )
                     .initializer(CodeBlock.of("cache.getOrCreateTable<%T>(tableName)", rowClass))
                     .addModifiers(KModifier.PRIVATE)
                     .build()
@@ -200,14 +191,14 @@ public class TableHandleGenerator(
 
                 classBuilder.addProperty(
                     PropertySpec.builder(
-                        indexPropName,
-                        UNIQUE_INDEX.parameterizedBy(rowClass, fieldType)
-                    )
+                            indexPropName,
+                            UNIQUE_INDEX.parameterizedBy(rowClass, fieldType),
+                        )
                         .initializer(
                             CodeBlock.of(
                                 "tableCache.registerUniqueIndex(%T { it.%N })",
                                 UNIQUE_INDEX.parameterizedBy(rowClass, fieldType),
-                                fieldName.toCamelCase()
+                                fieldName.toCamelCase(),
                             )
                         )
                         .addModifiers(KModifier.PRIVATE)
@@ -269,38 +260,35 @@ public class TableHandleGenerator(
             classBuilder.addFunction(buildRemoveCallbackFun("removeOnEvent", "removeOnInsert"))
         }
 
-        return FileSpec.builder(targetPackage, className)
-            .addType(classBuilder.build())
-            .build()
+        return FileSpec.builder(targetPackage, className).addType(classBuilder.build()).build()
     }
 
-    /**
-     * Generate a `RemoteTablesImpl` class implementing `RemoteTables`.
-     */
+    /** Generate a `RemoteTablesImpl` class implementing `RemoteTables`. */
     public fun generateRemoteTablesImplFile(): FileSpec {
         val remoteTablesInterface = ClassName(targetPackage, "RemoteTables")
 
-        val classBuilder = TypeSpec.classBuilder("RemoteTablesImpl")
-            .addModifiers(KModifier.PUBLIC)
-            .addSuperinterface(remoteTablesInterface)
-            .primaryConstructor(
-                FunSpec.constructorBuilder()
-                    .addParameter("cache", CLIENT_CACHE)
-                    .addParameter("callbacks", DB_CALLBACKS)
-                    .build()
-            )
-            .addProperty(
-                PropertySpec.builder("cache", CLIENT_CACHE)
-                    .initializer("cache")
-                    .addModifiers(KModifier.PRIVATE)
-                    .build()
-            )
-            .addProperty(
-                PropertySpec.builder("callbacks", DB_CALLBACKS)
-                    .initializer("callbacks")
-                    .addModifiers(KModifier.PRIVATE)
-                    .build()
-            )
+        val classBuilder =
+            TypeSpec.classBuilder("RemoteTablesImpl")
+                .addModifiers(KModifier.PUBLIC)
+                .addSuperinterface(remoteTablesInterface)
+                .primaryConstructor(
+                    FunSpec.constructorBuilder()
+                        .addParameter("cache", CLIENT_CACHE)
+                        .addParameter("callbacks", DB_CALLBACKS)
+                        .build()
+                )
+                .addProperty(
+                    PropertySpec.builder("cache", CLIENT_CACHE)
+                        .initializer("cache")
+                        .addModifiers(KModifier.PRIVATE)
+                        .build()
+                )
+                .addProperty(
+                    PropertySpec.builder("callbacks", DB_CALLBACKS)
+                        .initializer("callbacks")
+                        .addModifiers(KModifier.PRIVATE)
+                        .build()
+                )
 
         for (table in schema.publicTables) {
             val tablePascal = table.sourceName.toPascalCase()
@@ -323,14 +311,20 @@ public class TableHandleGenerator(
 
     // -- Helper methods for generating callback functions --
 
-    private fun buildRowCallbackFun(methodName: String, delegateMethod: String, rowClass: ClassName): FunSpec {
-        val callbackType = LambdaTypeName.get(
-            parameters = listOf(
-                ParameterSpec.builder("event", EVENT.parameterizedBy(STAR)).build(),
-                ParameterSpec.builder("row", rowClass).build(),
-            ),
-            returnType = UNIT,
-        )
+    private fun buildRowCallbackFun(
+        methodName: String,
+        delegateMethod: String,
+        rowClass: ClassName,
+    ): FunSpec {
+        val callbackType =
+            LambdaTypeName.get(
+                parameters =
+                    listOf(
+                        ParameterSpec.builder("event", EVENT.parameterizedBy(STAR)).build(),
+                        ParameterSpec.builder("row", rowClass).build(),
+                    ),
+                returnType = UNIT,
+            )
         return FunSpec.builder(methodName)
             .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
             .addParameter("callback", callbackType)
@@ -340,14 +334,16 @@ public class TableHandleGenerator(
     }
 
     private fun buildUpdateCallbackFun(rowClass: ClassName): FunSpec {
-        val callbackType = LambdaTypeName.get(
-            parameters = listOf(
-                ParameterSpec.builder("event", EVENT.parameterizedBy(STAR)).build(),
-                ParameterSpec.builder("oldRow", rowClass).build(),
-                ParameterSpec.builder("newRow", rowClass).build(),
-            ),
-            returnType = UNIT,
-        )
+        val callbackType =
+            LambdaTypeName.get(
+                parameters =
+                    listOf(
+                        ParameterSpec.builder("event", EVENT.parameterizedBy(STAR)).build(),
+                        ParameterSpec.builder("oldRow", rowClass).build(),
+                        ParameterSpec.builder("newRow", rowClass).build(),
+                    ),
+                returnType = UNIT,
+            )
         return FunSpec.builder("onUpdate")
             .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
             .addParameter("callback", callbackType)
@@ -364,8 +360,8 @@ public class TableHandleGenerator(
             .build()
 
     /**
-     * Extract the set of column indices that have unique constraints.
-     * Only single-column unique constraints are considered.
+     * Extract the set of column indices that have unique constraints. Only single-column unique
+     * constraints are considered.
      */
     private fun uniqueColumnIndices(table: RawTableDef): List<Int> =
         table.constraints

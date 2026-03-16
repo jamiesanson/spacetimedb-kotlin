@@ -6,8 +6,8 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Configuration for automatic reconnection with exponential backoff.
  *
- * When the WebSocket connection drops unexpectedly (network change, server restart, etc.),
- * the SDK will automatically attempt to reconnect using the configured parameters.
+ * When the WebSocket connection drops unexpectedly (network change, server restart, etc.), the SDK
+ * will automatically attempt to reconnect using the configured parameters.
  *
  * User-initiated disconnects via [SpacetimeDbConnection.disconnect] are never retried.
  *
@@ -22,7 +22,11 @@ public class ReconnectConfig(
 ) {
     init {
         require(maxAttempts > 0) { "maxAttempts must be positive, was $maxAttempts" }
-        require(!initialDelay.isNegative()) { "initialDelay must not be negative, was $initialDelay" }
-        require(maxDelay >= initialDelay) { "maxDelay ($maxDelay) must be >= initialDelay ($initialDelay)" }
+        require(!initialDelay.isNegative()) {
+            "initialDelay must not be negative, was $initialDelay"
+        }
+        require(maxDelay >= initialDelay) {
+            "maxDelay ($maxDelay) must be >= initialDelay ($initialDelay)"
+        }
     }
 }

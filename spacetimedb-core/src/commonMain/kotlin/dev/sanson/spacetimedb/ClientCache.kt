@@ -3,33 +3,30 @@ package dev.sanson.spacetimedb
 /**
  * Client-side replica of subscribed table rows.
  *
- * Manages a set of named [TableCache] instances, one per table. The cache is populated
- * by the connection's protocol handler as subscription data and transaction updates arrive.
+ * Manages a set of named [TableCache] instances, one per table. The cache is populated by the
+ * connection's protocol handler as subscription data and transaction updates arrive.
  *
- * This class is used by generated code and SDK internals; most users interact with
- * tables through the generated [Table] implementations instead.
+ * This class is used by generated code and SDK internals; most users interact with tables through
+ * the generated [Table] implementations instead.
  */
 public class ClientCache {
     private val tables = mutableMapOf<String, TableCache<*>>()
 
-    /**
-     * Returns the [TableCache] for [tableName], creating one if it doesn't already exist.
-     */
+    /** Returns the [TableCache] for [tableName], creating one if it doesn't already exist. */
     @Suppress("UNCHECKED_CAST")
     public fun <Row : Any> getOrCreateTable(tableName: String): TableCache<Row> {
         return tables.getOrPut(tableName) { TableCache<Row>() } as TableCache<Row>
     }
 
-    /**
-     * Returns the [TableCache] for [tableName], or `null` if it hasn't been created yet.
-     */
+    /** Returns the [TableCache] for [tableName], or `null` if it hasn't been created yet. */
     @Suppress("UNCHECKED_CAST")
     public fun <Row : Any> getTable(tableName: String): TableCache<Row>? {
         return tables[tableName] as? TableCache<Row>
     }
 
     /** Names of all tables currently in the cache. */
-    public val tableNames: Set<String> get() = tables.keys
+    public val tableNames: Set<String>
+        get() = tables.keys
 
     /** Remove all rows from all tables. */
     public fun clear() {
@@ -40,8 +37,8 @@ public class ClientCache {
 /**
  * Cache for a single table's rows, keyed by their BSATN-serialized bytes.
  *
- * Supports reference counting so that overlapping subscriptions sharing the same row
- * only trigger insert/delete events at the boundaries (first subscription adds, last removes).
+ * Supports reference counting so that overlapping subscriptions sharing the same row only trigger
+ * insert/delete events at the boundaries (first subscription adds, last removes).
  *
  * @param Row the deserialized row type
  */
@@ -50,18 +47,20 @@ public class TableCache<Row : Any> : Iterable<Row> {
     private val uniqueIndexes = mutableListOf<UniqueIndex<Row, *>>()
 
     /** Number of distinct rows currently cached. */
-    public val count: Int get() = entries.size
+    public val count: Int
+        get() = entries.size
 
-    override fun iterator(): Iterator<Row> =
-        entries.values.asSequence().map { it.row }.iterator()
+    override fun iterator(): Iterator<Row> = entries.values.asSequence().map { it.row }.iterator()
 
     /**
      * Register a [UniqueIndex] to be maintained automatically on insert/delete.
      *
-     * The index is immediately populated with all currently cached rows.
-     * Typically called once during table setup by generated code.
+     * The index is immediately populated with all currently cached rows. Typically called once
+     * during table setup by generated code.
      */
-    public fun <Col : Any> registerUniqueIndex(index: UniqueIndex<Row, Col>): UniqueIndex<Row, Col> {
+    public fun <Col : Any> registerUniqueIndex(
+        index: UniqueIndex<Row, Col>
+    ): UniqueIndex<Row, Col> {
         for (entry in entries.values) {
             index.add(entry.row)
         }
@@ -72,9 +71,9 @@ public class TableCache<Row : Any> : Iterable<Row> {
     /**
      * Insert a row into the cache.
      *
-     * If the row (identified by [rowBytes]) is already present, its reference count is
-     * incremented and `null` is returned. If it's new, the [row] is stored and returned
-     * to signal that insert callbacks should fire.
+     * If the row (identified by [rowBytes]) is already present, its reference count is incremented
+     * and `null` is returned. If it's new, the [row] is stored and returned to signal that insert
+     * callbacks should fire.
      *
      * @param rowBytes BSATN-serialized row bytes (used as the cache key)
      * @param row the deserialized row object
@@ -97,12 +96,13 @@ public class TableCache<Row : Any> : Iterable<Row> {
     /**
      * Delete a row from the cache.
      *
-     * Decrements the reference count for the row identified by [rowBytes]. If the count
-     * reaches zero, the row is removed and returned to signal that delete callbacks should
-     * fire. Otherwise returns `null`.
+     * Decrements the reference count for the row identified by [rowBytes]. If the count reaches
+     * zero, the row is removed and returned to signal that delete callbacks should fire. Otherwise
+     * returns `null`.
      *
      * @param rowBytes BSATN-serialized row bytes (used as the cache key)
-     * @return the removed row if it was fully evicted, or `null` if only the ref count was decremented
+     * @return the removed row if it was fully evicted, or `null` if only the ref count was
+     *   decremented
      */
     public fun delete(rowBytes: ByteArray): Row? {
         val key = RowKey(rowBytes)
@@ -129,12 +129,12 @@ public class TableCache<Row : Any> : Iterable<Row> {
     /**
      * Apply a [TableUpdate] to this cache, returning the effective diff.
      *
-     * Processes deletes first, then inserts. This ensures that for updates
-     * (where a row is deleted then re-inserted with the same primary key),
-     * the old row is removed from unique indexes before the new row is added.
+     * Processes deletes first, then inserts. This ensures that for updates (where a row is deleted
+     * then re-inserted with the same primary key), the old row is removed from unique indexes
+     * before the new row is added.
      *
-     * When the exact same row bytes appear in both inserts and deletes, the
-     * operations cancel out (net no-op for callbacks).
+     * When the exact same row bytes appear in both inserts and deletes, the operations cancel out
+     * (net no-op for callbacks).
      *
      * @return a [TableAppliedDiff] containing rows that were actually added or removed
      */
@@ -166,13 +166,8 @@ public class TableCache<Row : Any> : Iterable<Row> {
     }
 }
 
-/**
- * A cached row with its subscription reference count.
- */
-internal class RowEntry<Row>(
-    val row: Row,
-    var refCount: Int,
-)
+/** A cached row with its subscription reference count. */
+internal class RowEntry<Row>(val row: Row, var refCount: Int)
 
 /**
  * ByteArray wrapper with content-based [equals] and [hashCode], used as a HashMap key.

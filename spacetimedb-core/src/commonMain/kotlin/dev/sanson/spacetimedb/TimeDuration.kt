@@ -23,8 +23,7 @@ public value class TimeDuration(public val duration: Duration) : Comparable<Time
         public val ZERO: TimeDuration = TimeDuration(Duration.ZERO)
     }
 
-    override fun compareTo(other: TimeDuration): Int =
-        duration.compareTo(other.duration)
+    override fun compareTo(other: TimeDuration): Int = duration.compareTo(other.duration)
 
     override fun toString(): String = "TimeDuration($duration)"
 }

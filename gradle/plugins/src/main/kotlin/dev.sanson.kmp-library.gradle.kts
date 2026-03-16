@@ -4,6 +4,8 @@ plugins {
     id("org.jetbrains.kotlinx.binary-compatibility-validator")
     id("org.jetbrains.dokka")
     id("dev.drewhamilton.poko")
+    id("io.gitlab.arturbosch.detekt")
+    id("com.ncorti.ktfmt.gradle")
     `maven-publish`
 }
 
@@ -65,4 +67,13 @@ kotlin {
 
     // Tier 3
     mingwX64()
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+}
+
+ktfmt {
+    kotlinLangStyle()
 }

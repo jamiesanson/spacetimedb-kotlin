@@ -3,11 +3,10 @@ package dev.sanson.spacetimedb.codegen.generator
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
-import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 
 class ModuleGeneratorTest {
 
@@ -67,14 +66,32 @@ class ModuleGeneratorTest {
         }
 
         // Module wiring
-        sources.add(SourceFile.kotlin("TableDeserializerMap.kt", moduleGen.generateDeserializerMapFile().toString()))
-        sources.add(SourceFile.kotlin("TablePkExtractorMap.kt", moduleGen.generatePkExtractorMapFile().toString()))
-        sources.add(SourceFile.kotlin("BuilderExtensions.kt", moduleGen.generateBuilderExtensionFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "TableDeserializerMap.kt",
+                moduleGen.generateDeserializerMapFile().toString(),
+            )
+        )
+        sources.add(
+            SourceFile.kotlin(
+                "TablePkExtractorMap.kt",
+                moduleGen.generatePkExtractorMapFile().toString(),
+            )
+        )
+        sources.add(
+            SourceFile.kotlin(
+                "BuilderExtensions.kt",
+                moduleGen.generateBuilderExtensionFile().toString(),
+            )
+        )
 
-        val result = KotlinCompilation().apply {
-            this.sources = sources
-            inheritClassPath = true
-        }.compile()
+        val result =
+            KotlinCompilation()
+                .apply {
+                    this.sources = sources
+                    inheritClassPath = true
+                }
+                .compile()
 
         assertEquals(
             KotlinCompilation.ExitCode.OK,
@@ -111,30 +128,75 @@ class ModuleGeneratorTest {
         for (file in tableHandleGen.generateTableHandleFiles()) {
             sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
         }
-        sources.add(SourceFile.kotlin("RemoteTables.kt", tableHandleGen.generateRemoteTablesFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteTables.kt",
+                tableHandleGen.generateRemoteTablesFile().toString(),
+            )
+        )
 
         // Table handle impls + RemoteTablesImpl
         for (file in tableHandleGen.generateTableHandleImplFiles()) {
             sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
         }
-        sources.add(SourceFile.kotlin("RemoteTablesImpl.kt", tableHandleGen.generateRemoteTablesImplFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteTablesImpl.kt",
+                tableHandleGen.generateRemoteTablesImplFile().toString(),
+            )
+        )
 
         // Reducers
         sources.add(SourceFile.kotlin("Reducer.kt", reducerGen.generateReducerFile().toString()))
-        sources.add(SourceFile.kotlin("RemoteReducers.kt", reducerGen.generateRemoteReducersFile().toString()))
-        sources.add(SourceFile.kotlin("RemoteReducersImpl.kt", reducerGen.generateRemoteReducersImplFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteReducers.kt",
+                reducerGen.generateRemoteReducersFile().toString(),
+            )
+        )
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteReducersImpl.kt",
+                reducerGen.generateRemoteReducersImplFile().toString(),
+            )
+        )
 
         // Module wiring
-        sources.add(SourceFile.kotlin("TableDeserializerMap.kt", moduleGen.generateDeserializerMapFile().toString()))
-        sources.add(SourceFile.kotlin("TablePkExtractorMap.kt", moduleGen.generatePkExtractorMapFile().toString()))
-        sources.add(SourceFile.kotlin("BuilderExtensions.kt", moduleGen.generateBuilderExtensionFile().toString()))
-        sources.add(SourceFile.kotlin("DbConnection.kt", moduleGen.generateDbConnectionFile().toString()))
-        sources.add(SourceFile.kotlin("DbConnectionBuilder.kt", moduleGen.generateDbConnectionBuilderFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "TableDeserializerMap.kt",
+                moduleGen.generateDeserializerMapFile().toString(),
+            )
+        )
+        sources.add(
+            SourceFile.kotlin(
+                "TablePkExtractorMap.kt",
+                moduleGen.generatePkExtractorMapFile().toString(),
+            )
+        )
+        sources.add(
+            SourceFile.kotlin(
+                "BuilderExtensions.kt",
+                moduleGen.generateBuilderExtensionFile().toString(),
+            )
+        )
+        sources.add(
+            SourceFile.kotlin("DbConnection.kt", moduleGen.generateDbConnectionFile().toString())
+        )
+        sources.add(
+            SourceFile.kotlin(
+                "DbConnectionBuilder.kt",
+                moduleGen.generateDbConnectionBuilderFile().toString(),
+            )
+        )
 
-        val result = KotlinCompilation().apply {
-            this.sources = sources
-            inheritClassPath = true
-        }.compile()
+        val result =
+            KotlinCompilation()
+                .apply {
+                    this.sources = sources
+                    inheritClassPath = true
+                }
+                .compile()
 
         assertEquals(
             KotlinCompilation.ExitCode.OK,

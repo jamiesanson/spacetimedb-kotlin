@@ -8,12 +8,12 @@ import dev.sanson.spacetimedb.codegen.schema.ProductType
 import dev.sanson.spacetimedb.codegen.schema.ProductTypeElement
 import dev.sanson.spacetimedb.codegen.schema.SumType
 import dev.sanson.spacetimedb.codegen.schema.SumTypeVariant
-import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 
 class TypeGeneratorTest {
 
@@ -26,12 +26,13 @@ class TypeGeneratorTest {
         val schema = schemaWith()
         val gen = TypeGenerator(schema, "com.example")
 
-        val productType = ProductType(
-            listOf(
-                ProductTypeElement("player_id", AlgebraicType.U64),
-                ProductTypeElement("name", AlgebraicType.StringType),
+        val productType =
+            ProductType(
+                listOf(
+                    ProductTypeElement("player_id", AlgebraicType.U64),
+                    ProductTypeElement("name", AlgebraicType.StringType),
+                )
             )
-        )
 
         val file = gen.generateTableRowFile("logged_out_player", productType)
         val output = file.toString()
@@ -46,20 +47,31 @@ class TypeGeneratorTest {
 
     @Test
     fun `generates simple enum for unit-only sum type`() {
-        val schema = schemaWith(
-            types = listOf(
-                AlgebraicType.Sum(
-                    SumType(
-                        listOf(
-                            SumTypeVariant("Active", AlgebraicType.Product(ProductType(emptyList()))),
-                            SumTypeVariant("Inactive", AlgebraicType.Product(ProductType(emptyList()))),
-                            SumTypeVariant("Banned", AlgebraicType.Product(ProductType(emptyList()))),
+        val schema =
+            schemaWith(
+                types =
+                    listOf(
+                        AlgebraicType.Sum(
+                            SumType(
+                                listOf(
+                                    SumTypeVariant(
+                                        "Active",
+                                        AlgebraicType.Product(ProductType(emptyList())),
+                                    ),
+                                    SumTypeVariant(
+                                        "Inactive",
+                                        AlgebraicType.Product(ProductType(emptyList())),
+                                    ),
+                                    SumTypeVariant(
+                                        "Banned",
+                                        AlgebraicType.Product(ProductType(emptyList())),
+                                    ),
+                                )
+                            )
                         )
-                    )
-                )
-            ),
-            namedTypes = listOf(TypeNameEntry("PlayerStatus", 0)),
-        )
+                    ),
+                namedTypes = listOf(TypeNameEntry("PlayerStatus", 0)),
+            )
         val gen = TypeGenerator(schema, "com.example")
         val typeDef = schema.types.first()
         val file = gen.generateTypeFile(typeDef)
@@ -74,19 +86,27 @@ class TypeGeneratorTest {
 
     @Test
     fun `generates PascalCase enum entries with SerialName for lowercase variants`() {
-        val schema = schemaWith(
-            types = listOf(
-                AlgebraicType.Sum(
-                    SumType(
-                        listOf(
-                            SumTypeVariant("text", AlgebraicType.Product(ProductType(emptyList()))),
-                            SumTypeVariant("voice", AlgebraicType.Product(ProductType(emptyList()))),
+        val schema =
+            schemaWith(
+                types =
+                    listOf(
+                        AlgebraicType.Sum(
+                            SumType(
+                                listOf(
+                                    SumTypeVariant(
+                                        "text",
+                                        AlgebraicType.Product(ProductType(emptyList())),
+                                    ),
+                                    SumTypeVariant(
+                                        "voice",
+                                        AlgebraicType.Product(ProductType(emptyList())),
+                                    ),
+                                )
+                            )
                         )
-                    )
-                )
-            ),
-            namedTypes = listOf(TypeNameEntry("ChannelKind", 0)),
-        )
+                    ),
+                namedTypes = listOf(TypeNameEntry("ChannelKind", 0)),
+            )
         val gen = TypeGenerator(schema, "com.example")
         val typeDef = schema.types.first()
         val file = gen.generateTypeFile(typeDef)
@@ -102,27 +122,44 @@ class TypeGeneratorTest {
 
     @Test
     fun `generates sealed class for data sum type`() {
-        val schema = schemaWith(
-            types = listOf(
-                AlgebraicType.Sum(
-                    SumType(
-                        listOf(
-                            SumTypeVariant("Circle", AlgebraicType.Product(
-                                ProductType(listOf(ProductTypeElement("radius", AlgebraicType.F64)))
-                            )),
-                            SumTypeVariant("Rectangle", AlgebraicType.Product(
-                                ProductType(listOf(
-                                    ProductTypeElement("width", AlgebraicType.F64),
-                                    ProductTypeElement("height", AlgebraicType.F64),
-                                ))
-                            )),
-                            SumTypeVariant("None", AlgebraicType.Product(ProductType(emptyList()))),
+        val schema =
+            schemaWith(
+                types =
+                    listOf(
+                        AlgebraicType.Sum(
+                            SumType(
+                                listOf(
+                                    SumTypeVariant(
+                                        "Circle",
+                                        AlgebraicType.Product(
+                                            ProductType(
+                                                listOf(
+                                                    ProductTypeElement("radius", AlgebraicType.F64)
+                                                )
+                                            )
+                                        ),
+                                    ),
+                                    SumTypeVariant(
+                                        "Rectangle",
+                                        AlgebraicType.Product(
+                                            ProductType(
+                                                listOf(
+                                                    ProductTypeElement("width", AlgebraicType.F64),
+                                                    ProductTypeElement("height", AlgebraicType.F64),
+                                                )
+                                            )
+                                        ),
+                                    ),
+                                    SumTypeVariant(
+                                        "None",
+                                        AlgebraicType.Product(ProductType(emptyList())),
+                                    ),
+                                )
+                            )
                         )
-                    )
-                )
-            ),
-            namedTypes = listOf(TypeNameEntry("Shape", 0)),
-        )
+                    ),
+                namedTypes = listOf(TypeNameEntry("Shape", 0)),
+            )
         val gen = TypeGenerator(schema, "com.example")
         val typeDef = schema.types.first()
         val file = gen.generateTypeFile(typeDef)
@@ -139,14 +176,18 @@ class TypeGeneratorTest {
 
     @Test
     fun `skips Identity type`() {
-        val schema = schemaWith(
-            types = listOf(
-                AlgebraicType.Product(
-                    ProductType(listOf(ProductTypeElement("__identity__", AlgebraicType.U256)))
-                )
-            ),
-            namedTypes = listOf(TypeNameEntry("Identity", 0)),
-        )
+        val schema =
+            schemaWith(
+                types =
+                    listOf(
+                        AlgebraicType.Product(
+                            ProductType(
+                                listOf(ProductTypeElement("__identity__", AlgebraicType.U256))
+                            )
+                        )
+                    ),
+                namedTypes = listOf(TypeNameEntry("Identity", 0)),
+            )
         val gen = TypeGenerator(schema, "com.example")
         val typeDef = schema.types.first()
 
@@ -158,12 +199,13 @@ class TypeGeneratorTest {
         val schema = schemaWith()
         val gen = TypeGenerator(schema, "com.example")
 
-        val productType = ProductType(
-            listOf(
-                ProductTypeElement("first_name", AlgebraicType.StringType),
-                ProductTypeElement("age", AlgebraicType.U8),
+        val productType =
+            ProductType(
+                listOf(
+                    ProductTypeElement("first_name", AlgebraicType.StringType),
+                    ProductTypeElement("age", AlgebraicType.U8),
+                )
             )
-        )
 
         val file = gen.generateTableRowFile("person", productType)
         val output = file.toString()
@@ -185,9 +227,7 @@ class TypeGeneratorTest {
 
         for (file in files) {
             val output = file.toString()
-            assert(output.contains("@Serializable")) {
-                "File ${file.name} missing @Serializable"
-            }
+            assert(output.contains("@Serializable")) { "File ${file.name} missing @Serializable" }
         }
     }
 
@@ -231,14 +271,25 @@ class TypeGeneratorTest {
         for (file in tableHandleGen.generateTableHandleFiles()) {
             sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
         }
-        sources.add(SourceFile.kotlin("RemoteTables.kt", tableHandleGen.generateRemoteTablesFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteTables.kt",
+                tableHandleGen.generateRemoteTablesFile().toString(),
+            )
+        )
         sources.add(SourceFile.kotlin("Reducer.kt", reducerGen.generateReducerFile().toString()))
-        sources.add(SourceFile.kotlin("RemoteReducers.kt", reducerGen.generateRemoteReducersFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteReducers.kt",
+                reducerGen.generateRemoteReducersFile().toString(),
+            )
+        )
 
-        val compilation = KotlinCompilation().apply {
-            this.sources = sources
-            inheritClassPath = true
-        }
+        val compilation =
+            KotlinCompilation().apply {
+                this.sources = sources
+                inheritClassPath = true
+            }
 
         val result = compilation.compile()
         assertEquals(

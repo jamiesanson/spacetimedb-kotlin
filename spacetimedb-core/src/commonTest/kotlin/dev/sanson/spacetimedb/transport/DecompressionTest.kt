@@ -8,9 +8,7 @@ import kotlin.test.assertFailsWith
 class DecompressionTest {
     @Test
     fun `empty message throws`() {
-        assertFailsWith<IllegalArgumentException> {
-            decompressServerMessage(byteArrayOf())
-        }
+        assertFailsWith<IllegalArgumentException> { decompressServerMessage(byteArrayOf()) }
     }
 
     @Test
@@ -29,8 +27,6 @@ class DecompressionTest {
     @Test
     fun `unknown tag throws`() {
         val raw = byteArrayOf(99, 1, 2, 3)
-        assertFailsWith<IllegalArgumentException> {
-            decompressServerMessage(raw)
-        }
+        assertFailsWith<IllegalArgumentException> { decompressServerMessage(raw) }
     }
 }

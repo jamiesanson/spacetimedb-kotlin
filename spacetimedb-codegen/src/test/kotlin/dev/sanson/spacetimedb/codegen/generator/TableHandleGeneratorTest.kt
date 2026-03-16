@@ -3,11 +3,11 @@ package dev.sanson.spacetimedb.codegen.generator
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
-import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 
 class TableHandleGeneratorTest {
 
@@ -118,12 +118,20 @@ class TableHandleGeneratorTest {
         for (file in tableHandleGen.generateTableHandleFiles()) {
             sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
         }
-        sources.add(SourceFile.kotlin("RemoteTables.kt", tableHandleGen.generateRemoteTablesFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteTables.kt",
+                tableHandleGen.generateRemoteTablesFile().toString(),
+            )
+        )
 
-        val result = KotlinCompilation().apply {
-            this.sources = sources
-            inheritClassPath = true
-        }.compile()
+        val result =
+            KotlinCompilation()
+                .apply {
+                    this.sources = sources
+                    inheritClassPath = true
+                }
+                .compile()
 
         assertEquals(
             KotlinCompilation.ExitCode.OK,
@@ -218,18 +226,31 @@ class TableHandleGeneratorTest {
         for (file in tableHandleGen.generateTableHandleFiles()) {
             sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
         }
-        sources.add(SourceFile.kotlin("RemoteTables.kt", tableHandleGen.generateRemoteTablesFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteTables.kt",
+                tableHandleGen.generateRemoteTablesFile().toString(),
+            )
+        )
 
         // Table handle impls + RemoteTablesImpl
         for (file in tableHandleGen.generateTableHandleImplFiles()) {
             sources.add(SourceFile.kotlin("${file.name}.kt", file.toString()))
         }
-        sources.add(SourceFile.kotlin("RemoteTablesImpl.kt", tableHandleGen.generateRemoteTablesImplFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteTablesImpl.kt",
+                tableHandleGen.generateRemoteTablesImplFile().toString(),
+            )
+        )
 
-        val result = KotlinCompilation().apply {
-            this.sources = sources
-            inheritClassPath = true
-        }.compile()
+        val result =
+            KotlinCompilation()
+                .apply {
+                    this.sources = sources
+                    inheritClassPath = true
+                }
+                .compile()
 
         assertEquals(
             KotlinCompilation.ExitCode.OK,

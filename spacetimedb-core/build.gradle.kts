@@ -1,6 +1,4 @@
-plugins {
-    id("dev.sanson.kmp-library")
-}
+plugins { id("dev.sanson.kmp-library") }
 
 kotlin {
     sourceSets {
@@ -25,20 +23,12 @@ kotlin {
             implementation(libs.brotli.dec)
         }
 
-        jsMain.dependencies {
-            implementation(libs.ktor.client.js)
-        }
+        jsMain.dependencies { implementation(libs.ktor.client.js) }
 
-        appleMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-        }
+        appleMain.dependencies { implementation(libs.ktor.client.darwin) }
 
-        linuxMain.dependencies {
-            implementation(libs.ktor.client.cio)
-        }
+        linuxMain.dependencies { implementation(libs.ktor.client.cio) }
 
-        mingwMain.dependencies {
-            implementation(libs.ktor.client.winhttp)
-        }
+        mingwMain.dependencies { implementation(libs.ktor.client.winhttp) }
     }
 }

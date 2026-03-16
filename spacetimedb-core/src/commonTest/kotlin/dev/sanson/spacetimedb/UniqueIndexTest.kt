@@ -39,9 +39,7 @@ class UniqueIndexTest {
     fun `add duplicate key throws`() {
         val index = UniqueIndex<User, Int>(getColumn = { it.id })
         index.add(User(1, "alice"))
-        assertFailsWith<IllegalStateException> {
-            index.add(User(1, "bob"))
-        }
+        assertFailsWith<IllegalStateException> { index.add(User(1, "bob")) }
         // Original row should still be present after failed add
         assertEquals("alice", index.find(1)?.name)
     }
@@ -49,9 +47,7 @@ class UniqueIndexTest {
     @Test
     fun `remove non-present row throws`() {
         val index = UniqueIndex<User, Int>(getColumn = { it.id })
-        assertFailsWith<IllegalStateException> {
-            index.remove(User(99, "ghost"))
-        }
+        assertFailsWith<IllegalStateException> { index.remove(User(99, "ghost")) }
     }
 
     @Test

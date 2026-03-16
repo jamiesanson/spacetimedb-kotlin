@@ -18,16 +18,15 @@ public value class Identity(public val value: U256) : Comparable<Identity> {
 
     override fun compareTo(other: Identity): Int = value.compareTo(other.value)
 
-    /**
-     * Returns the identity as a 64-character lowercase hex string (big-endian convention).
-     */
-    public fun toHexString(): String = buildString(64) {
-        // Big-endian: most-significant word first
-        append(value.w3.toString(16).padStart(16, '0'))
-        append(value.w2.toString(16).padStart(16, '0'))
-        append(value.w1.toString(16).padStart(16, '0'))
-        append(value.w0.toString(16).padStart(16, '0'))
-    }
+    /** Returns the identity as a 64-character lowercase hex string (big-endian convention). */
+    public fun toHexString(): String =
+        buildString(64) {
+            // Big-endian: most-significant word first
+            append(value.w3.toString(16).padStart(16, '0'))
+            append(value.w2.toString(16).padStart(16, '0'))
+            append(value.w1.toString(16).padStart(16, '0'))
+            append(value.w0.toString(16).padStart(16, '0'))
+        }
 
     override fun toString(): String = "Identity(${toHexString()})"
 }

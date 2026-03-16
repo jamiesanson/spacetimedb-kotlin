@@ -4,6 +4,7 @@ java-toolchain = "21"
 binary-compatibility-validator = "0.18.1"
 brotli-dec = "0.1.2"
 clikt = "5.1.0"
+detekt = "1.23.8"
 dokka = "2.2.0-Beta"
 foojay = "0.8.0"
 jetbrains-annotations = "26.0.2"
@@ -12,6 +13,7 @@ kotlin-compile-testing = "0.12.1"
 kotlinpoet = "2.2.0"
 kotlinx-serialization = "1.10.0"
 kotlinx-coroutines = "1.10.2"
+ktfmt = "0.25.0"
 ktor = "3.4.0"
 okio = "3.16.4"
 poko = "0.21.1"
@@ -41,9 +43,11 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 [plugins]
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "binary-compatibility-validator" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 foojay = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "foojay" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
 poko = { id = "dev.drewhamilton.poko", version.ref = "poko" }

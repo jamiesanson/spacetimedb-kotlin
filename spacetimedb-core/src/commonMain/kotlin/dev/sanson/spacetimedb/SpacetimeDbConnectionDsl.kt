@@ -6,12 +6,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.KSerializer
 
 /**
- * Scope-control marker that prevents accidentally accessing an outer DSL receiver
- * from within a nested lambda.
+ * Scope-control marker that prevents accidentally accessing an outer DSL receiver from within a
+ * nested lambda.
  */
-@DslMarker
-@Target(AnnotationTarget.CLASS)
-internal annotation class SpacetimeDbDsl
+@DslMarker @Target(AnnotationTarget.CLASS) internal annotation class SpacetimeDbDsl
 
 /**
  * DSL receiver for configuring a [SpacetimeDbConnection].
@@ -53,9 +51,9 @@ public class SpacetimeDbConnectionDsl internal constructor() {
     /**
      * Whether to enable confirmed reads. Defaults to `false`.
      *
-     * When `true`, the server waits for each transaction to be durable on disk before
-     * sending the subscription update, adding latency. When `false`, updates are sent
-     * immediately after commit — recommended for real-time applications.
+     * When `true`, the server waits for each transaction to be durable on disk before sending the
+     * subscription update, adding latency. When `false`, updates are sent immediately after commit
+     * — recommended for real-time applications.
      *
      * @see SpacetimeDbConnectionBuilder.withConfirmedReads
      */
@@ -73,16 +71,16 @@ public class SpacetimeDbConnectionDsl internal constructor() {
     /**
      * Table deserializers for row decoding.
      *
-     * Maps table names to their kotlinx.serialization [KSerializer].
-     * Typically set by generated code.
+     * Maps table names to their kotlinx.serialization [KSerializer]. Typically set by generated
+     * code.
      */
     public var tableDeserializers: Map<String, KSerializer<out Any>> = emptyMap()
 
     /**
      * Primary-key extractor functions for tables.
      *
-     * Maps table names to a function that extracts the primary-key value from a row.
-     * Typically set by generated code.
+     * Maps table names to a function that extracts the primary-key value from a row. Typically set
+     * by generated code.
      */
     public var pkExtractors: Map<String, (Any) -> Any> = emptyMap()
 
@@ -91,10 +89,12 @@ public class SpacetimeDbConnectionDsl internal constructor() {
     private var onConnectError: ((SpacetimeError) -> Unit)? = null
 
     /**
-     * Callback invoked when the connection is established and the server sends
-     * the initial identity, token, and connection ID.
+     * Callback invoked when the connection is established and the server sends the initial
+     * identity, token, and connection ID.
      */
-    public fun onConnect(callback: (identity: Identity, token: String, connectionId: ConnectionId) -> Unit) {
+    public fun onConnect(
+        callback: (identity: Identity, token: String, connectionId: ConnectionId) -> Unit
+    ) {
         this.onConnect = callback
     }
 
@@ -107,9 +107,7 @@ public class SpacetimeDbConnectionDsl internal constructor() {
         this.onDisconnect = callback
     }
 
-    /**
-     * Callback invoked if the initial connection attempt fails.
-     */
+    /** Callback invoked if the initial connection attempt fails. */
     public fun onConnectError(callback: (error: SpacetimeError) -> Unit) {
         this.onConnectError = callback
     }
@@ -152,8 +150,8 @@ public class SpacetimeDbConnectionDsl internal constructor() {
  * }
  * ```
  *
- * The existing [SpacetimeDbConnectionBuilder] fluent API remains available
- * for Java interop and cases where method chaining is preferred.
+ * The existing [SpacetimeDbConnectionBuilder] fluent API remains available for Java interop and
+ * cases where method chaining is preferred.
  *
  * @param scope The [CoroutineScope] in which to run the connection and message loop.
  * @param block DSL configuration block.
@@ -164,5 +162,4 @@ public class SpacetimeDbConnectionDsl internal constructor() {
 public fun SpacetimeDbConnection(
     scope: CoroutineScope,
     block: SpacetimeDbConnectionDsl.() -> Unit,
-): SpacetimeDbConnection =
-    SpacetimeDbConnectionDsl().apply(block).build(scope)
+): SpacetimeDbConnection = SpacetimeDbConnectionDsl().apply(block).build(scope)

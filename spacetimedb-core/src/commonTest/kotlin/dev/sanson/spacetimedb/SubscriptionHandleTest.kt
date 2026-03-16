@@ -1,7 +1,6 @@
 package dev.sanson.spacetimedb
 
 import dev.sanson.spacetimedb.protocol.ClientMessage
-import kotlinx.coroutines.channels.Channel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -9,6 +8,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.channels.Channel
 
 class SubscriptionHandleTest {
 
@@ -17,13 +17,14 @@ class SubscriptionHandleTest {
         onError: ((String) -> Unit)? = null,
     ): Pair<SubscriptionHandle, Channel<ClientMessage>> {
         val channel = Channel<ClientMessage>(Channel.UNLIMITED)
-        val handle = SubscriptionHandle(
-            querySetId = nextQuerySetId(),
-            querySql = listOf("SELECT * FROM users"),
-            sendChannel = channel,
-            onApplied = onApplied,
-            onError = onError,
-        )
+        val handle =
+            SubscriptionHandle(
+                querySetId = nextQuerySetId(),
+                querySql = listOf("SELECT * FROM users"),
+                sendChannel = channel,
+                onApplied = onApplied,
+                onError = onError,
+            )
         return handle to channel
     }
 
@@ -51,7 +52,7 @@ class SubscriptionHandleTest {
 
     @Test
     fun `notifyApplied returns null on second call`() {
-        val (handle, _) = createHandle(onApplied = { })
+        val (handle, _) = createHandle(onApplied = {})
         handle.notifyApplied()
         val callback = handle.notifyApplied()
         assertNull(callback)

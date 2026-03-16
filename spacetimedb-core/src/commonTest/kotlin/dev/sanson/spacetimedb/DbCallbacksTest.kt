@@ -17,10 +17,11 @@ class DbCallbacksTest {
 
         callbacks.registerOnInsert<User>("users") { _, row -> received.add(row) }
 
-        val diff = TableAppliedDiff(
-            inserts = listOf(User(1, "alice"), User(2, "bob")),
-            deletes = emptyList(),
-        )
+        val diff =
+            TableAppliedDiff(
+                inserts = listOf(User(1, "alice"), User(2, "bob")),
+                deletes = emptyList(),
+            )
         callbacks.invokeCallbacks("users", diff, Event.SubscribeApplied)
 
         assertEquals(listOf(User(1, "alice"), User(2, "bob")), received)
@@ -33,10 +34,7 @@ class DbCallbacksTest {
 
         callbacks.registerOnDelete<User>("users") { _, row -> received.add(row) }
 
-        val diff = TableAppliedDiff(
-            inserts = emptyList(),
-            deletes = listOf(User(1, "alice")),
-        )
+        val diff = TableAppliedDiff(inserts = emptyList(), deletes = listOf(User(1, "alice")))
         callbacks.invokeCallbacks("users", diff, Event.SubscribeApplied)
 
         assertEquals(listOf(User(1, "alice")), received)
@@ -49,12 +47,13 @@ class DbCallbacksTest {
 
         callbacks.registerOnUpdate<User>("users") { _, old, new -> received.add(old to new) }
 
-        val diff = TableAppliedDiff(
-            inserts = emptyList(),
-            deletes = emptyList(),
-            updateDeletes = listOf(User(1, "alice")),
-            updateInserts = listOf(User(1, "alicia")),
-        )
+        val diff =
+            TableAppliedDiff(
+                inserts = emptyList(),
+                deletes = emptyList(),
+                updateDeletes = listOf(User(1, "alice")),
+                updateInserts = listOf(User(1, "alicia")),
+            )
         callbacks.invokeCallbacks("users", diff, Event.SubscribeApplied)
 
         assertEquals(listOf(User(1, "alice") to User(1, "alicia")), received)
@@ -67,10 +66,7 @@ class DbCallbacksTest {
 
         callbacks.registerOnInsert<User>("users") { event, _ -> events.add(event) }
 
-        val diff = TableAppliedDiff(
-            inserts = listOf(User(1, "alice")),
-            deletes = emptyList(),
-        )
+        val diff = TableAppliedDiff(inserts = listOf(User(1, "alice")), deletes = emptyList())
         callbacks.invokeCallbacks("users", diff, Event.Transaction)
 
         assertEquals(1, events.size)
@@ -88,10 +84,7 @@ class DbCallbacksTest {
         callbacks.registerOnInsert<User>("users") { _, row -> received1.add(row) }
         callbacks.registerOnInsert<User>("users") { _, row -> received2.add(row) }
 
-        val diff = TableAppliedDiff(
-            inserts = listOf(User(1, "alice")),
-            deletes = emptyList(),
-        )
+        val diff = TableAppliedDiff(inserts = listOf(User(1, "alice")), deletes = emptyList())
         callbacks.invokeCallbacks("users", diff, Event.SubscribeApplied)
 
         assertEquals(1, received1.size)
@@ -108,10 +101,7 @@ class DbCallbacksTest {
         val id = callbacks.registerOnInsert<User>("users") { _, row -> received.add(row) }
         callbacks.removeOnInsert("users", id)
 
-        val diff = TableAppliedDiff(
-            inserts = listOf(User(1, "alice")),
-            deletes = emptyList(),
-        )
+        val diff = TableAppliedDiff(inserts = listOf(User(1, "alice")), deletes = emptyList())
         callbacks.invokeCallbacks("users", diff, Event.SubscribeApplied)
 
         assertTrue(received.isEmpty())
@@ -125,10 +115,7 @@ class DbCallbacksTest {
         val id = callbacks.registerOnDelete<User>("users") { _, row -> received.add(row) }
         callbacks.removeOnDelete("users", id)
 
-        val diff = TableAppliedDiff(
-            inserts = emptyList(),
-            deletes = listOf(User(1, "alice")),
-        )
+        val diff = TableAppliedDiff(inserts = emptyList(), deletes = listOf(User(1, "alice")))
         callbacks.invokeCallbacks("users", diff, Event.SubscribeApplied)
 
         assertTrue(received.isEmpty())
@@ -139,15 +126,17 @@ class DbCallbacksTest {
         val callbacks = DbCallbacks()
         val received = mutableListOf<Pair<User, User>>()
 
-        val id = callbacks.registerOnUpdate<User>("users") { _, old, new -> received.add(old to new) }
+        val id =
+            callbacks.registerOnUpdate<User>("users") { _, old, new -> received.add(old to new) }
         callbacks.removeOnUpdate("users", id)
 
-        val diff = TableAppliedDiff(
-            inserts = emptyList(),
-            deletes = emptyList(),
-            updateDeletes = listOf(User(1, "alice")),
-            updateInserts = listOf(User(1, "bob")),
-        )
+        val diff =
+            TableAppliedDiff(
+                inserts = emptyList(),
+                deletes = emptyList(),
+                updateDeletes = listOf(User(1, "alice")),
+                updateInserts = listOf(User(1, "bob")),
+            )
         callbacks.invokeCallbacks("users", diff, Event.SubscribeApplied)
 
         assertTrue(received.isEmpty())
@@ -163,10 +152,7 @@ class DbCallbacksTest {
         callbacks.registerOnInsert<User>("users") { _, row -> received2.add(row) }
         callbacks.removeOnInsert("users", id1)
 
-        val diff = TableAppliedDiff(
-            inserts = listOf(User(1, "alice")),
-            deletes = emptyList(),
-        )
+        val diff = TableAppliedDiff(inserts = listOf(User(1, "alice")), deletes = emptyList())
         callbacks.invokeCallbacks("users", diff, Event.SubscribeApplied)
 
         assertTrue(received1.isEmpty())
@@ -212,10 +198,7 @@ class DbCallbacksTest {
     @Test
     fun `invokeCallbacks for unregistered table is a no-op`() {
         val callbacks = DbCallbacks()
-        val diff = TableAppliedDiff(
-            inserts = listOf(User(1, "alice")),
-            deletes = emptyList(),
-        )
+        val diff = TableAppliedDiff(inserts = listOf(User(1, "alice")), deletes = emptyList())
         // Should not throw
         callbacks.invokeCallbacks("unknown", diff, Event.SubscribeApplied)
     }
@@ -246,10 +229,11 @@ class DbCallbacksTest {
         callbacks.registerOnUpdate<User>("users") { _, old, new -> updatedRows.add(old to new) }
 
         // Simulate a transaction update: delete alice and insert alicia (same PK = update)
-        val update = TableUpdate(
-            inserts = listOf(RowWithBsatn(byteArrayOf(1, 1), User(1, "alicia"))),
-            deletes = listOf(RowWithBsatn(byteArrayOf(1, 0), User(1, "alice"))),
-        )
+        val update =
+            TableUpdate(
+                inserts = listOf(RowWithBsatn(byteArrayOf(1, 1), User(1, "alicia"))),
+                deletes = listOf(RowWithBsatn(byteArrayOf(1, 0), User(1, "alice"))),
+            )
 
         val diff = table.applyDiff(update)
         val refined = diff.withUpdatesByPk { it.id }

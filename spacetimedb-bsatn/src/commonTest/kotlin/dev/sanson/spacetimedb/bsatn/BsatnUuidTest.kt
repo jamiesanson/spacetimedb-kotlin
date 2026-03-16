@@ -35,10 +35,11 @@ class BsatnUuidTest {
     @Test
     fun `Uuid byte layout matches U128 LE`() {
         // UUID with known byte pattern: MSB = 0x0102030405060708 and LSB = 0x090a0b0c0d0e0f10
-        val uuid = Uuid.fromLongs(
-            mostSignificantBits = 0x0102030405060708L,
-            leastSignificantBits = 0x090a0b0c0d0e0f10L,
-        )
+        val uuid =
+            Uuid.fromLongs(
+                mostSignificantBits = 0x0102030405060708L,
+                leastSignificantBits = 0x090a0b0c0d0e0f10L,
+            )
         val uuidBytes = Bsatn.encodeToByteArray(UuidSerializer, uuid)
 
         // Equivalent U128: lo = LSB and hi = MSB
@@ -51,16 +52,9 @@ class BsatnUuidTest {
     @Test
     fun `Uuid in struct roundtrip`() {
         @Serializable
-        data class Row(
-            @Serializable(with = UuidSerializer::class)
-            val id: Uuid,
-            val name: String,
-        )
+        data class Row(@Serializable(with = UuidSerializer::class) val id: Uuid, val name: String)
 
-        val row = Row(
-            id = Uuid.parse("550e8400-e29b-41d4-a716-446655440000"),
-            name = "test",
-        )
+        val row = Row(id = Uuid.parse("550e8400-e29b-41d4-a716-446655440000"), name = "test")
         val bytes = Bsatn.encodeToByteArray(Row.serializer(), row)
         val decoded = Bsatn.decodeFromByteArray(Row.serializer(), bytes)
         assertEquals(row, decoded)

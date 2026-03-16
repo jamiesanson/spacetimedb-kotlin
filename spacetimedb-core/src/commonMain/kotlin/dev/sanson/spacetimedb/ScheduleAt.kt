@@ -13,25 +13,15 @@ import kotlinx.serialization.Serializable
  */
 @Serializable(with = ScheduleAtSerializer::class)
 public abstract class ScheduleAt private constructor() {
-    /**
-     * Execute the reducer at a repeating interval.
-     */
-    @Serializable
-    @Poko
-    public class Interval(public val duration: TimeDuration) : ScheduleAt()
+    /** Execute the reducer at a repeating interval. */
+    @Serializable @Poko public class Interval(public val duration: TimeDuration) : ScheduleAt()
 
-    /**
-     * Execute the reducer at a specific point in time.
-     */
-    @Serializable
-    @Poko
-    public class Time(public val timestamp: Timestamp) : ScheduleAt()
+    /** Execute the reducer at a specific point in time. */
+    @Serializable @Poko public class Time(public val timestamp: Timestamp) : ScheduleAt()
 }
 
-internal object ScheduleAtSerializer : KSerializer<ScheduleAt> by TaggedSumSerializer(
-    "ScheduleAt",
-    arrayOf(
-        variant(ScheduleAt.Interval.serializer()),
-        variant(ScheduleAt.Time.serializer()),
-    ),
-)
+internal object ScheduleAtSerializer :
+    KSerializer<ScheduleAt> by TaggedSumSerializer(
+        "ScheduleAt",
+        arrayOf(variant(ScheduleAt.Interval.serializer()), variant(ScheduleAt.Time.serializer())),
+    )

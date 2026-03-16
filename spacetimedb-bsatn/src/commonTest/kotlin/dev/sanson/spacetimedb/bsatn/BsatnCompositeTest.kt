@@ -1,33 +1,25 @@
 package dev.sanson.spacetimedb.bsatn
 
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
-import kotlin.test.Test
-import kotlin.test.assertContentEquals
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertFailsWith
 
 class BsatnCompositeTest {
 
-
-    @Serializable
-    data class Point(val x: Int, val y: Int)
+    @Serializable data class Point(val x: Int, val y: Int)
 
     @Test
     fun `encode product type`() {
         val bytes = Bsatn.encodeToByteArray(Point.serializer(), Point(1, 2))
         // x=1 as i32LE + y=2 as i32LE, no prefix
-        assertContentEquals(
-            byteArrayOf(
-                0x01, 0x00, 0x00, 0x00,
-                0x02, 0x00, 0x00, 0x00,
-            ),
-            bytes,
-        )
+        assertContentEquals(byteArrayOf(0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00), bytes)
     }
 
     @Test
@@ -37,9 +29,7 @@ class BsatnCompositeTest {
         assertEquals(value, Bsatn.decodeFromByteArray(Point.serializer(), bytes))
     }
 
-
-    @Serializable
-    data class Line(val start: Point, val end: Point)
+    @Serializable data class Line(val start: Point, val end: Point)
 
     @Test
     fun `roundtrip nested product`() {
@@ -48,7 +38,6 @@ class BsatnCompositeTest {
         assertEquals(value, Bsatn.decodeFromByteArray(Line.serializer(), bytes))
     }
 
-
     @Test
     fun `encode list with count prefix`() {
         val list = listOf(1, 2, 3)
@@ -56,10 +45,22 @@ class BsatnCompositeTest {
         // u32LE(3) + 3x i32LE
         assertContentEquals(
             byteArrayOf(
-                0x03, 0x00, 0x00, 0x00, // count = 3
-                0x01, 0x00, 0x00, 0x00, // 1
-                0x02, 0x00, 0x00, 0x00, // 2
-                0x03, 0x00, 0x00, 0x00, // 3
+                0x03,
+                0x00,
+                0x00,
+                0x00, // count = 3
+                0x01,
+                0x00,
+                0x00,
+                0x00, // 1
+                0x02,
+                0x00,
+                0x00,
+                0x00, // 2
+                0x03,
+                0x00,
+                0x00,
+                0x00, // 3
             ),
             bytes,
         )
@@ -87,15 +88,11 @@ class BsatnCompositeTest {
         assertEquals(list, Bsatn.decodeFromByteArray(ListSerializer(Point.serializer()), bytes))
     }
 
-
     @Test
     fun `encode nullable some`() {
         val bytes = Bsatn.encodeToByteArray(Int.serializer().nullable, 42)
         // tag=0 (Some) + i32LE(42)
-        assertContentEquals(
-            byteArrayOf(0x00, 0x2A, 0x00, 0x00, 0x00),
-            bytes,
-        )
+        assertContentEquals(byteArrayOf(0x00, 0x2A, 0x00, 0x00, 0x00), bytes)
     }
 
     @Test
@@ -119,14 +116,11 @@ class BsatnCompositeTest {
         assertNull(Bsatn.decodeFromByteArray(Int.serializer().nullable, bytes))
     }
 
-
     @Serializable
     sealed class Shape {
-        @Serializable
-        data class Circle(val radius: Float) : Shape()
+        @Serializable data class Circle(val radius: Float) : Shape()
 
-        @Serializable
-        data class Rect(val width: Float, val height: Float) : Shape()
+        @Serializable data class Rect(val width: Float, val height: Float) : Shape()
     }
 
     @Test
@@ -166,14 +160,20 @@ class BsatnCompositeTest {
         }
     }
 
-
     @Serializable
-    enum class Color { Red, Green, Blue }
+    enum class Color {
+        Red,
+        Green,
+        Blue,
+    }
 
     @Test
     fun `encode enum as u8 tag`() {
         assertContentEquals(byteArrayOf(0), Bsatn.encodeToByteArray(Color.serializer(), Color.Red))
-        assertContentEquals(byteArrayOf(1), Bsatn.encodeToByteArray(Color.serializer(), Color.Green))
+        assertContentEquals(
+            byteArrayOf(1),
+            Bsatn.encodeToByteArray(Color.serializer(), Color.Green),
+        )
         assertContentEquals(byteArrayOf(2), Bsatn.encodeToByteArray(Color.serializer(), Color.Blue))
     }
 
@@ -184,7 +184,6 @@ class BsatnCompositeTest {
             assertEquals(c, Bsatn.decodeFromByteArray(Color.serializer(), bytes))
         }
     }
-
 
     @Serializable
     data class MixedRow(
@@ -225,7 +224,6 @@ class BsatnCompositeTest {
         val bytes = Bsatn.encodeToByteArray(MixedRow.serializer(), value)
         assertEquals(value, Bsatn.decodeFromByteArray(MixedRow.serializer(), bytes))
     }
-
 
     @Test
     fun `encoding map throws`() {

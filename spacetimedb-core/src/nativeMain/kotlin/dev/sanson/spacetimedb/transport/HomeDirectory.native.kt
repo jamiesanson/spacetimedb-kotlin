@@ -7,5 +7,4 @@ import okio.Path.Companion.toPath
 import platform.posix.getenv
 
 @OptIn(ExperimentalForeignApi::class)
-internal actual fun defaultHomeDirectory(): Path? =
-    getenv("HOME")?.toKString()?.toPath()
+internal actual fun defaultHomeDirectory(): Path? = getenv("HOME")?.toKString()?.toPath()

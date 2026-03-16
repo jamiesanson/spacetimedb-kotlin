@@ -29,18 +29,21 @@ class MainTest {
 
     @Test
     fun `end-to-end generates files to directory`() {
-        val tempDir = File(System.getProperty("java.io.tmpdir"), "codegen-test-${System.nanoTime()}")
+        val tempDir =
+            File(System.getProperty("java.io.tmpdir"), "codegen-test-${System.nanoTime()}")
         val schemaFile = File(tempDir, "schema.json")
 
         try {
             tempDir.mkdirs()
             schemaFile.writeText(fixture)
 
-            val result = GenerateCommand().test(
-                "--schema ${schemaFile.absolutePath} " +
-                    "--out-dir ${File(tempDir, "generated").absolutePath} " +
-                    "--package com.example.test"
-            )
+            val result =
+                GenerateCommand()
+                    .test(
+                        "--schema ${schemaFile.absolutePath} " +
+                            "--out-dir ${File(tempDir, "generated").absolutePath} " +
+                            "--package com.example.test"
+                    )
 
             assertTrue(result.statusCode == 0, "Expected success, got: ${result.output}")
             assertContains(result.output, "Generated")

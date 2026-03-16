@@ -1,7 +1,6 @@
 package dev.sanson.spacetimedb
 
 import kotlin.jvm.JvmInline
-import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Instant
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -22,9 +21,7 @@ public value class Timestamp(public val instant: Instant) : Comparable<Timestamp
     public companion object {
         public val UNIX_EPOCH: Timestamp = Timestamp(Instant.fromEpochSeconds(0))
 
-        /**
-         * Creates a [Timestamp] from microseconds since the Unix epoch.
-         */
+        /** Creates a [Timestamp] from microseconds since the Unix epoch. */
         public fun fromEpochMicroseconds(micros: Long): Timestamp {
             val seconds = micros.floorDiv(MICROS_PER_SECOND)
             val nanoAdjustment = micros.mod(MICROS_PER_SECOND) * NANOS_PER_MICRO
@@ -35,9 +32,7 @@ public value class Timestamp(public val instant: Instant) : Comparable<Timestamp
         private const val NANOS_PER_MICRO = 1_000L
     }
 
-    /**
-     * Returns the number of microseconds since the Unix epoch.
-     */
+    /** Returns the number of microseconds since the Unix epoch. */
     public val epochMicroseconds: Long
         get() = instant.epochSeconds * 1_000_000L + instant.nanosecondsOfSecond / 1_000
 

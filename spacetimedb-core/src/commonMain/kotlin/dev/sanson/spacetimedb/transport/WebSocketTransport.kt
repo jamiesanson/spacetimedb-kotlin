@@ -19,24 +19,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.receiveAsFlow
 
-/**
- * WebSocket subprotocol identifier for SpacetimeDB v2 binary protocol.
- */
+/** WebSocket subprotocol identifier for SpacetimeDB v2 binary protocol. */
 internal const val WS_PROTOCOL: String = "v2.bsatn.spacetimedb"
 
 /**
  * Low-level WebSocket transport for SpacetimeDB.
  *
- * Handles connection establishment, message encoding/decoding, and
- * server message decompression. Does not implement higher-level connection
- * management (reconnection, callbacks, subscriptions).
+ * Handles connection establishment, message encoding/decoding, and server message decompression.
+ * Does not implement higher-level connection management (reconnection, callbacks, subscriptions).
  *
- * @param httpClient A Ktor [HttpClient] with the [WebSockets] plugin installed.
- *   If not provided, a default client is created.
+ * @param httpClient A Ktor [HttpClient] with the [WebSockets] plugin installed. If not provided, a
+ *   default client is created.
  */
-internal class WebSocketTransport(
-    private val httpClient: HttpClient = defaultHttpClient(),
-) {
+internal class WebSocketTransport(private val httpClient: HttpClient = defaultHttpClient()) {
     /**
      * Establishes a WebSocket connection to a SpacetimeDB instance.
      *
@@ -56,20 +51,22 @@ internal class WebSocketTransport(
         connectionId: ConnectionId? = null,
         confirmed: Boolean? = null,
     ): WebSocketConnection {
-        val uri = buildSpacetimeUri(
-            host = host,
-            databaseName = databaseName,
-            compression = compression,
-            connectionId = connectionId,
-            confirmed = confirmed,
-        )
+        val uri =
+            buildSpacetimeUri(
+                host = host,
+                databaseName = databaseName,
+                compression = compression,
+                connectionId = connectionId,
+                confirmed = confirmed,
+            )
 
-        val session = httpClient.webSocketSession(urlString = uri) {
-            headers.append(HttpHeaders.SecWebSocketProtocol, WS_PROTOCOL)
-            if (token != null) {
-                headers.append(HttpHeaders.Authorization, "Bearer $token")
+        val session =
+            httpClient.webSocketSession(urlString = uri) {
+                headers.append(HttpHeaders.SecWebSocketProtocol, WS_PROTOCOL)
+                if (token != null) {
+                    headers.append(HttpHeaders.Authorization, "Bearer $token")
+                }
             }
-        }
 
         return KtorWebSocketConnection(session)
     }
@@ -78,8 +75,8 @@ internal class WebSocketTransport(
 /**
  * An active WebSocket connection to a SpacetimeDB instance.
  *
- * Provides typed send/receive for [ClientMessage] and [ServerMessage],
- * with automatic BSATN encoding and server message decompression.
+ * Provides typed send/receive for [ClientMessage] and [ServerMessage], with automatic BSATN
+ * encoding and server message decompression.
  */
 internal abstract class WebSocketConnection {
     /** Flow of decoded [ServerMessage]s from the server. */
@@ -92,23 +89,19 @@ internal abstract class WebSocketConnection {
     abstract suspend fun close()
 }
 
-/**
- * Ktor-based [WebSocketConnection] implementation.
- */
-internal class KtorWebSocketConnection(
-    private val session: DefaultClientWebSocketSession,
-) : WebSocketConnection() {
+/** Ktor-based [WebSocketConnection] implementation. */
+internal class KtorWebSocketConnection(private val session: DefaultClientWebSocketSession) :
+    WebSocketConnection() {
     override val serverMessages: Flow<ServerMessage> =
-        session.incoming.receiveAsFlow()
-            .mapNotNull { frame ->
-                when (frame) {
-                    is Frame.Binary -> {
-                        val decompressed = decompressServerMessage(frame.readBytes())
-                        Bsatn.decodeFromByteArray(ServerMessageSerializer, decompressed)
-                    }
-                    else -> null
+        session.incoming.receiveAsFlow().mapNotNull { frame ->
+            when (frame) {
+                is Frame.Binary -> {
+                    val decompressed = decompressServerMessage(frame.readBytes())
+                    Bsatn.decodeFromByteArray(ServerMessageSerializer, decompressed)
                 }
+                else -> null
             }
+        }
 
     override suspend fun send(message: ClientMessage) {
         val bytes = Bsatn.encodeToByteArray(ClientMessageSerializer, message)
@@ -120,7 +113,4 @@ internal class KtorWebSocketConnection(
     }
 }
 
-private fun defaultHttpClient(): HttpClient =
-    HttpClient {
-        install(WebSockets)
-    }
+private fun defaultHttpClient(): HttpClient = HttpClient { install(WebSockets) }

@@ -8,14 +8,10 @@ import dev.sanson.spacetimedb.codegen.schema.RawTypeDef
 import dev.sanson.spacetimedb.codegen.schema.ScopedTypeName
 import dev.sanson.spacetimedb.codegen.schema.Typespace
 
-/**
- * Lightweight named-type entry for tests.
- */
+/** Lightweight named-type entry for tests. */
 data class TypeNameEntry(val name: String, val tyIndex: Int)
 
-/**
- * Build a [ModuleSchema] from in-memory data for testing.
- */
+/** Build a [ModuleSchema] from in-memory data for testing. */
 fun schemaWith(
     types: List<AlgebraicType> = emptyList(),
     namedTypes: List<TypeNameEntry> = emptyList(),
@@ -28,7 +24,8 @@ fun schemaWith(
                 RawModuleDefV10Section.TypesSection(
                     namedTypes.map { entry ->
                         RawTypeDef(
-                            sourceName = ScopedTypeName(scope = emptyList(), sourceName = entry.name),
+                            sourceName =
+                                ScopedTypeName(scope = emptyList(), sourceName = entry.name),
                             ty = entry.tyIndex,
                             customOrdering = false,
                         )

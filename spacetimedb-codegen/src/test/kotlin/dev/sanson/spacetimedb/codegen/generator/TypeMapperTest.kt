@@ -4,12 +4,10 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.asTypeName
 import dev.sanson.spacetimedb.codegen.schema.AlgebraicType
-import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
 import dev.sanson.spacetimedb.codegen.schema.ProductType
 import dev.sanson.spacetimedb.codegen.schema.ProductTypeElement
 import dev.sanson.spacetimedb.codegen.schema.SumType
 import dev.sanson.spacetimedb.codegen.schema.SumTypeVariant
-import dev.sanson.spacetimedb.codegen.schema.Typespace
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -83,9 +81,8 @@ class TypeMapperTest {
         val mapper = mapperWith()
         val type = AlgebraicType.Array(AlgebraicType.Array(AlgebraicType.I32))
         assertEquals(
-            List::class.asTypeName().parameterizedBy(
-                List::class.asTypeName().parameterizedBy(Int::class.asTypeName())
-            ),
+            List::class.asTypeName()
+                .parameterizedBy(List::class.asTypeName().parameterizedBy(Int::class.asTypeName())),
             mapper.typeName(type),
         )
     }
@@ -93,98 +90,92 @@ class TypeMapperTest {
     @Test
     fun `maps Option to nullable type`() {
         val mapper = mapperWith()
-        val option = AlgebraicType.Sum(
-            SumType(
-                listOf(
-                    SumTypeVariant("some", AlgebraicType.StringType),
-                    SumTypeVariant("none", AlgebraicType.Product(ProductType(emptyList()))),
+        val option =
+            AlgebraicType.Sum(
+                SumType(
+                    listOf(
+                        SumTypeVariant("some", AlgebraicType.StringType),
+                        SumTypeVariant("none", AlgebraicType.Product(ProductType(emptyList()))),
+                    )
                 )
             )
-        )
-        assertEquals(
-            String::class.asTypeName().copy(nullable = true),
-            mapper.typeName(option),
-        )
+        assertEquals(String::class.asTypeName().copy(nullable = true), mapper.typeName(option))
     }
 
     @Test
     fun `maps Identity product to SDK Identity`() {
         val mapper = mapperWith()
-        val identity = AlgebraicType.Product(
-            ProductType(
-                listOf(ProductTypeElement("__identity__", AlgebraicType.U256))
+        val identity =
+            AlgebraicType.Product(
+                ProductType(listOf(ProductTypeElement("__identity__", AlgebraicType.U256)))
             )
-        )
-        assertEquals(
-            ClassName("dev.sanson.spacetimedb", "Identity"),
-            mapper.typeName(identity),
-        )
+        assertEquals(ClassName("dev.sanson.spacetimedb", "Identity"), mapper.typeName(identity))
     }
 
     @Test
     fun `maps ConnectionId product to SDK ConnectionId`() {
         val mapper = mapperWith()
-        val connId = AlgebraicType.Product(
-            ProductType(
-                listOf(ProductTypeElement("__connection_id__", AlgebraicType.U128))
+        val connId =
+            AlgebraicType.Product(
+                ProductType(listOf(ProductTypeElement("__connection_id__", AlgebraicType.U128)))
             )
-        )
-        assertEquals(
-            ClassName("dev.sanson.spacetimedb", "ConnectionId"),
-            mapper.typeName(connId),
-        )
+        assertEquals(ClassName("dev.sanson.spacetimedb", "ConnectionId"), mapper.typeName(connId))
     }
 
     @Test
     fun `maps Timestamp product to SDK Timestamp`() {
         val mapper = mapperWith()
-        val timestamp = AlgebraicType.Product(
-            ProductType(
-                listOf(ProductTypeElement("__timestamp_micros_since_unix_epoch__", AlgebraicType.I64))
+        val timestamp =
+            AlgebraicType.Product(
+                ProductType(
+                    listOf(
+                        ProductTypeElement(
+                            "__timestamp_micros_since_unix_epoch__",
+                            AlgebraicType.I64,
+                        )
+                    )
+                )
             )
-        )
-        assertEquals(
-            ClassName("dev.sanson.spacetimedb", "Timestamp"),
-            mapper.typeName(timestamp),
-        )
+        assertEquals(ClassName("dev.sanson.spacetimedb", "Timestamp"), mapper.typeName(timestamp))
     }
 
     @Test
     fun `maps Ref to named type`() {
         // Typespace index 0 = a Product type, and there's a named RawTypeDef for it
-        val schema = schemaWith(
-            types = listOf(
-                AlgebraicType.Product(
-                    ProductType(
-                        listOf(
-                            ProductTypeElement("x", AlgebraicType.I32),
-                            ProductTypeElement("y", AlgebraicType.I32),
+        val schema =
+            schemaWith(
+                types =
+                    listOf(
+                        AlgebraicType.Product(
+                            ProductType(
+                                listOf(
+                                    ProductTypeElement("x", AlgebraicType.I32),
+                                    ProductTypeElement("y", AlgebraicType.I32),
+                                )
+                            )
                         )
-                    )
-                )
-            ),
-            namedTypes = listOf(TypeNameEntry(name = "my_point", tyIndex = 0)),
-        )
+                    ),
+                namedTypes = listOf(TypeNameEntry(name = "my_point", tyIndex = 0)),
+            )
         val mapper = TypeMapper(schema, "com.example")
 
-        assertEquals(
-            ClassName("com.example", "MyPoint"),
-            mapper.typeName(AlgebraicType.Ref(0)),
-        )
+        assertEquals(ClassName("com.example", "MyPoint"), mapper.typeName(AlgebraicType.Ref(0)))
     }
 
     @Test
     fun `maps Ref to Identity when type is special`() {
-        val schema = schemaWith(
-            types = listOf(
-                AlgebraicType.Product(
-                    ProductType(
-                        listOf(ProductTypeElement("__identity__", AlgebraicType.U256))
-                    )
-                )
-            ),
-            namedTypes = listOf(TypeNameEntry(name = "Identity", tyIndex = 0)),
-        )
+        val schema =
+            schemaWith(
+                types =
+                    listOf(
+                        AlgebraicType.Product(
+                            ProductType(
+                                listOf(ProductTypeElement("__identity__", AlgebraicType.U256))
+                            )
+                        )
+                    ),
+                namedTypes = listOf(TypeNameEntry(name = "Identity", tyIndex = 0)),
+            )
         val mapper = TypeMapper(schema, "com.example")
 
         // Even though there's a named type, Identity resolves to the SDK type
@@ -197,28 +188,40 @@ class TypeMapperTest {
     @Test
     fun `maps ScheduleAt to SDK type`() {
         val mapper = mapperWith()
-        val scheduleAt = AlgebraicType.Sum(
-            SumType(
-                listOf(
-                    SumTypeVariant(
-                        "Interval",
-                        AlgebraicType.Product(
-                            ProductType(listOf(ProductTypeElement("__time_duration_micros__", AlgebraicType.I64)))
+        val scheduleAt =
+            AlgebraicType.Sum(
+                SumType(
+                    listOf(
+                        SumTypeVariant(
+                            "Interval",
+                            AlgebraicType.Product(
+                                ProductType(
+                                    listOf(
+                                        ProductTypeElement(
+                                            "__time_duration_micros__",
+                                            AlgebraicType.I64,
+                                        )
+                                    )
+                                )
+                            ),
                         ),
-                    ),
-                    SumTypeVariant(
-                        "Time",
-                        AlgebraicType.Product(
-                            ProductType(listOf(ProductTypeElement("__timestamp_micros_since_unix_epoch__", AlgebraicType.I64)))
+                        SumTypeVariant(
+                            "Time",
+                            AlgebraicType.Product(
+                                ProductType(
+                                    listOf(
+                                        ProductTypeElement(
+                                            "__timestamp_micros_since_unix_epoch__",
+                                            AlgebraicType.I64,
+                                        )
+                                    )
+                                )
+                            ),
                         ),
-                    ),
+                    )
                 )
             )
-        )
-        assertEquals(
-            ClassName("dev.sanson.spacetimedb", "ScheduleAt"),
-            mapper.typeName(scheduleAt),
-        )
+        assertEquals(ClassName("dev.sanson.spacetimedb", "ScheduleAt"), mapper.typeName(scheduleAt))
     }
 
     @Test

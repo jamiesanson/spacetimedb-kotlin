@@ -2,7 +2,6 @@ package dev.sanson.spacetimedb
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TableUpdateTest {
@@ -14,13 +13,15 @@ class TableUpdateTest {
     @Test
     fun `applyDiff inserts new rows`() {
         val cache = TableCache<User>()
-        val update = TableUpdate(
-            inserts = listOf(
-                RowWithBsatn(byteArrayOf(1), User(1, "alice")),
-                RowWithBsatn(byteArrayOf(2), User(2, "bob")),
-            ),
-            deletes = emptyList(),
-        )
+        val update =
+            TableUpdate(
+                inserts =
+                    listOf(
+                        RowWithBsatn(byteArrayOf(1), User(1, "alice")),
+                        RowWithBsatn(byteArrayOf(2), User(2, "bob")),
+                    ),
+                deletes = emptyList(),
+            )
 
         val diff = cache.applyDiff(update)
 
@@ -35,10 +36,11 @@ class TableUpdateTest {
         cache.insert(byteArrayOf(1), User(1, "alice"))
         cache.insert(byteArrayOf(2), User(2, "bob"))
 
-        val update = TableUpdate<User>(
-            inserts = emptyList(),
-            deletes = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
-        )
+        val update =
+            TableUpdate<User>(
+                inserts = emptyList(),
+                deletes = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
+            )
 
         val diff = cache.applyDiff(update)
 
@@ -59,10 +61,11 @@ class TableUpdateTest {
         val cache = TableCache<User>()
         cache.insert(byteArrayOf(1), User(1, "alice"))
 
-        val update = TableUpdate(
-            inserts = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
-            deletes = emptyList(),
-        )
+        val update =
+            TableUpdate(
+                inserts = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
+                deletes = emptyList(),
+            )
 
         val diff = cache.applyDiff(update)
         assertTrue(diff.inserts.isEmpty())
@@ -75,10 +78,11 @@ class TableUpdateTest {
         cache.insert(byteArrayOf(1), User(1, "alice"))
         cache.insert(byteArrayOf(1), User(1, "alice")) // ref_count = 2
 
-        val update = TableUpdate<User>(
-            inserts = emptyList(),
-            deletes = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
-        )
+        val update =
+            TableUpdate<User>(
+                inserts = emptyList(),
+                deletes = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
+            )
 
         val diff = cache.applyDiff(update)
         assertTrue(diff.deletes.isEmpty())
@@ -91,10 +95,11 @@ class TableUpdateTest {
         cache.insert(byteArrayOf(1), User(1, "alice"))
 
         // Row inserted then deleted in same transaction — net no-op
-        val update = TableUpdate(
-            inserts = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
-            deletes = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
-        )
+        val update =
+            TableUpdate(
+                inserts = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
+                deletes = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
+            )
 
         val diff = cache.applyDiff(update)
         assertTrue(diff.inserts.isEmpty())
@@ -107,10 +112,11 @@ class TableUpdateTest {
         val cache = TableCache<User>()
         val index = cache.registerUniqueIndex(UniqueIndex(getColumn = { it.id }))
 
-        val update = TableUpdate(
-            inserts = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
-            deletes = emptyList(),
-        )
+        val update =
+            TableUpdate(
+                inserts = listOf(RowWithBsatn(byteArrayOf(1), User(1, "alice"))),
+                deletes = emptyList(),
+            )
 
         cache.applyDiff(update)
         assertEquals(User(1, "alice"), index.find(1))
@@ -120,10 +126,8 @@ class TableUpdateTest {
 
     @Test
     fun `withUpdatesByPk matches delete-insert pairs by PK`() {
-        val diff = TableAppliedDiff(
-            inserts = listOf(User(1, "bob")),
-            deletes = listOf(User(1, "alice")),
-        )
+        val diff =
+            TableAppliedDiff(inserts = listOf(User(1, "bob")), deletes = listOf(User(1, "alice")))
 
         val refined = diff.withUpdatesByPk { it.id }
 
@@ -137,10 +141,11 @@ class TableUpdateTest {
 
     @Test
     fun `withUpdatesByPk separates updates from pure inserts and deletes`() {
-        val diff = TableAppliedDiff(
-            inserts = listOf(User(1, "bob"), User(3, "charlie")),
-            deletes = listOf(User(1, "alice"), User(2, "dave")),
-        )
+        val diff =
+            TableAppliedDiff(
+                inserts = listOf(User(1, "bob"), User(3, "charlie")),
+                deletes = listOf(User(1, "alice"), User(2, "dave")),
+            )
 
         val refined = diff.withUpdatesByPk { it.id }
 
@@ -157,10 +162,8 @@ class TableUpdateTest {
 
     @Test
     fun `withUpdatesByPk with no matching PKs returns same diff`() {
-        val diff = TableAppliedDiff(
-            inserts = listOf(User(1, "alice")),
-            deletes = listOf(User(2, "bob")),
-        )
+        val diff =
+            TableAppliedDiff(inserts = listOf(User(1, "alice")), deletes = listOf(User(2, "bob")))
 
         val refined = diff.withUpdatesByPk { it.id }
 
@@ -171,10 +174,7 @@ class TableUpdateTest {
 
     @Test
     fun `withUpdatesByPk with empty inserts is no-op`() {
-        val diff = TableAppliedDiff(
-            inserts = emptyList<User>(),
-            deletes = listOf(User(1, "alice")),
-        )
+        val diff = TableAppliedDiff(inserts = emptyList<User>(), deletes = listOf(User(1, "alice")))
 
         val refined = diff.withUpdatesByPk { it.id }
         assertEquals(diff.deletes, refined.deletes)
@@ -183,10 +183,7 @@ class TableUpdateTest {
 
     @Test
     fun `withUpdatesByPk with empty deletes is no-op`() {
-        val diff = TableAppliedDiff(
-            inserts = listOf(User(1, "alice")),
-            deletes = emptyList(),
-        )
+        val diff = TableAppliedDiff(inserts = listOf(User(1, "alice")), deletes = emptyList())
 
         val refined = diff.withUpdatesByPk { it.id }
         assertEquals(diff.inserts, refined.inserts)
@@ -207,12 +204,13 @@ class TableUpdateTest {
 
     @Test
     fun `isEmpty is false with updates`() {
-        val diff = TableAppliedDiff(
-            inserts = emptyList<User>(),
-            deletes = emptyList(),
-            updateDeletes = listOf(User(1, "alice")),
-            updateInserts = listOf(User(1, "bob")),
-        )
+        val diff =
+            TableAppliedDiff(
+                inserts = emptyList<User>(),
+                deletes = emptyList(),
+                updateDeletes = listOf(User(1, "alice")),
+                updateInserts = listOf(User(1, "bob")),
+            )
         assertTrue(!diff.isEmpty)
     }
 }

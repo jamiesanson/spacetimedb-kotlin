@@ -3,9 +3,10 @@ package dev.sanson.spacetimedb
 /**
  * A read-only view of a table's cached rows, with callback registration for row changes.
  *
- * Implementations are generated per-table by the SpacetimeDB code generator. Each generated
- * table class delegates [count] and [iterator] to the underlying [ClientCache][dev.sanson.spacetimedb.ClientCache],
- * and callback methods to the connection's callback registry.
+ * Implementations are generated per-table by the SpacetimeDB code generator. Each generated table
+ * class delegates [count] and [iterator] to the underlying
+ * [ClientCache][dev.sanson.spacetimedb.ClientCache], and callback methods to the connection's
+ * callback registry.
  */
 public interface Table<Row : Any> : Iterable<Row> {
 
@@ -38,8 +39,8 @@ public interface Table<Row : Any> : Iterable<Row> {
 /**
  * A [Table] with a primary key column, which additionally supports update callbacks.
  *
- * An "update" is a paired delete + insert within the same transaction where the old and new
- * rows share the same primary key value.
+ * An "update" is a paired delete + insert within the same transaction where the old and new rows
+ * share the same primary key value.
  */
 public interface TableWithPrimaryKey<Row : Any> : Table<Row> {
 
@@ -62,7 +63,8 @@ public interface TableWithPrimaryKey<Row : Any> : Table<Row> {
 public interface EventTable<Row : Any> : Iterable<Row> {
 
     /** Always returns 0 — event tables do not persist rows. */
-    public val count: Int get() = 0
+    public val count: Int
+        get() = 0
 
     /** Always returns an empty iterator — event tables do not persist rows. */
     override fun iterator(): Iterator<Row> = emptyList<Row>().iterator()

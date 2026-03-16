@@ -109,7 +109,8 @@ internal class BsatnDecoder(
         }
 
         return when (descriptor.kind) {
-            StructureKind.CLASS, StructureKind.OBJECT -> {
+            StructureKind.CLASS,
+            StructureKind.OBJECT -> {
                 if (elementIndex >= descriptor.elementsCount) {
                     CompositeDecoder.DECODE_DONE
                 } else {
@@ -169,8 +170,8 @@ internal class BsatnDecoder(
 /**
  * Specialized decoder for sealed class hierarchies.
  *
- * Reads a u8 tag to determine the subclass variant, then resolves the
- * kotlinx.serialization serial name and delegates content decoding.
+ * Reads a u8 tag to determine the subclass variant, then resolves the kotlinx.serialization serial
+ * name and delegates content decoding.
  */
 @OptIn(ExperimentalSerializationApi::class)
 private class SealedClassDecoder(

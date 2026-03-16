@@ -30,9 +30,7 @@ import kotlinx.serialization.modules.SerializersModule
  * ```
  */
 @OptIn(ExperimentalSerializationApi::class)
-public sealed class Bsatn(
-    override val serializersModule: SerializersModule,
-) : BinaryFormat {
+public sealed class Bsatn(override val serializersModule: SerializersModule) : BinaryFormat {
 
     public companion object Default : Bsatn(EmptySerializersModule())
 
@@ -43,7 +41,10 @@ public sealed class Bsatn(
         return buffer.toByteArray()
     }
 
-    override fun <T> decodeFromByteArray(deserializer: DeserializationStrategy<T>, bytes: ByteArray): T {
+    override fun <T> decodeFromByteArray(
+        deserializer: DeserializationStrategy<T>,
+        bytes: ByteArray,
+    ): T {
         val reader = BsatnReader(bytes)
         val decoder = BsatnDecoder(reader, serializersModule)
         return decoder.decodeSerializableValue(deserializer)
