@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   publish:
-    name: "Publish to GitHub Packages"
+    name: "Publish"
     runs-on: ubuntu-latest
 
     steps:
@@ -30,10 +30,21 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: "Publish"
+      - name: "Publish to Maven Central"
         shell: bash
-        run: ./gradlew publish
+        run: ./gradlew publishAllPublicationsToMavenCentralRepository
         env:
+          RELEASE: "true"
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+
+      - name: "Publish to GitHub Packages"
+        shell: bash
+        run: ./gradlew publishAllPublicationsToGitHubPackagesRepository
+        env:
+          RELEASE: "true"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   bump-version:

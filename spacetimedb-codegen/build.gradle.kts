@@ -12,14 +12,6 @@ application {
     mainClass.set("dev.sanson.spacetimedb.codegen.MainKt")
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-        }
-    }
-}
-
 dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinpoet)
