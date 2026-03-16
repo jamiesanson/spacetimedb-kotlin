@@ -9,6 +9,7 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.websockets)
             compileOnly(libs.jetbrains.annotations)
+            api(libs.jetbrains.annotations)
         }
 
         commonTest.dependencies {
