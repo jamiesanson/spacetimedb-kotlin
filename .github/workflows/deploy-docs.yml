@@ -51,9 +51,6 @@ jobs:
         working-directory: docs-site
         run: npm run build
 
-      - name: "Copy API docs into site"
-        run: cp -r build/dokka/html docs-site/dist/api
-
       - name: "Upload Pages artifact"
         uses: actions/upload-pages-artifact@v3
         with:

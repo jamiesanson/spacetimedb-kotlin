@@ -1,5 +1,8 @@
 # build output
 dist/
+
+# generated API docs (from dokkaGenerate)
+public/api/
 # generated types
 .astro/
 
