@@ -98,21 +98,17 @@ public class TypeMapper(private val schema: ModuleSchema, private val targetPack
             is AlgebraicType.Product -> {
                 // Anonymous product type — shouldn't happen for named types
                 // (those are caught by the Ref path above)
-                throw IllegalArgumentException(
-                    "Unnamed product type encountered; expected a Ref to a named type"
-                )
+                error("Unnamed product type encountered; expected a Ref to a named type")
             }
 
             is AlgebraicType.Sum -> {
                 // Anonymous sum type — shouldn't happen for named types
-                throw IllegalArgumentException(
-                    "Unnamed sum type encountered; expected a Ref to a named type"
-                )
+                error("Unnamed sum type encountered; expected a Ref to a named type")
             }
 
             is AlgebraicType.Ref -> {
                 // Should not reach here — Refs are resolved at the top of typeName()
-                throw IllegalStateException("Unresolved Ref(${type.id})")
+                error("Unresolved Ref(${type.id})")
             }
         }
     }

@@ -87,6 +87,10 @@ public val AlgebraicType.isTimeDuration: Boolean
 public val AlgebraicType.isScheduleAt: Boolean
     get() = this is AlgebraicType.Sum && type.isScheduleAt
 
+/** True if this type maps to a special SDK type (Identity, ConnectionId, Timestamp, etc.). */
+public val AlgebraicType.isSpecialSdkType: Boolean
+    get() = isIdentity || isConnectionId || isTimestamp || isTimeDuration || isScheduleAt
+
 /** If this is an Option sum, returns the inner type. */
 public fun AlgebraicType.asOption(): AlgebraicType? = (this as? AlgebraicType.Sum)?.type?.asOption()
 

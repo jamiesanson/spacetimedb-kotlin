@@ -13,11 +13,7 @@ import dev.sanson.spacetimedb.codegen.schema.ProductType
 import dev.sanson.spacetimedb.codegen.schema.RawTypeDef
 import dev.sanson.spacetimedb.codegen.schema.SumType
 import dev.sanson.spacetimedb.codegen.schema.asOption
-import dev.sanson.spacetimedb.codegen.schema.isConnectionId
-import dev.sanson.spacetimedb.codegen.schema.isIdentity
-import dev.sanson.spacetimedb.codegen.schema.isScheduleAt
-import dev.sanson.spacetimedb.codegen.schema.isTimeDuration
-import dev.sanson.spacetimedb.codegen.schema.isTimestamp
+import dev.sanson.spacetimedb.codegen.schema.isSpecialSdkType
 
 /** Generates Kotlin source files for SpacetimeDB table row types and custom types. */
 public class TypeGenerator(private val schema: ModuleSchema, private val targetPackage: String) {
@@ -36,13 +32,7 @@ public class TypeGenerator(private val schema: ModuleSchema, private val targetP
         val typeName = typeDef.sourceName.sourceName.toPascalCase()
 
         // Skip types that map to SDK special types
-        if (
-            resolved.isIdentity ||
-                resolved.isConnectionId ||
-                resolved.isTimestamp ||
-                resolved.isTimeDuration ||
-                resolved.isScheduleAt
-        ) {
+        if (resolved.isSpecialSdkType) {
             return null
         }
 

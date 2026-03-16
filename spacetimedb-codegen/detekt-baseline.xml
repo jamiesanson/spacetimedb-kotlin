@@ -1,8 +1,0 @@
-<?xml version="1.0" ?>
-<SmellBaseline>
-  <ManuallySuppressedIssues/>
-  <CurrentIssues>
-    <ID>ComplexCondition:TypeGenerator.kt$TypeGenerator$resolved.isIdentity || resolved.isConnectionId || resolved.isTimestamp || resolved.isTimeDuration || resolved.isScheduleAt</ID>
-    <ID>ThrowsCount:TypeMapper.kt$TypeMapper$private fun resolvedTypeName(type: AlgebraicType, refId: Int?): TypeName</ID>
-  </CurrentIssues>
-</SmellBaseline>
