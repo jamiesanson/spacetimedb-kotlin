@@ -10,9 +10,9 @@ import kotlinx.serialization.encoding.Encoder
 /**
  * A custom serializer for BSATN sum types that uses explicit tag ordering.
  *
- * kotlinx.serialization orders sealed class variants alphabetically by serial name,
- * but BSATN wire compatibility requires Rust enum declaration order. This serializer
- * writes a u8 tag byte followed by the variant's product data.
+ * kotlinx.serialization orders sealed class variants alphabetically by serial name, but BSATN wire
+ * compatibility requires Rust enum declaration order. This serializer writes a u8 tag byte followed
+ * by the variant's product data.
  */
 internal class TaggedSumSerializer<T : Any>(
     serialName: String,
@@ -35,10 +35,7 @@ internal class TaggedSumSerializer<T : Any>(
     }
 }
 
-internal class TaggedVariant<V : Any>(
-    val kClass: KClass<V>,
-    val serializer: KSerializer<V>,
-)
+internal class TaggedVariant<V : Any>(val kClass: KClass<V>, val serializer: KSerializer<V>)
 
 internal inline fun <reified V : Any> variant(serializer: KSerializer<V>): TaggedVariant<V> =
     TaggedVariant(V::class, serializer)

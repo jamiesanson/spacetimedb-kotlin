@@ -17,9 +17,7 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
-/**
- * Gradle task that generates typed Kotlin sources from a SpacetimeDB module schema.
- */
+/** Gradle task that generates typed Kotlin sources from a SpacetimeDB module schema. */
 @CacheableTask
 public abstract class GenerateSpacetimeTypesTask : DefaultTask() {
 
@@ -29,12 +27,10 @@ public abstract class GenerateSpacetimeTypesTask : DefaultTask() {
     public abstract val schemaFile: RegularFileProperty
 
     /** Package name for generated code. */
-    @get:Input
-    public abstract val packageName: Property<String>
+    @get:Input public abstract val packageName: Property<String>
 
     /** Output directory for generated Kotlin sources. */
-    @get:OutputDirectory
-    public abstract val outputDirectory: DirectoryProperty
+    @get:OutputDirectory public abstract val outputDirectory: DirectoryProperty
 
     @TaskAction
     public fun generate() {

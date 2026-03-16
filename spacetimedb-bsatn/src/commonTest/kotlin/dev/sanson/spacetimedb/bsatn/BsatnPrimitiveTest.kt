@@ -1,14 +1,13 @@
 package dev.sanson.spacetimedb.bsatn
 
-import kotlinx.serialization.builtins.ByteArraySerializer
-import kotlinx.serialization.builtins.serializer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlinx.serialization.builtins.ByteArraySerializer
+import kotlinx.serialization.builtins.serializer
 
 class BsatnPrimitiveTest {
-
 
     @Test
     fun `encode true`() {
@@ -40,7 +39,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-
     @Test
     fun `roundtrip byte`() {
         for (v in listOf(Byte.MIN_VALUE, -1, 0, 1, Byte.MAX_VALUE)) {
@@ -49,7 +47,6 @@ class BsatnPrimitiveTest {
             assertEquals(v, Bsatn.decodeFromByteArray(Byte.serializer(), bytes))
         }
     }
-
 
     @Test
     fun `encode short little-endian`() {
@@ -67,7 +64,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-
     @Test
     fun `encode int little-endian`() {
         // 0x01020304 → LE: [0x04, 0x03, 0x02, 0x01]
@@ -84,7 +80,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-
     @Test
     fun `encode long little-endian`() {
         val bytes = Bsatn.encodeToByteArray(Long.serializer(), 0x0102030405060708L)
@@ -100,7 +95,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-
     @Test
     fun `roundtrip float`() {
         for (v in listOf(0.0f, 1.0f, -1.0f, Float.MIN_VALUE, Float.MAX_VALUE, Float.NaN)) {
@@ -111,7 +105,6 @@ class BsatnPrimitiveTest {
             assertEquals(v.toBits(), decoded.toBits())
         }
     }
-
 
     @Test
     fun `roundtrip double`() {
@@ -126,7 +119,6 @@ class BsatnPrimitiveTest {
             }
         }
     }
-
 
     @Test
     fun `encode string with length prefix`() {
@@ -150,7 +142,6 @@ class BsatnPrimitiveTest {
         }
     }
 
-
     @Test
     fun `decode from truncated input throws`() {
         assertFailsWith<BsatnDecodeException.BufferLength> {
@@ -158,7 +149,6 @@ class BsatnPrimitiveTest {
             Bsatn.decodeFromByteArray(Int.serializer(), byteArrayOf(0x01, 0x02))
         }
     }
-
 
     @OptIn(ExperimentalUnsignedTypes::class)
     @Test
@@ -202,15 +192,24 @@ class BsatnPrimitiveTest {
     fun `UInt MAX_VALUE encoding matches Rust u32 MAX`() {
         // Rust u32::MAX = 0xFFFFFFFF → LE: [0xFF, 0xFF, 0xFF, 0xFF]
         val bytes = Bsatn.encodeToByteArray(UInt.serializer(), UInt.MAX_VALUE)
-        assertContentEquals(byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()), bytes)
+        assertContentEquals(
+            byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()),
+            bytes,
+        )
     }
-
 
     @Test
     fun `encode byte array with length prefix`() {
-        val bytes = Bsatn.encodeToByteArray(ByteArraySerializer(), byteArrayOf(0xCA.toByte(), 0xFE.toByte()))
+        val bytes =
+            Bsatn.encodeToByteArray(
+                ByteArraySerializer(),
+                byteArrayOf(0xCA.toByte(), 0xFE.toByte()),
+            )
         // u32LE(2) + raw bytes
-        assertContentEquals(byteArrayOf(0x02, 0x00, 0x00, 0x00, 0xCA.toByte(), 0xFE.toByte()), bytes)
+        assertContentEquals(
+            byteArrayOf(0x02, 0x00, 0x00, 0x00, 0xCA.toByte(), 0xFE.toByte()),
+            bytes,
+        )
     }
 
     @Test

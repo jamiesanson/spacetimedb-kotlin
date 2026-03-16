@@ -3,17 +3,14 @@ package dev.sanson.spacetimedb
 /**
  * An index over a unique column of a table, enabling efficient point lookups.
  *
- * Maintained automatically by [TableCache] — rows are indexed on insert and
- * de-indexed on delete. Generated table code creates one [UniqueIndex] per
- * unique or primary-key column.
+ * Maintained automatically by [TableCache] — rows are indexed on insert and de-indexed on delete.
+ * Generated table code creates one [UniqueIndex] per unique or primary-key column.
  *
  * @param Row the deserialized row type
  * @param Col the column type (must have correct [equals]/[hashCode])
  * @param getColumn extracts the indexed column value from a row
  */
-public class UniqueIndex<Row : Any, Col : Any>(
-    private val getColumn: (Row) -> Col,
-) {
+public class UniqueIndex<Row : Any, Col : Any>(private val getColumn: (Row) -> Col) {
     private val index = LinkedHashMap<Col, Row>()
 
     /**
@@ -50,7 +47,8 @@ public class UniqueIndex<Row : Any, Col : Any>(
     }
 
     /** Number of entries in this index. */
-    public val size: Int get() = index.size
+    public val size: Int
+        get() = index.size
 
     /** Remove all entries. */
     internal fun clear() {

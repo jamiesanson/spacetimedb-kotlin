@@ -1,0 +1,51 @@
+# Detekt configuration
+# https://detekt.dev/docs/introduction/configurations
+
+complexity:
+  LongMethod:
+    threshold: 150
+  LongParameterList:
+    functionThreshold: 8
+    constructorThreshold: 10
+  TooManyFunctions:
+    active: false
+  CyclomaticComplexMethod:
+    threshold: 35
+  NestedBlockDepth:
+    threshold: 5
+  ComplexCondition:
+    threshold: 5
+
+style:
+  MagicNumber:
+    active: false
+  MaxLineLength:
+    maxLineLength: 120
+  ReturnCount:
+    max: 10
+  WildcardImport:
+    active: false
+  ForbiddenComment:
+    active: false
+  UnnecessaryAbstractClass:
+    active: false
+  UseCheckOrError:
+    active: false
+  LoopWithTooManyJumpStatements:
+    active: false
+
+naming:
+  MatchingDeclarationName:
+    active: false
+  FunctionNaming:
+    # Allow backtick names in tests
+    ignoreAnnotated:
+      - "Test"
+  TopLevelPropertyNaming:
+    constantPattern: "[A-Z][A-Za-z0-9_]*"
+  ConstructorParameterNaming:
+    parameterPattern: "[a-zA-Z_][A-Za-z0-9]*"
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false

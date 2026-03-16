@@ -77,7 +77,10 @@ internal class BsatnEncoder(
         buffer.writeByte(0)
     }
 
-    override fun beginCollection(descriptor: SerialDescriptor, collectionSize: Int): CompositeEncoder {
+    override fun beginCollection(
+        descriptor: SerialDescriptor,
+        collectionSize: Int,
+    ): CompositeEncoder {
         if (descriptor.kind == StructureKind.MAP) {
             throw BsatnEncodeException("BSATN does not support map types")
         }
@@ -123,8 +126,8 @@ internal class BsatnEncoder(
  * Specialized encoder for sealed class hierarchies.
  *
  * kotlinx.serialization encodes sealed classes as a 2-element structure:
- * [type_discriminator_string, content]. We intercept this to write BSATN sum types:
- * u8 tag (ordinal index of the subclass) + encoded content.
+ * [type_discriminator_string, content]. We intercept this to write BSATN sum types: u8 tag (ordinal
+ * index of the subclass) + encoded content.
  */
 @OptIn(ExperimentalSerializationApi::class)
 private class SealedClassEncoder(
@@ -160,13 +163,23 @@ private class SealedClassEncoder(
         // no-op
     }
 
-    override fun encodeBoolean(value: Boolean) = BsatnEncoder(buffer, serializersModule).encodeBoolean(value)
+    override fun encodeBoolean(value: Boolean) =
+        BsatnEncoder(buffer, serializersModule).encodeBoolean(value)
+
     override fun encodeByte(value: Byte) = BsatnEncoder(buffer, serializersModule).encodeByte(value)
-    override fun encodeShort(value: Short) = BsatnEncoder(buffer, serializersModule).encodeShort(value)
+
+    override fun encodeShort(value: Short) =
+        BsatnEncoder(buffer, serializersModule).encodeShort(value)
+
     override fun encodeInt(value: Int) = BsatnEncoder(buffer, serializersModule).encodeInt(value)
+
     override fun encodeLong(value: Long) = BsatnEncoder(buffer, serializersModule).encodeLong(value)
-    override fun encodeFloat(value: Float) = BsatnEncoder(buffer, serializersModule).encodeFloat(value)
-    override fun encodeDouble(value: Double) = BsatnEncoder(buffer, serializersModule).encodeDouble(value)
+
+    override fun encodeFloat(value: Float) =
+        BsatnEncoder(buffer, serializersModule).encodeFloat(value)
+
+    override fun encodeDouble(value: Double) =
+        BsatnEncoder(buffer, serializersModule).encodeDouble(value)
 
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) {
         buffer.writeByte(index)

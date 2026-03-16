@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
- * A [Flow] of inserted rows. The callback is automatically unregistered when the
- * flow collector is cancelled.
+ * A [Flow] of inserted rows. The callback is automatically unregistered when the flow collector is
+ * cancelled.
  *
  * ```kotlin
  * conn.db.player.insertFlow().collect { (event, row) ->
@@ -23,8 +23,8 @@ public fun <Row : Any> Table<Row>.insertFlow(): Flow<RowEvent<Row>> = callbackFl
 }
 
 /**
- * A [Flow] of deleted rows. The callback is automatically unregistered when the
- * flow collector is cancelled.
+ * A [Flow] of deleted rows. The callback is automatically unregistered when the flow collector is
+ * cancelled.
  */
 public fun <Row : Any> Table<Row>.deleteFlow(): Flow<RowEvent<Row>> = callbackFlow {
     val id = onDelete { event, row -> trySend(RowEvent(event, row)) }
@@ -32,8 +32,8 @@ public fun <Row : Any> Table<Row>.deleteFlow(): Flow<RowEvent<Row>> = callbackFl
 }
 
 /**
- * A [Flow] of row updates (old → new). The callback is automatically unregistered
- * when the flow collector is cancelled.
+ * A [Flow] of row updates (old → new). The callback is automatically unregistered when the flow
+ * collector is cancelled.
  *
  * ```kotlin
  * conn.db.player.updateFlow().collect { (event, oldRow, newRow) ->
@@ -41,14 +41,17 @@ public fun <Row : Any> Table<Row>.deleteFlow(): Flow<RowEvent<Row>> = callbackFl
  * }
  * ```
  */
-public fun <Row : Any> TableWithPrimaryKey<Row>.updateFlow(): Flow<RowUpdateEvent<Row>> = callbackFlow {
-    val id = onUpdate { event, oldRow, newRow -> trySend(RowUpdateEvent(event, oldRow, newRow)) }
-    awaitClose { removeOnUpdate(id) }
-}
+public fun <Row : Any> TableWithPrimaryKey<Row>.updateFlow(): Flow<RowUpdateEvent<Row>> =
+    callbackFlow {
+        val id = onUpdate { event, oldRow, newRow ->
+            trySend(RowUpdateEvent(event, oldRow, newRow))
+        }
+        awaitClose { removeOnUpdate(id) }
+    }
 
 /**
- * A [Flow] of event table rows. The callback is automatically unregistered when the
- * flow collector is cancelled.
+ * A [Flow] of event table rows. The callback is automatically unregistered when the flow collector
+ * is cancelled.
  */
 public fun <Row : Any> EventTable<Row>.eventFlow(): Flow<RowEvent<Row>> = callbackFlow {
     val id = onEvent { event, row -> trySend(RowEvent(event, row)) }
@@ -58,17 +61,16 @@ public fun <Row : Any> EventTable<Row>.eventFlow(): Flow<RowEvent<Row>> = callba
 /**
  * A [Flow] of the current list of rows in this table.
  *
- * The flow emits the initial snapshot of all cached rows, then re-emits the full
- * list whenever rows are inserted or deleted.
+ * The flow emits the initial snapshot of all cached rows, then re-emits the full list whenever rows
+ * are inserted or deleted.
  *
- * By default, intermediate snapshots during rapid changes (e.g. initial subscription
- * apply) are automatically [conflated][conflate] so collectors always see the latest
- * state without processing every intermediate list. For high-frequency use cases
- * (e.g. game state at 20Hz) where every intermediate snapshot matters, pass
- * `conflate = false` to preserve all emissions.
+ * By default, intermediate snapshots during rapid changes (e.g. initial subscription apply) are
+ * automatically [conflated][conflate] so collectors always see the latest state without processing
+ * every intermediate list. For high-frequency use cases (e.g. game state at 20Hz) where every
+ * intermediate snapshot matters, pass `conflate = false` to preserve all emissions.
  *
- * For tables with a primary key, prefer the [TableWithPrimaryKey] overload which
- * also tracks row updates.
+ * For tables with a primary key, prefer the [TableWithPrimaryKey] overload which also tracks row
+ * updates.
  *
  * ```kotlin
  * // One line per table — replaces manual onInsert/onDelete/onApplied boilerplate
@@ -82,25 +84,27 @@ public fun <Row : Any> EventTable<Row>.eventFlow(): Flow<RowEvent<Row>> = callba
  *     .stateIn(scope, SharingStarted.Eagerly, emptyList())
  * ```
  *
- * @param conflate When `true` (the default), applies [Flow.conflate] so only the
- *   latest snapshot is delivered when the collector is slower than the producer.
- *   When `false`, all intermediate snapshots are buffered and delivered in order.
+ * @param conflate When `true` (the default), applies [Flow.conflate] so only the latest snapshot is
+ *   delivered when the collector is slower than the producer. When `false`, all intermediate
+ *   snapshots are buffered and delivered in order.
  */
-public fun <Row : Any> Table<Row>.rowsFlow(conflate: Boolean = true): Flow<List<Row>> = callbackFlow {
-    send(toList())
-    val insertId = onInsert { _, _ -> trySend(toList()) }
-    val deleteId = onDelete { _, _ -> trySend(toList()) }
-    awaitClose {
-        removeOnInsert(insertId)
-        removeOnDelete(deleteId)
-    }
-}.let { if (conflate) it.conflate() else it.distinctUntilChanged() }
+public fun <Row : Any> Table<Row>.rowsFlow(conflate: Boolean = true): Flow<List<Row>> =
+    callbackFlow {
+            send(toList())
+            val insertId = onInsert { _, _ -> trySend(toList()) }
+            val deleteId = onDelete { _, _ -> trySend(toList()) }
+            awaitClose {
+                removeOnInsert(insertId)
+                removeOnDelete(deleteId)
+            }
+        }
+        .let { if (conflate) it.conflate() else it.distinctUntilChanged() }
 
 /**
  * A [Flow] of the current list of rows in this table with primary key.
  *
- * Behaves identically to [Table.rowsFlow] but also re-emits when rows are
- * updated (a PK-matched delete + insert within the same transaction).
+ * Behaves identically to [Table.rowsFlow] but also re-emits when rows are updated (a PK-matched
+ * delete + insert within the same transaction).
  *
  * ```kotlin
  * val messages: Flow<List<Message>> = conn.db.message.rowsFlow()
@@ -110,37 +114,35 @@ public fun <Row : Any> Table<Row>.rowsFlow(conflate: Boolean = true): Flow<List<
  *     .map { it.sortedBy { m -> m.createdAt } }
  * ```
  *
- * @param conflate When `true` (the default), applies [Flow.conflate] so only the
- *   latest snapshot is delivered when the collector is slower than the producer.
- *   When `false`, all intermediate snapshots are buffered and delivered in order.
+ * @param conflate When `true` (the default), applies [Flow.conflate] so only the latest snapshot is
+ *   delivered when the collector is slower than the producer. When `false`, all intermediate
+ *   snapshots are buffered and delivered in order.
  */
-public fun <Row : Any> TableWithPrimaryKey<Row>.rowsFlow(conflate: Boolean = true): Flow<List<Row>> = callbackFlow {
-    send(toList())
-    val insertId = onInsert { _, _ -> trySend(toList()) }
-    val deleteId = onDelete { _, _ -> trySend(toList()) }
-    val updateId = onUpdate { _, _, _ -> trySend(toList()) }
-    awaitClose {
-        removeOnInsert(insertId)
-        removeOnDelete(deleteId)
-        removeOnUpdate(updateId)
-    }
-}.let { if (conflate) it.conflate() else it.distinctUntilChanged() }
+public fun <Row : Any> TableWithPrimaryKey<Row>.rowsFlow(
+    conflate: Boolean = true
+): Flow<List<Row>> =
+    callbackFlow {
+            send(toList())
+            val insertId = onInsert { _, _ -> trySend(toList()) }
+            val deleteId = onDelete { _, _ -> trySend(toList()) }
+            val updateId = onUpdate { _, _, _ -> trySend(toList()) }
+            awaitClose {
+                removeOnInsert(insertId)
+                removeOnDelete(deleteId)
+                removeOnUpdate(updateId)
+            }
+        }
+        .let { if (conflate) it.conflate() else it.distinctUntilChanged() }
 
-/**
- * An insert or delete event paired with its row.
- */
+/** An insert or delete event paired with its row. */
 @Poko
-public class RowEvent<Row : Any>(
-    public val event: Event<*>,
-    public val row: Row,
-) {
+public class RowEvent<Row : Any>(public val event: Event<*>, public val row: Row) {
     public operator fun component1(): Event<*> = event
+
     public operator fun component2(): Row = row
 }
 
-/**
- * An update event with the old and new row values.
- */
+/** An update event with the old and new row values. */
 @Poko
 public class RowUpdateEvent<Row : Any>(
     public val event: Event<*>,
@@ -148,6 +150,8 @@ public class RowUpdateEvent<Row : Any>(
     public val newRow: Row,
 ) {
     public operator fun component1(): Event<*> = event
+
     public operator fun component2(): Row = oldRow
+
     public operator fun component3(): Row = newRow
 }

@@ -1,9 +1,9 @@
 package dev.sanson.spacetimedb
 
 import app.cash.turbine.test
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.coroutines.test.runTest
 
 class TableFlowExtensionsTest {
 
@@ -13,11 +13,19 @@ class TableFlowExtensionsTest {
         val table = FakeTable<String>("items", callbacks)
 
         table.insertFlow().test {
-            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("a"), deletes = emptyList()), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "items",
+                TableAppliedDiff(inserts = listOf("a"), deletes = emptyList()),
+                Event.Transaction,
+            )
             val (_, row) = awaitItem()
             assertEquals("a", row)
 
-            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "items",
+                TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()),
+                Event.Transaction,
+            )
             assertEquals("b", awaitItem().row)
 
             cancel()
@@ -30,7 +38,11 @@ class TableFlowExtensionsTest {
         val table = FakeTable<String>("items", callbacks)
 
         table.deleteFlow().test {
-            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = emptyList(), deletes = listOf("x")), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "items",
+                TableAppliedDiff(inserts = emptyList(), deletes = listOf("x")),
+                Event.Transaction,
+            )
             assertEquals("x", awaitItem().row)
 
             cancel()
@@ -68,7 +80,11 @@ class TableFlowExtensionsTest {
         val table = FakeEventTable<String>("events", callbacks)
 
         table.eventFlow().test {
-            callbacks.invokeCallbacks("events", TableAppliedDiff(inserts = listOf("evt"), deletes = emptyList()), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "events",
+                TableAppliedDiff(inserts = listOf("evt"), deletes = emptyList()),
+                Event.Transaction,
+            )
             assertEquals("evt", awaitItem().row)
 
             cancel()
@@ -95,7 +111,11 @@ class TableFlowExtensionsTest {
             assertEquals(listOf("a"), awaitItem())
 
             table.rows.add("b")
-            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "items",
+                TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()),
+                Event.Transaction,
+            )
             assertEquals(listOf("a", "b"), awaitItem())
 
             cancel()
@@ -111,7 +131,11 @@ class TableFlowExtensionsTest {
             assertEquals(listOf("a", "b"), awaitItem())
 
             table.rows.remove("a")
-            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = emptyList(), deletes = listOf("a")), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "items",
+                TableAppliedDiff(inserts = emptyList(), deletes = listOf("a")),
+                Event.Transaction,
+            )
             assertEquals(listOf("b"), awaitItem())
 
             cancel()
@@ -155,7 +179,11 @@ class TableFlowExtensionsTest {
 
         // After cancellation, updating the table should not cause issues
         table.rows.add("b")
-        callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()), Event.Transaction)
+        callbacks.invokeCallbacks(
+            "items",
+            TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()),
+            Event.Transaction,
+        )
     }
 
     @Test
@@ -168,9 +196,17 @@ class TableFlowExtensionsTest {
 
             // Rapid-fire two inserts
             table.rows.add("b")
-            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "items",
+                TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()),
+                Event.Transaction,
+            )
             table.rows.add("c")
-            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("c"), deletes = emptyList()), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "items",
+                TableAppliedDiff(inserts = listOf("c"), deletes = emptyList()),
+                Event.Transaction,
+            )
 
             assertEquals(listOf("a", "b"), awaitItem())
             assertEquals(listOf("a", "b", "c"), awaitItem())
@@ -189,16 +225,28 @@ class TableFlowExtensionsTest {
 
             // Insert then immediately delete — table returns to same state
             table.rows.add("b")
-            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "items",
+                TableAppliedDiff(inserts = listOf("b"), deletes = emptyList()),
+                Event.Transaction,
+            )
             assertEquals(listOf("a", "b"), awaitItem())
 
             table.rows.remove("b")
-            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = emptyList(), deletes = listOf("b")), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "items",
+                TableAppliedDiff(inserts = emptyList(), deletes = listOf("b")),
+                Event.Transaction,
+            )
             // Should still emit because it's a distinct list from the previous
             assertEquals(listOf("a"), awaitItem())
 
             // Trigger a no-op callback — same list content should be deduplicated
-            callbacks.invokeCallbacks("items", TableAppliedDiff(inserts = emptyList(), deletes = emptyList()), Event.Transaction)
+            callbacks.invokeCallbacks(
+                "items",
+                TableAppliedDiff(inserts = emptyList(), deletes = emptyList()),
+                Event.Transaction,
+            )
             expectNoEvents()
 
             cancel()
@@ -242,43 +290,45 @@ class TableFlowExtensionsTest {
     }
 
     @Test
-    fun `rowsFlow with default conflation delivers latest state after a high-frequency burst`() = runTest {
-        val callbacks = DbCallbacks()
-        val table = FakeTableWithPk<Position>("pos", callbacks, mutableListOf(Position(0, 0)))
+    fun `rowsFlow with default conflation delivers latest state after a high-frequency burst`() =
+        runTest {
+            val callbacks = DbCallbacks()
+            val table = FakeTableWithPk<Position>("pos", callbacks, mutableListOf(Position(0, 0)))
 
-        val updates = (1..20).map { tick -> Position(tick * 5, tick * 3) }
+            val updates = (1..20).map { tick -> Position(tick * 5, tick * 3) }
 
-        table.rowsFlow().test {
-            assertEquals(listOf(Position(0, 0)), awaitItem())
+            table.rowsFlow().test {
+                assertEquals(listOf(Position(0, 0)), awaitItem())
 
-            // Fire all 20 updates — with conflation the collector will see some
-            // subset ending with the final position
-            for (newPos in updates) {
-                val oldPos = table.rows[0]
-                table.rows[0] = newPos
-                callbacks.invokeCallbacks(
-                    "pos",
-                    TableAppliedDiff(
-                        inserts = emptyList(),
-                        deletes = emptyList(),
-                        updateDeletes = listOf(oldPos),
-                        updateInserts = listOf(newPos),
-                    ),
-                    Event.Transaction,
-                )
+                // Fire all 20 updates — with conflation the collector will see some
+                // subset ending with the final position
+                for (newPos in updates) {
+                    val oldPos = table.rows[0]
+                    table.rows[0] = newPos
+                    callbacks.invokeCallbacks(
+                        "pos",
+                        TableAppliedDiff(
+                            inserts = emptyList(),
+                            deletes = emptyList(),
+                            updateDeletes = listOf(oldPos),
+                            updateInserts = listOf(newPos),
+                        ),
+                        Event.Transaction,
+                    )
+                }
+
+                // Drain all available items — the last one must be the final position
+                var last: List<Position> = awaitItem()
+                do {
+                    val events = cancelAndConsumeRemainingEvents()
+                    val items =
+                        events.filterIsInstance<app.cash.turbine.Event.Item<List<Position>>>()
+                    if (items.isNotEmpty()) last = items.last().value
+                } while (false)
+
+                assertEquals(listOf(updates.last()), last)
             }
-
-            // Drain all available items — the last one must be the final position
-            var last: List<Position> = awaitItem()
-            do {
-                val events = cancelAndConsumeRemainingEvents()
-                val items = events.filterIsInstance<app.cash.turbine.Event.Item<List<Position>>>()
-                if (items.isNotEmpty()) last = items.last().value
-            } while (false)
-
-            assertEquals(listOf(updates.last()), last)
         }
-    }
 
     // Minimal fakes that implement the interfaces
     private class FakeTable<Row : Any>(
@@ -286,13 +336,19 @@ class TableFlowExtensionsTest {
         private val callbacks: DbCallbacks,
         val rows: MutableList<Row> = mutableListOf(),
     ) : Table<Row> {
-        override val count: Int get() = rows.size
+        override val count: Int
+            get() = rows.size
+
         override fun iterator(): Iterator<Row> = rows.toList().iterator()
+
         override fun onInsert(callback: (event: Event<*>, row: Row) -> Unit): CallbackId =
             callbacks.registerOnInsert(tableName, callback)
+
         override fun removeOnInsert(id: CallbackId) = callbacks.removeOnInsert(tableName, id)
+
         override fun onDelete(callback: (event: Event<*>, row: Row) -> Unit): CallbackId =
             callbacks.registerOnDelete(tableName, callback)
+
         override fun removeOnDelete(id: CallbackId) = callbacks.removeOnDelete(tableName, id)
     }
 
@@ -301,16 +357,25 @@ class TableFlowExtensionsTest {
         private val callbacks: DbCallbacks,
         val rows: MutableList<Row> = mutableListOf(),
     ) : TableWithPrimaryKey<Row> {
-        override val count: Int get() = rows.size
+        override val count: Int
+            get() = rows.size
+
         override fun iterator(): Iterator<Row> = rows.toList().iterator()
+
         override fun onInsert(callback: (event: Event<*>, row: Row) -> Unit): CallbackId =
             callbacks.registerOnInsert(tableName, callback)
+
         override fun removeOnInsert(id: CallbackId) = callbacks.removeOnInsert(tableName, id)
+
         override fun onDelete(callback: (event: Event<*>, row: Row) -> Unit): CallbackId =
             callbacks.registerOnDelete(tableName, callback)
+
         override fun removeOnDelete(id: CallbackId) = callbacks.removeOnDelete(tableName, id)
-        override fun onUpdate(callback: (event: Event<*>, oldRow: Row, newRow: Row) -> Unit): CallbackId =
-            callbacks.registerOnUpdate(tableName, callback)
+
+        override fun onUpdate(
+            callback: (event: Event<*>, oldRow: Row, newRow: Row) -> Unit
+        ): CallbackId = callbacks.registerOnUpdate(tableName, callback)
+
         override fun removeOnUpdate(id: CallbackId) = callbacks.removeOnUpdate(tableName, id)
     }
 
@@ -320,6 +385,7 @@ class TableFlowExtensionsTest {
     ) : EventTable<Row> {
         override fun onEvent(callback: (event: Event<*>, row: Row) -> Unit): CallbackId =
             callbacks.registerOnInsert(tableName, callback)
+
         override fun removeOnEvent(id: CallbackId) = callbacks.removeOnInsert(tableName, id)
     }
 

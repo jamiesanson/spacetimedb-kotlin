@@ -26,9 +26,7 @@ class ConnectionIdHexTest {
 
     @Test
     fun `fromHex rejects wrong length`() {
-        assertFailsWith<IllegalArgumentException> {
-            ConnectionId.fromHex("abcd")
-        }
+        assertFailsWith<IllegalArgumentException> { ConnectionId.fromHex("abcd") }
     }
 
     @Test

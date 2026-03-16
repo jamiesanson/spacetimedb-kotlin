@@ -18,25 +18,23 @@ import kotlin.io.path.readText
 /**
  * CLI entry point for SpacetimeDB Kotlin codegen.
  *
- * Reads a V10 module schema JSON file (from `spacetimedb-standalone extract-schema`)
- * and generates typed Kotlin source files.
+ * Reads a V10 module schema JSON file (from `spacetimedb-standalone extract-schema`) and generates
+ * typed Kotlin source files.
  */
-public class GenerateCommand : CliktCommand(
-    name = "spacetimedb-codegen",
-) {
+public class GenerateCommand : CliktCommand(name = "spacetimedb-codegen") {
     override fun help(context: Context): String =
         "Generate typed Kotlin sources from a SpacetimeDB module schema."
 
-    private val schema: Path by option("--schema", help = "Path to V10 module schema JSON")
-        .path(mustExist = true, canBeDir = false)
-        .required()
+    private val schema: Path by
+        option("--schema", help = "Path to V10 module schema JSON")
+            .path(mustExist = true, canBeDir = false)
+            .required()
 
-    private val outDir: Path by option("--out-dir", help = "Output directory for generated sources")
-        .path()
-        .required()
+    private val outDir: Path by
+        option("--out-dir", help = "Output directory for generated sources").path().required()
 
-    private val packageName: String by option("--package", help = "Package name for generated code")
-        .required()
+    private val packageName: String by
+        option("--package", help = "Package name for generated code").required()
 
     override fun run() {
         val schemaJson = schema.readText()

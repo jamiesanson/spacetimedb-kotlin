@@ -1,6 +1,8 @@
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jetbrains.dokka")
+    id("io.gitlab.arturbosch.detekt")
+    id("com.ncorti.ktfmt.gradle")
     `maven-publish`
 }
 
@@ -34,4 +36,13 @@ publishing {
             }
         }
     }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+}
+
+ktfmt {
+    kotlinLangStyle()
 }

@@ -30,11 +30,12 @@ class EventTypesTest {
 
     @Test
     fun `ReducerEvent carries timestamp and status and reducer`() {
-        val event = ReducerEvent(
-            timestamp = Timestamp.fromEpochMicroseconds(1_000_000L),
-            status = Status.Committed,
-            reducer = "add_player",
-        )
+        val event =
+            ReducerEvent(
+                timestamp = Timestamp.fromEpochMicroseconds(1_000_000L),
+                status = Status.Committed,
+                reducer = "add_player",
+            )
         assertEquals(Timestamp.fromEpochMicroseconds(1_000_000L), event.timestamp)
         assertIs<Status.Committed>(event.status)
         assertEquals("add_player", event.reducer)
@@ -44,11 +45,12 @@ class EventTypesTest {
 
     @Test
     fun `Event Reducer wraps ReducerEvent`() {
-        val reducerEvent = ReducerEvent(
-            timestamp = Timestamp.fromEpochMicroseconds(1L),
-            status = Status.Committed,
-            reducer = 42,
-        )
+        val reducerEvent =
+            ReducerEvent(
+                timestamp = Timestamp.fromEpochMicroseconds(1L),
+                status = Status.Committed,
+                reducer = 42,
+            )
         val event: Event<Int> = Event.Reducer(reducerEvent)
         assertIs<Event.Reducer<Int>>(event)
         assertEquals(reducerEvent, event.event)
@@ -88,9 +90,8 @@ class EventTypesTest {
 
     @Test
     fun `Event is covariant in R`() {
-        val intEvent: Event<Int> = Event.Reducer(
-            ReducerEvent(Timestamp.fromEpochMicroseconds(0L), Status.Committed, 42),
-        )
+        val intEvent: Event<Int> =
+            Event.Reducer(ReducerEvent(Timestamp.fromEpochMicroseconds(0L), Status.Committed, 42))
         // Should compile: Event<Int> assignable to Event<Any>
         val anyEvent: Event<Any> = intEvent
         assertIs<Event.Reducer<Any>>(anyEvent)
@@ -154,14 +155,15 @@ class SpacetimeErrorTest {
 
     @Test
     fun `all errors are SpacetimeError`() {
-        val errors: List<SpacetimeError> = listOf(
-            SpacetimeError.Disconnected,
-            SpacetimeError.FailedToConnect(),
-            SpacetimeError.SubscriptionError("err"),
-            SpacetimeError.AlreadyEnded,
-            SpacetimeError.AlreadyUnsubscribed,
-            SpacetimeError.Internal("msg"),
-        )
+        val errors: List<SpacetimeError> =
+            listOf(
+                SpacetimeError.Disconnected,
+                SpacetimeError.FailedToConnect(),
+                SpacetimeError.SubscriptionError("err"),
+                SpacetimeError.AlreadyEnded,
+                SpacetimeError.AlreadyUnsubscribed,
+                SpacetimeError.Internal("msg"),
+            )
         assertEquals(6, errors.size)
         errors.forEach { assertIs<SpacetimeError>(it) }
     }

@@ -25,14 +25,15 @@ class BsatnBigIntegerTest {
 
     @Test
     fun `roundtrip U128`() {
-        val values = listOf(
-            U128.ZERO,
-            U128(1u, 0u),
-            U128(ULong.MAX_VALUE, 0u),
-            U128(0u, 1u),
-            U128(ULong.MAX_VALUE, ULong.MAX_VALUE),
-            U128(0x0102030405060708u, 0x090A0B0C0D0E0F10u),
-        )
+        val values =
+            listOf(
+                U128.ZERO,
+                U128(1u, 0u),
+                U128(ULong.MAX_VALUE, 0u),
+                U128(0u, 1u),
+                U128(ULong.MAX_VALUE, ULong.MAX_VALUE),
+                U128(0x0102030405060708u, 0x090A0B0C0D0E0F10u),
+            )
         for (v in values) {
             val bytes = Bsatn.encodeToByteArray(U128.serializer(), v)
             assertEquals(v, Bsatn.decodeFromByteArray(U128.serializer(), bytes))
@@ -41,13 +42,14 @@ class BsatnBigIntegerTest {
 
     @Test
     fun `roundtrip I128`() {
-        val values = listOf(
-            I128.ZERO,
-            I128(1u, 0u),
-            I128.MIN,
-            I128.MAX,
-            I128(ULong.MAX_VALUE, ULong.MAX_VALUE), // -1
-        )
+        val values =
+            listOf(
+                I128.ZERO,
+                I128(1u, 0u),
+                I128.MIN,
+                I128.MAX,
+                I128(ULong.MAX_VALUE, ULong.MAX_VALUE), // -1
+            )
         for (v in values) {
             val bytes = Bsatn.encodeToByteArray(I128.serializer(), v)
             assertEquals(v, Bsatn.decodeFromByteArray(I128.serializer(), bytes))
@@ -63,12 +65,18 @@ class BsatnBigIntegerTest {
 
     @Test
     fun `roundtrip U256`() {
-        val values = listOf(
-            U256.ZERO,
-            U256(1u, 0u, 0u, 0u),
-            U256.MAX,
-            U256(0x0102030405060708u, 0x090A0B0C0D0E0F10u, 0x1112131415161718u, 0x191A1B1C1D1E1F20u),
-        )
+        val values =
+            listOf(
+                U256.ZERO,
+                U256(1u, 0u, 0u, 0u),
+                U256.MAX,
+                U256(
+                    0x0102030405060708u,
+                    0x090A0B0C0D0E0F10u,
+                    0x1112131415161718u,
+                    0x191A1B1C1D1E1F20u,
+                ),
+            )
         for (v in values) {
             val bytes = Bsatn.encodeToByteArray(U256.serializer(), v)
             assertEquals(v, Bsatn.decodeFromByteArray(U256.serializer(), bytes))
@@ -77,11 +85,12 @@ class BsatnBigIntegerTest {
 
     @Test
     fun `roundtrip I256`() {
-        val values = listOf(
-            I256.ZERO,
-            I256(1u, 0u, 0u, 0u),
-            I256(ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE), // -1
-        )
+        val values =
+            listOf(
+                I256.ZERO,
+                I256(1u, 0u, 0u, 0u),
+                I256(ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE), // -1
+            )
         for (v in values) {
             val bytes = Bsatn.encodeToByteArray(I256.serializer(), v)
             assertEquals(v, Bsatn.decodeFromByteArray(I256.serializer(), bytes))

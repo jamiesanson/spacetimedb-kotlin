@@ -4,11 +4,11 @@ package dev.sanson.spacetimedb
  * Registry for table row-change callbacks.
  *
  * Manages per-table `on_insert`, `on_delete`, and `on_update` callbacks keyed by [CallbackId].
- * After a [TableAppliedDiff] is computed, call [invokeCallbacks] to fire all matching
- * callbacks for the affected rows.
+ * After a [TableAppliedDiff] is computed, call [invokeCallbacks] to fire all matching callbacks for
+ * the affected rows.
  *
- * Used by SDK internals and generated code; most users register callbacks through the
- * generated [Table] implementations.
+ * Used by SDK internals and generated code; most users register callbacks through the generated
+ * [Table] implementations.
  */
 public class DbCallbacks {
     private val tableCallbacks = mutableMapOf<String, TableCallbacks>()
@@ -22,8 +22,8 @@ public class DbCallbacks {
     /**
      * Register an insert callback for [tableName].
      *
-     * The [callback] will be invoked with each newly inserted row when
-     * [invokeCallbacks] is called after a cache update.
+     * The [callback] will be invoked with each newly inserted row when [invokeCallbacks] is called
+     * after a cache update.
      */
     public fun <Row : Any> registerOnInsert(
         tableName: String,
@@ -34,9 +34,7 @@ public class DbCallbacks {
         return id
     }
 
-    /**
-     * Register a delete callback for [tableName].
-     */
+    /** Register a delete callback for [tableName]. */
     public fun <Row : Any> registerOnDelete(
         tableName: String,
         callback: (event: Event<*>, row: Row) -> Unit,
@@ -82,8 +80,8 @@ public class DbCallbacks {
     /**
      * Invoke all registered callbacks for the given [diff] on [tableName].
      *
-     * Fires insert callbacks for [TableAppliedDiff.inserts], delete callbacks
-     * for [TableAppliedDiff.deletes], and update callbacks for
+     * Fires insert callbacks for [TableAppliedDiff.inserts], delete callbacks for
+     * [TableAppliedDiff.deletes], and update callbacks for
      * [TableAppliedDiff.updateDeletes]/[TableAppliedDiff.updateInserts] pairs.
      */
     public fun <Row : Any> invokeCallbacks(
@@ -120,13 +118,14 @@ public class DbCallbacks {
 
     // -- Reducer callbacks --
 
-    private val reducerCallbacks = mutableMapOf<String, LinkedHashMap<CallbackId, ReducerCallback>>()
+    private val reducerCallbacks =
+        mutableMapOf<String, LinkedHashMap<CallbackId, ReducerCallback>>()
 
     /**
      * Register a callback for a specific reducer by [reducerName].
      *
-     * The [callback] will be invoked with the [ReducerEvent] whenever the server
-     * responds to a call to this reducer (committed, failed, or panicked).
+     * The [callback] will be invoked with the [ReducerEvent] whenever the server responds to a call
+     * to this reducer (committed, failed, or panicked).
      */
     public fun registerOnReducer(
         reducerName: String,
@@ -142,9 +141,7 @@ public class DbCallbacks {
         reducerCallbacks[reducerName]?.remove(id)
     }
 
-    /**
-     * Invoke all registered callbacks for a reducer result.
-     */
+    /** Invoke all registered callbacks for a reducer result. */
     public fun invokeReducerCallbacks(reducerName: String, event: ReducerEvent<*>) {
         val callbacks = reducerCallbacks[reducerName] ?: return
         for (cb in callbacks.values) {
@@ -156,7 +153,9 @@ public class DbCallbacks {
 // -- Internal types --
 
 internal typealias RowCallback = (Event<*>, Any) -> Unit
+
 internal typealias UpdateCallback = (Event<*>, Any, Any) -> Unit
+
 internal typealias ReducerCallback = (ReducerEvent<*>) -> Unit
 
 internal class TableCallbacks {
@@ -166,11 +165,12 @@ internal class TableCallbacks {
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun <Row : Any> eraseRowCallback(
-    callback: (Event<*>, Row) -> Unit,
-): RowCallback = { event, row -> callback(event, row as Row) }
+private fun <Row : Any> eraseRowCallback(callback: (Event<*>, Row) -> Unit): RowCallback =
+    { event, row ->
+        callback(event, row as Row)
+    }
 
 @Suppress("UNCHECKED_CAST")
 private fun <Row : Any> eraseUpdateCallback(
-    callback: (Event<*>, Row, Row) -> Unit,
+    callback: (Event<*>, Row, Row) -> Unit
 ): UpdateCallback = { event, oldRow, newRow -> callback(event, oldRow as Row, newRow as Row) }

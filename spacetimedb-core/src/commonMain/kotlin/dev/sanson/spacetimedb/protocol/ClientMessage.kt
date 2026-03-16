@@ -4,16 +4,10 @@ import kotlin.jvm.JvmInline
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
-/**
- * Opaque identifier for a subscription query set.
- */
-@Serializable
-@JvmInline
-internal value class QuerySetId(val id: UInt)
+/** Opaque identifier for a subscription query set. */
+@Serializable @JvmInline internal value class QuerySetId(val id: UInt)
 
-/**
- * Flags for [ClientMessage.CallReducer] requests.
- */
+/** Flags for [ClientMessage.CallReducer] requests. */
 @Serializable
 @JvmInline
 internal value class CallReducerFlags(val bits: UByte) {
@@ -22,9 +16,7 @@ internal value class CallReducerFlags(val bits: UByte) {
     }
 }
 
-/**
- * Flags for [ClientMessage.Unsubscribe] requests.
- */
+/** Flags for [ClientMessage.Unsubscribe] requests. */
 @Serializable
 @JvmInline
 internal value class UnsubscribeFlags(val bits: UByte) {
@@ -34,9 +26,7 @@ internal value class UnsubscribeFlags(val bits: UByte) {
     }
 }
 
-/**
- * Flags for [ClientMessage.CallProcedure] requests.
- */
+/** Flags for [ClientMessage.CallProcedure] requests. */
 @Serializable
 @JvmInline
 internal value class CallProcedureFlags(val bits: UByte) {
@@ -67,10 +57,7 @@ internal sealed class ClientMessage {
     ) : ClientMessage()
 
     @Serializable
-    data class OneOffQuery(
-        val requestId: UInt,
-        val queryString: String,
-    ) : ClientMessage()
+    data class OneOffQuery(val requestId: UInt, val queryString: String) : ClientMessage()
 
     @Serializable
     data class CallReducer(
@@ -89,13 +76,14 @@ internal sealed class ClientMessage {
     ) : ClientMessage()
 }
 
-internal object ClientMessageSerializer : KSerializer<ClientMessage> by TaggedSumSerializer(
-    "ClientMessage",
-    arrayOf(
-        variant(ClientMessage.Subscribe.serializer()),
-        variant(ClientMessage.Unsubscribe.serializer()),
-        variant(ClientMessage.OneOffQuery.serializer()),
-        variant(ClientMessage.CallReducer.serializer()),
-        variant(ClientMessage.CallProcedure.serializer()),
-    ),
-)
+internal object ClientMessageSerializer :
+    KSerializer<ClientMessage> by TaggedSumSerializer(
+        "ClientMessage",
+        arrayOf(
+            variant(ClientMessage.Subscribe.serializer()),
+            variant(ClientMessage.Unsubscribe.serializer()),
+            variant(ClientMessage.OneOffQuery.serializer()),
+            variant(ClientMessage.CallReducer.serializer()),
+            variant(ClientMessage.CallProcedure.serializer()),
+        ),
+    )

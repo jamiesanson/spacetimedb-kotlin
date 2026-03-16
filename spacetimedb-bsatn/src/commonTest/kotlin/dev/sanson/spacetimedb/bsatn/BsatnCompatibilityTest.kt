@@ -1,19 +1,18 @@
 package dev.sanson.spacetimedb.bsatn
 
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
-import kotlin.test.Test
-import kotlin.test.assertContentEquals
-import kotlin.test.assertEquals
 
 /**
- * Tests encoding/decoding against known BSATN byte sequences
- * that match the Rust SpacetimeDB BSATN encoder output.
+ * Tests encoding/decoding against known BSATN byte sequences that match the Rust SpacetimeDB BSATN
+ * encoder output.
  */
 class BsatnCompatibilityTest {
-
 
     @Test
     fun `bool true matches Rust`() {
@@ -63,9 +62,7 @@ class BsatnCompatibilityTest {
         )
     }
 
-
-    @Serializable
-    data class TestPoint(val x: Int, val y: Int)
+    @Serializable data class TestPoint(val x: Int, val y: Int)
 
     @Test
     fun `product struct matches Rust field order`() {
@@ -77,15 +74,11 @@ class BsatnCompatibilityTest {
         )
     }
 
-
     @Test
     fun `option some matches Rust`() {
         // Rust: bsatn::to_vec(&Some(42i32)) == [0, 42, 0, 0, 0]
         // Tag 0 = Some, then value
-        val bytes = Bsatn.encodeToByteArray(
-            Int.serializer().nullable,
-            42,
-        )
+        val bytes = Bsatn.encodeToByteArray(Int.serializer().nullable, 42)
         assertContentEquals(byteArrayOf(0, 42, 0, 0, 0), bytes)
     }
 
@@ -93,40 +86,45 @@ class BsatnCompatibilityTest {
     fun `option none matches Rust`() {
         // Rust: bsatn::to_vec(&None::<i32>) == [1]
         // Tag 1 = None
-        val bytes = Bsatn.encodeToByteArray(
-            Int.serializer().nullable,
-            null,
-        )
+        val bytes = Bsatn.encodeToByteArray(Int.serializer().nullable, null)
         assertContentEquals(byteArrayOf(1), bytes)
     }
 
-
     @Serializable
-    enum class SimpleEnum { Zero, One, Two }
+    enum class SimpleEnum {
+        Zero,
+        One,
+        Two,
+    }
 
     @Test
     fun `enum tag matches Rust ordinal`() {
         // Rust enum variants are tagged 0, 1, 2...
-        assertContentEquals(byteArrayOf(0), Bsatn.encodeToByteArray(SimpleEnum.serializer(), SimpleEnum.Zero))
-        assertContentEquals(byteArrayOf(1), Bsatn.encodeToByteArray(SimpleEnum.serializer(), SimpleEnum.One))
-        assertContentEquals(byteArrayOf(2), Bsatn.encodeToByteArray(SimpleEnum.serializer(), SimpleEnum.Two))
+        assertContentEquals(
+            byteArrayOf(0),
+            Bsatn.encodeToByteArray(SimpleEnum.serializer(), SimpleEnum.Zero),
+        )
+        assertContentEquals(
+            byteArrayOf(1),
+            Bsatn.encodeToByteArray(SimpleEnum.serializer(), SimpleEnum.One),
+        )
+        assertContentEquals(
+            byteArrayOf(2),
+            Bsatn.encodeToByteArray(SimpleEnum.serializer(), SimpleEnum.Two),
+        )
     }
-
 
     @Test
     fun `vec of i32 matches Rust`() {
         // Rust: bsatn::to_vec(&vec![1i32, 2, 3])
         // == [3,0,0,0, 1,0,0,0, 2,0,0,0, 3,0,0,0]
-        val bytes = Bsatn.encodeToByteArray(
-            kotlinx.serialization.builtins.ListSerializer(Int.serializer()),
-            listOf(1, 2, 3),
-        )
-        assertContentEquals(
-            byteArrayOf(3, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0),
-            bytes,
-        )
+        val bytes =
+            Bsatn.encodeToByteArray(
+                kotlinx.serialization.builtins.ListSerializer(Int.serializer()),
+                listOf(1, 2, 3),
+            )
+        assertContentEquals(byteArrayOf(3, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0), bytes)
     }
-
 
     @Test
     fun `decode Rust-produced product bytes`() {

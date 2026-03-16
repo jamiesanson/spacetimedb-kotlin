@@ -45,11 +45,12 @@ class ClientMessageTest {
 
     @Test
     fun `Subscribe round-trips through BSATN`() {
-        val msg: ClientMessage = ClientMessage.Subscribe(
-            requestId = 1u,
-            querySetId = QuerySetId(10u),
-            queryStrings = listOf("SELECT * FROM users", "SELECT * FROM items"),
-        )
+        val msg: ClientMessage =
+            ClientMessage.Subscribe(
+                requestId = 1u,
+                querySetId = QuerySetId(10u),
+                queryStrings = listOf("SELECT * FROM users", "SELECT * FROM items"),
+            )
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
         val decoded = Bsatn.decodeFromByteArray(ClientMessage.serializer(), bytes)
 
@@ -61,11 +62,12 @@ class ClientMessageTest {
 
     @Test
     fun `Subscribe has tag 0`() {
-        val msg: ClientMessage = ClientMessage.Subscribe(
-            requestId = 0u,
-            querySetId = QuerySetId(0u),
-            queryStrings = emptyList(),
-        )
+        val msg: ClientMessage =
+            ClientMessage.Subscribe(
+                requestId = 0u,
+                querySetId = QuerySetId(0u),
+                queryStrings = emptyList(),
+            )
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
         assertEquals(0, bytes[0].toInt()) // tag byte
     }
@@ -74,11 +76,12 @@ class ClientMessageTest {
 
     @Test
     fun `Unsubscribe round-trips through BSATN`() {
-        val msg: ClientMessage = ClientMessage.Unsubscribe(
-            requestId = 2u,
-            querySetId = QuerySetId(20u),
-            flags = UnsubscribeFlags.SendDroppedRows,
-        )
+        val msg: ClientMessage =
+            ClientMessage.Unsubscribe(
+                requestId = 2u,
+                querySetId = QuerySetId(20u),
+                flags = UnsubscribeFlags.SendDroppedRows,
+            )
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
         val decoded = Bsatn.decodeFromByteArray(ClientMessage.serializer(), bytes)
 
@@ -89,11 +92,12 @@ class ClientMessageTest {
 
     @Test
     fun `Unsubscribe has tag 1`() {
-        val msg: ClientMessage = ClientMessage.Unsubscribe(
-            requestId = 0u,
-            querySetId = QuerySetId(0u),
-            flags = UnsubscribeFlags.Default,
-        )
+        val msg: ClientMessage =
+            ClientMessage.Unsubscribe(
+                requestId = 0u,
+                querySetId = QuerySetId(0u),
+                flags = UnsubscribeFlags.Default,
+            )
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
         assertEquals(1, bytes[0].toInt())
     }
@@ -102,10 +106,11 @@ class ClientMessageTest {
 
     @Test
     fun `OneOffQuery round-trips through BSATN`() {
-        val msg: ClientMessage = ClientMessage.OneOffQuery(
-            requestId = 3u,
-            queryString = "SELECT * FROM users WHERE id = 1",
-        )
+        val msg: ClientMessage =
+            ClientMessage.OneOffQuery(
+                requestId = 3u,
+                queryString = "SELECT * FROM users WHERE id = 1",
+            )
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
         val decoded = Bsatn.decodeFromByteArray(ClientMessage.serializer(), bytes)
 
@@ -116,10 +121,7 @@ class ClientMessageTest {
 
     @Test
     fun `OneOffQuery has tag 2`() {
-        val msg: ClientMessage = ClientMessage.OneOffQuery(
-            requestId = 0u,
-            queryString = "",
-        )
+        val msg: ClientMessage = ClientMessage.OneOffQuery(requestId = 0u, queryString = "")
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
         assertEquals(2, bytes[0].toInt())
     }
@@ -129,12 +131,13 @@ class ClientMessageTest {
     @Test
     fun `CallReducer round-trips through BSATN`() {
         val args = byteArrayOf(0x01, 0x02, 0x03)
-        val msg: ClientMessage = ClientMessage.CallReducer(
-            requestId = 4u,
-            flags = CallReducerFlags.Default,
-            reducer = "add_user",
-            args = args,
-        )
+        val msg: ClientMessage =
+            ClientMessage.CallReducer(
+                requestId = 4u,
+                flags = CallReducerFlags.Default,
+                reducer = "add_user",
+                args = args,
+            )
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
         val decoded = Bsatn.decodeFromByteArray(ClientMessage.serializer(), bytes)
 
@@ -147,12 +150,13 @@ class ClientMessageTest {
 
     @Test
     fun `CallReducer has tag 3`() {
-        val msg: ClientMessage = ClientMessage.CallReducer(
-            requestId = 0u,
-            flags = CallReducerFlags.Default,
-            reducer = "",
-            args = byteArrayOf(),
-        )
+        val msg: ClientMessage =
+            ClientMessage.CallReducer(
+                requestId = 0u,
+                flags = CallReducerFlags.Default,
+                reducer = "",
+                args = byteArrayOf(),
+            )
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
         assertEquals(3, bytes[0].toInt())
     }
@@ -162,12 +166,13 @@ class ClientMessageTest {
     @Test
     fun `CallProcedure round-trips through BSATN`() {
         val args = byteArrayOf(0xAA.toByte(), 0xBB.toByte())
-        val msg: ClientMessage = ClientMessage.CallProcedure(
-            requestId = 5u,
-            flags = CallProcedureFlags.Default,
-            procedure = "my_proc",
-            args = args,
-        )
+        val msg: ClientMessage =
+            ClientMessage.CallProcedure(
+                requestId = 5u,
+                flags = CallProcedureFlags.Default,
+                procedure = "my_proc",
+                args = args,
+            )
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
         val decoded = Bsatn.decodeFromByteArray(ClientMessage.serializer(), bytes)
 
@@ -179,12 +184,13 @@ class ClientMessageTest {
 
     @Test
     fun `CallProcedure has tag 4`() {
-        val msg: ClientMessage = ClientMessage.CallProcedure(
-            requestId = 0u,
-            flags = CallProcedureFlags.Default,
-            procedure = "",
-            args = byteArrayOf(),
-        )
+        val msg: ClientMessage =
+            ClientMessage.CallProcedure(
+                requestId = 0u,
+                flags = CallProcedureFlags.Default,
+                procedure = "",
+                args = byteArrayOf(),
+            )
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
         assertEquals(4, bytes[0].toInt())
     }
@@ -193,11 +199,12 @@ class ClientMessageTest {
 
     @Test
     fun `Subscribe encodes fields in correct order`() {
-        val msg: ClientMessage = ClientMessage.Subscribe(
-            requestId = 1u,
-            querySetId = QuerySetId(2u),
-            queryStrings = listOf("q1"),
-        )
+        val msg: ClientMessage =
+            ClientMessage.Subscribe(
+                requestId = 1u,
+                querySetId = QuerySetId(2u),
+                queryStrings = listOf("q1"),
+            )
         val bytes = Bsatn.encodeToByteArray(ClientMessage.serializer(), msg)
 
         // tag(0) + requestId(u32LE) + querySetId(u32LE) + queryStrings(u32LE count + string)

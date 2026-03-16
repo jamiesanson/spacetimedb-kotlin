@@ -1,11 +1,11 @@
 package dev.sanson.spacetimedb.transport
 
 import dev.sanson.spacetimedb.protocol.Compression
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import okio.Buffer
 import okio.GzipSink
 import okio.buffer
-import kotlin.test.Test
-import kotlin.test.assertContentEquals
 
 class GzipDecompressionJvmTest {
     private fun gzipCompress(data: ByteArray): ByteArray {

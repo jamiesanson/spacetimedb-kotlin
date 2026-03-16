@@ -10,8 +10,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 /**
- * 128-bit unsigned integer, stored as two [ULong] halves in little-endian order.
- * [lo] is the least-significant 64 bits, [hi] is the most-significant 64 bits.
+ * 128-bit unsigned integer, stored as two [ULong] halves in little-endian order. [lo] is the
+ * least-significant 64 bits, [hi] is the most-significant 64 bits.
  */
 @Poko
 @Serializable(with = U128Serializer::class)
@@ -33,8 +33,8 @@ public class U128(public val lo: ULong, public val hi: ULong) : Comparable<U128>
 }
 
 /**
- * 128-bit signed integer, stored as two [ULong] halves in little-endian order.
- * Interpreted as two's complement.
+ * 128-bit signed integer, stored as two [ULong] halves in little-endian order. Interpreted as two's
+ * complement.
  */
 @Poko
 @Serializable(with = I128Serializer::class)
@@ -51,15 +51,19 @@ public class I128(public val lo: ULong, public val hi: ULong) : Comparable<I128>
     }
 }
 
-/**
- * 256-bit unsigned integer, stored as four [ULong] words in little-endian order.
- */
+/** 256-bit unsigned integer, stored as four [ULong] words in little-endian order. */
 @Poko
 @Serializable(with = U256Serializer::class)
-public class U256(public val w0: ULong, public val w1: ULong, public val w2: ULong, public val w3: ULong) : Comparable<U256> {
+public class U256(
+    public val w0: ULong,
+    public val w1: ULong,
+    public val w2: ULong,
+    public val w3: ULong,
+) : Comparable<U256> {
     public companion object {
         public val ZERO: U256 = U256(0u, 0u, 0u, 0u)
-        public val MAX: U256 = U256(ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE)
+        public val MAX: U256 =
+            U256(ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE)
     }
 
     override fun compareTo(other: U256): Int {
@@ -74,12 +78,17 @@ public class U256(public val w0: ULong, public val w1: ULong, public val w2: ULo
 }
 
 /**
- * 256-bit signed integer, stored as four [ULong] words in little-endian order.
- * Interpreted as two's complement.
+ * 256-bit signed integer, stored as four [ULong] words in little-endian order. Interpreted as two's
+ * complement.
  */
 @Poko
 @Serializable(with = I256Serializer::class)
-public class I256(public val w0: ULong, public val w1: ULong, public val w2: ULong, public val w3: ULong) : Comparable<I256> {
+public class I256(
+    public val w0: ULong,
+    public val w1: ULong,
+    public val w2: ULong,
+    public val w3: ULong,
+) : Comparable<I256> {
     public companion object {
         public val ZERO: I256 = I256(0u, 0u, 0u, 0u)
     }

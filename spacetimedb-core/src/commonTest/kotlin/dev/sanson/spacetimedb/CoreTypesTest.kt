@@ -192,10 +192,11 @@ class CoreTypesTest {
         @kotlinx.serialization.Serializable
         data class Event(val caller: Identity, val at: Timestamp)
 
-        val event = Event(
-            caller = Identity(U256(42u, 0u, 0u, 0u)),
-            at = Timestamp.fromEpochMicroseconds(1_000_000L),
-        )
+        val event =
+            Event(
+                caller = Identity(U256(42u, 0u, 0u, 0u)),
+                at = Timestamp.fromEpochMicroseconds(1_000_000L),
+            )
         val bytes = Bsatn.encodeToByteArray(Event.serializer(), event)
         // 32 bytes identity + 8 bytes timestamp
         assertEquals(40, bytes.size)

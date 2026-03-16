@@ -4,11 +4,13 @@ plugins {
 
 dependencies {
     api(libs.plugins.binary.compatibility.validator.asDependency())
+    api(libs.plugins.detekt.asDependency())
     api(libs.plugins.dokka.asDependency())
     api(libs.plugins.foojay.asDependency())
     api(libs.plugins.kotlin.jvm.asDependency())
     api(libs.plugins.kotlin.multiplatform.asDependency())
     api(libs.plugins.kotlin.serialization.asDependency())
+    api(libs.plugins.ktfmt.asDependency())
     api(libs.plugins.poko.asDependency())
 }
 

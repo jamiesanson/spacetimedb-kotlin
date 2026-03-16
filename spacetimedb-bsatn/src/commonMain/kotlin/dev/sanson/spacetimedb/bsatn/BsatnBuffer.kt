@@ -1,8 +1,6 @@
 package dev.sanson.spacetimedb.bsatn
 
-/**
- * A growable byte buffer for BSATN encoding.
- */
+/** A growable byte buffer for BSATN encoding. */
 internal class BsatnBuffer {
     private var data = ByteArray(256)
     private var position = 0
@@ -57,9 +55,7 @@ internal class BsatnBuffer {
     fun toByteArray(): ByteArray = data.copyOf(position)
 }
 
-/**
- * A sequential reader over a byte array for BSATN decoding.
- */
+/** A sequential reader over a byte array for BSATN decoding. */
 internal class BsatnReader(private val data: ByteArray) {
     private var position = 0
 
@@ -100,8 +96,14 @@ internal class BsatnReader(private val data: ByteArray) {
         val b5 = data[position++].toLong() and 0xFF
         val b6 = data[position++].toLong() and 0xFF
         val b7 = data[position++].toLong() and 0xFF
-        return b0 or (b1 shl 8) or (b2 shl 16) or (b3 shl 24) or
-            (b4 shl 32) or (b5 shl 40) or (b6 shl 48) or (b7 shl 56)
+        return b0 or
+            (b1 shl 8) or
+            (b2 shl 16) or
+            (b3 shl 24) or
+            (b4 shl 32) or
+            (b5 shl 40) or
+            (b6 shl 48) or
+            (b7 shl 56)
     }
 
     fun readBytes(count: Int): ByteArray {
@@ -111,7 +113,8 @@ internal class BsatnReader(private val data: ByteArray) {
         return result
     }
 
-    val remaining: Int get() = data.size - position
+    val remaining: Int
+        get() = data.size - position
 }
 
 /**
@@ -122,7 +125,9 @@ internal class BsatnReader(private val data: ByteArray) {
 public open class BsatnDecodeException(message: String) : RuntimeException(message) {
     /** Insufficient bytes in the buffer. Mirrors Rust `DecodeError::BufferLength`. */
     public class BufferLength(forType: String, expected: Int, given: Int) :
-        BsatnDecodeException("Unexpected end of input: need $expected bytes for $forType at current position, but only $given available")
+        BsatnDecodeException(
+            "Unexpected end of input: need $expected bytes for $forType at current position, but only $given available"
+        )
 
     /** Invalid tag byte for a sum type. Mirrors Rust `DecodeError::InvalidTag`. */
     public class InvalidTag(tag: Int, sumName: String? = null) :

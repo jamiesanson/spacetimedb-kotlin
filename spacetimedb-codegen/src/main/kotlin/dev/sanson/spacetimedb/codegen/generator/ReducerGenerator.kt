@@ -27,99 +27,108 @@ private val BSATN = ClassName("dev.sanson.spacetimedb.bsatn", "Bsatn")
  * - A `Reducer` abstract class hierarchy with a subtype per client-callable reducer
  * - A `RemoteReducers` interface with an invoke method per reducer
  */
-public class ReducerGenerator(
-    private val schema: ModuleSchema,
-    private val targetPackage: String,
-) {
+public class ReducerGenerator(private val schema: ModuleSchema, private val targetPackage: String) {
     private val typeMapper = TypeMapper(schema, targetPackage)
 
     /**
      * Generate the `Reducer` abstract class hierarchy.
      *
-     * Each client-callable reducer becomes a subtype, holding its arguments.
-     * Reducers with no arguments become `data object`s.
+     * Each client-callable reducer becomes a subtype, holding its arguments. Reducers with no
+     * arguments become `data object`s.
      */
     public fun generateReducerFile(): FileSpec {
-        val reducerClass = TypeSpec.classBuilder("Reducer")
-            .addModifiers(KModifier.PUBLIC, KModifier.SEALED)
+        val reducerClass =
+            TypeSpec.classBuilder("Reducer").addModifiers(KModifier.PUBLIC, KModifier.SEALED)
 
         for (reducer in schema.clientCallableReducers) {
             val variantName = reducer.sourceName.toPascalCase()
             val params = reducer.params.elements
 
-            val variantSpec = if (params.isEmpty()) {
-                TypeSpec.objectBuilder(variantName)
-                    .addModifiers(KModifier.DATA)
-                    .superclass(ClassName(targetPackage, "Reducer"))
-                    .build()
-            } else {
-                val classBuilder = TypeSpec.classBuilder(variantName)
-                    .addModifiers(KModifier.PUBLIC, KModifier.DATA)
-                    .superclass(ClassName(targetPackage, "Reducer"))
+            val variantSpec =
+                if (params.isEmpty()) {
+                    TypeSpec.objectBuilder(variantName)
+                        .addModifiers(KModifier.DATA)
+                        .superclass(ClassName(targetPackage, "Reducer"))
+                        .build()
+                } else {
+                    val classBuilder =
+                        TypeSpec.classBuilder(variantName)
+                            .addModifiers(KModifier.PUBLIC, KModifier.DATA)
+                            .superclass(ClassName(targetPackage, "Reducer"))
 
-                val ctorBuilder = FunSpec.constructorBuilder()
+                    val ctorBuilder = FunSpec.constructorBuilder()
 
-                for (element in params) {
-                    val originalName = element.name
-                        ?: throw IllegalArgumentException("Reducer '${reducer.sourceName}' has unnamed parameter")
-                    val fieldName = originalName.toCamelCase()
-                    val fieldType = typeMapper.typeName(element.algebraicType)
+                    for (element in params) {
+                        val originalName =
+                            element.name
+                                ?: throw IllegalArgumentException(
+                                    "Reducer '${reducer.sourceName}' has unnamed parameter"
+                                )
+                        val fieldName = originalName.toCamelCase()
+                        val fieldType = typeMapper.typeName(element.algebraicType)
 
-                    ctorBuilder.addParameter(fieldName, fieldType)
+                        ctorBuilder.addParameter(fieldName, fieldType)
 
-                    val propBuilder = PropertySpec.builder(fieldName, fieldType)
-                        .initializer(fieldName)
-                        .addModifiers(KModifier.PUBLIC)
+                        val propBuilder =
+                            PropertySpec.builder(fieldName, fieldType)
+                                .initializer(fieldName)
+                                .addModifiers(KModifier.PUBLIC)
 
-                    if (originalName != fieldName) {
-                        propBuilder.addAnnotation(
-                            AnnotationSpec.builder(SERIAL_NAME)
-                                .addMember("%S", originalName)
-                                .build()
-                        )
+                        if (originalName != fieldName) {
+                            propBuilder.addAnnotation(
+                                AnnotationSpec.builder(SERIAL_NAME)
+                                    .addMember("%S", originalName)
+                                    .build()
+                            )
+                        }
+
+                        classBuilder.addProperty(propBuilder.build())
                     }
 
-                    classBuilder.addProperty(propBuilder.build())
+                    classBuilder.primaryConstructor(ctorBuilder.build())
+                    classBuilder.build()
                 }
-
-                classBuilder.primaryConstructor(ctorBuilder.build())
-                classBuilder.build()
-            }
 
             reducerClass.addType(variantSpec)
         }
 
-        return FileSpec.builder(targetPackage, "Reducer")
-            .addType(reducerClass.build())
-            .build()
+        return FileSpec.builder(targetPackage, "Reducer").addType(reducerClass.build()).build()
     }
 
     /**
      * Generate the `RemoteReducers` interface with a method per reducer.
      *
-     * Each method takes the reducer's parameters directly (not a wrapper class).
-     * Also generates `on<Reducer>` / `removeOn<Reducer>` callback methods.
+     * Each method takes the reducer's parameters directly (not a wrapper class). Also generates
+     * `on<Reducer>` / `removeOn<Reducer>` callback methods.
      */
     public fun generateRemoteReducersFile(): FileSpec {
         val reducerClassName = ClassName(targetPackage, "Reducer")
-        val callbackType = LambdaTypeName.get(
-            parameters = listOf(
-                ParameterSpec.builder("event", REDUCER_EVENT.parameterizedBy(reducerClassName)).build(),
-            ),
-            returnType = com.squareup.kotlinpoet.UNIT,
-        )
+        val callbackType =
+            LambdaTypeName.get(
+                parameters =
+                    listOf(
+                        ParameterSpec.builder(
+                                "event",
+                                REDUCER_EVENT.parameterizedBy(reducerClassName),
+                            )
+                            .build()
+                    ),
+                returnType = com.squareup.kotlinpoet.UNIT,
+            )
 
-        val builder = TypeSpec.interfaceBuilder("RemoteReducers")
-            .addModifiers(KModifier.PUBLIC)
+        val builder = TypeSpec.interfaceBuilder("RemoteReducers").addModifiers(KModifier.PUBLIC)
 
         for (reducer in schema.clientCallableReducers) {
             val methodName = reducer.sourceName.toCamelCase()
-            val funBuilder = FunSpec.builder(methodName)
-                .addModifiers(KModifier.PUBLIC, KModifier.ABSTRACT)
+            val funBuilder =
+                FunSpec.builder(methodName).addModifiers(KModifier.PUBLIC, KModifier.ABSTRACT)
 
             for (element in reducer.params.elements) {
-                val originalName = element.name
-                    ?: throw IllegalArgumentException("Reducer '${reducer.sourceName}' has unnamed parameter")
+                val originalName =
+                    element.name
+                        ?: throw IllegalArgumentException(
+                            "Reducer '${reducer.sourceName}' has unnamed parameter"
+                        )
                 val paramName = originalName.toCamelCase()
                 val paramType = typeMapper.typeName(element.algebraicType)
                 funBuilder.addParameter(paramName, paramType)
@@ -147,17 +156,14 @@ public class ReducerGenerator(
             )
         }
 
-        return FileSpec.builder(targetPackage, "RemoteReducers")
-            .addType(builder.build())
-            .build()
+        return FileSpec.builder(targetPackage, "RemoteReducers").addType(builder.build()).build()
     }
 
     /**
      * Generate a `RemoteReducersImpl` class implementing `RemoteReducers`.
      *
-     * For reducers with arguments, generates a private `@Serializable` args class
-     * and BSATN-encodes the args before calling `connection.callReducer()`.
-     * No-arg reducers pass an empty byte array.
+     * For reducers with arguments, generates a private `@Serializable` args class and BSATN-encodes
+     * the args before calling `connection.callReducer()`. No-arg reducers pass an empty byte array.
      */
     public fun generateRemoteReducersImplFile(): FileSpec {
         val remoteReducersInterface = ClassName(targetPackage, "RemoteReducers")
@@ -170,28 +176,29 @@ public class ReducerGenerator(
             if (params.isEmpty()) continue
 
             val argsClassName = "${reducer.sourceName.toPascalCase()}Args"
-            val argsClassBuilder = TypeSpec.classBuilder(argsClassName)
-                .addModifiers(KModifier.PRIVATE)
-                .addAnnotation(SERIALIZABLE)
+            val argsClassBuilder =
+                TypeSpec.classBuilder(argsClassName)
+                    .addModifiers(KModifier.PRIVATE)
+                    .addAnnotation(SERIALIZABLE)
 
             val ctorBuilder = FunSpec.constructorBuilder()
             for (element in params) {
-                val originalName = element.name
-                    ?: throw IllegalArgumentException("Reducer '${reducer.sourceName}' has unnamed parameter")
+                val originalName =
+                    element.name
+                        ?: throw IllegalArgumentException(
+                            "Reducer '${reducer.sourceName}' has unnamed parameter"
+                        )
                 val fieldName = originalName.toCamelCase()
                 val fieldType = typeMapper.typeName(element.algebraicType)
 
                 ctorBuilder.addParameter(fieldName, fieldType)
 
-                val propBuilder = PropertySpec.builder(fieldName, fieldType)
-                    .initializer(fieldName)
+                val propBuilder = PropertySpec.builder(fieldName, fieldType).initializer(fieldName)
 
                 // Add @SerialName if the Kotlin name differs from the original
                 if (originalName != fieldName) {
                     propBuilder.addAnnotation(
-                        AnnotationSpec.builder(SERIAL_NAME)
-                            .addMember("%S", originalName)
-                            .build()
+                        AnnotationSpec.builder(SERIAL_NAME).addMember("%S", originalName).build()
                     )
                 }
 
@@ -204,57 +211,65 @@ public class ReducerGenerator(
 
         // Generate the impl class
         val reducerClassName = ClassName(targetPackage, "Reducer")
-        val callbackType = LambdaTypeName.get(
-            parameters = listOf(
-                ParameterSpec.builder("event", REDUCER_EVENT.parameterizedBy(reducerClassName)).build(),
-            ),
-            returnType = com.squareup.kotlinpoet.UNIT,
-        )
+        val callbackType =
+            LambdaTypeName.get(
+                parameters =
+                    listOf(
+                        ParameterSpec.builder(
+                                "event",
+                                REDUCER_EVENT.parameterizedBy(reducerClassName),
+                            )
+                            .build()
+                    ),
+                returnType = com.squareup.kotlinpoet.UNIT,
+            )
 
-        val classBuilder = TypeSpec.classBuilder("RemoteReducersImpl")
-            .addModifiers(KModifier.PUBLIC)
-            .addSuperinterface(remoteReducersInterface)
-            .primaryConstructor(
-                FunSpec.constructorBuilder()
-                    .addParameter("connection", SPACETIMEDB_CONNECTION)
-                    .addParameter("callbacks", DB_CALLBACKS)
-                    .build()
-            )
-            .addProperty(
-                PropertySpec.builder("connection", SPACETIMEDB_CONNECTION)
-                    .initializer("connection")
-                    .addModifiers(KModifier.PRIVATE)
-                    .build()
-            )
-            .addProperty(
-                PropertySpec.builder("callbacks", DB_CALLBACKS)
-                    .initializer("callbacks")
-                    .addModifiers(KModifier.PRIVATE)
-                    .build()
-            )
+        val classBuilder =
+            TypeSpec.classBuilder("RemoteReducersImpl")
+                .addModifiers(KModifier.PUBLIC)
+                .addSuperinterface(remoteReducersInterface)
+                .primaryConstructor(
+                    FunSpec.constructorBuilder()
+                        .addParameter("connection", SPACETIMEDB_CONNECTION)
+                        .addParameter("callbacks", DB_CALLBACKS)
+                        .build()
+                )
+                .addProperty(
+                    PropertySpec.builder("connection", SPACETIMEDB_CONNECTION)
+                        .initializer("connection")
+                        .addModifiers(KModifier.PRIVATE)
+                        .build()
+                )
+                .addProperty(
+                    PropertySpec.builder("callbacks", DB_CALLBACKS)
+                        .initializer("callbacks")
+                        .addModifiers(KModifier.PRIVATE)
+                        .build()
+                )
 
         for (reducer in schema.clientCallableReducers) {
             val methodName = reducer.sourceName.toCamelCase()
             val params = reducer.params.elements
 
-            val funBuilder = FunSpec.builder(methodName)
-                .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
+            val funBuilder =
+                FunSpec.builder(methodName).addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
 
             for (element in params) {
-                val originalName = element.name
-                    ?: throw IllegalArgumentException("Reducer '${reducer.sourceName}' has unnamed parameter")
+                val originalName =
+                    element.name
+                        ?: throw IllegalArgumentException(
+                            "Reducer '${reducer.sourceName}' has unnamed parameter"
+                        )
                 val paramName = originalName.toCamelCase()
                 val paramType = typeMapper.typeName(element.algebraicType)
                 funBuilder.addParameter(paramName, paramType)
             }
 
             if (params.isEmpty()) {
-                funBuilder.addCode(
-                    "connection.callReducer(%S, byteArrayOf())",
-                    reducer.sourceName,
-                )
+                funBuilder.addCode("connection.callReducer(%S, byteArrayOf())", reducer.sourceName)
             } else {
-                val argsClassName = ClassName(targetPackage, "${reducer.sourceName.toPascalCase()}Args")
+                val argsClassName =
+                    ClassName(targetPackage, "${reducer.sourceName.toPascalCase()}Args")
                 val argsCtorArgs = params.mapNotNull { it.name?.toCamelCase() }.joinToString(", ")
                 val serializerMember = MemberName("kotlinx.serialization", "serializer")
 

@@ -3,11 +3,11 @@ package dev.sanson.spacetimedb.codegen.generator
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import dev.sanson.spacetimedb.codegen.schema.ModuleSchema
-import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 
 class ReducerGeneratorTest {
 
@@ -177,13 +177,26 @@ class ReducerGeneratorTest {
         }
 
         sources.add(SourceFile.kotlin("Reducer.kt", reducerGen.generateReducerFile().toString()))
-        sources.add(SourceFile.kotlin("RemoteReducers.kt", reducerGen.generateRemoteReducersFile().toString()))
-        sources.add(SourceFile.kotlin("RemoteReducersImpl.kt", reducerGen.generateRemoteReducersImplFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteReducers.kt",
+                reducerGen.generateRemoteReducersFile().toString(),
+            )
+        )
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteReducersImpl.kt",
+                reducerGen.generateRemoteReducersImplFile().toString(),
+            )
+        )
 
-        val result = KotlinCompilation().apply {
-            this.sources = sources
-            inheritClassPath = true
-        }.compile()
+        val result =
+            KotlinCompilation()
+                .apply {
+                    this.sources = sources
+                    inheritClassPath = true
+                }
+                .compile()
 
         assertEquals(
             KotlinCompilation.ExitCode.OK,
@@ -208,12 +221,20 @@ class ReducerGeneratorTest {
         }
 
         sources.add(SourceFile.kotlin("Reducer.kt", reducerGen.generateReducerFile().toString()))
-        sources.add(SourceFile.kotlin("RemoteReducers.kt", reducerGen.generateRemoteReducersFile().toString()))
+        sources.add(
+            SourceFile.kotlin(
+                "RemoteReducers.kt",
+                reducerGen.generateRemoteReducersFile().toString(),
+            )
+        )
 
-        val result = KotlinCompilation().apply {
-            this.sources = sources
-            inheritClassPath = true
-        }.compile()
+        val result =
+            KotlinCompilation()
+                .apply {
+                    this.sources = sources
+                    inheritClassPath = true
+                }
+                .compile()
 
         assertEquals(
             KotlinCompilation.ExitCode.OK,

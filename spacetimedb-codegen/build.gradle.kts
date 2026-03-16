@@ -4,21 +4,11 @@ plugins {
     application
 }
 
-kotlin {
-    explicitApi()
-}
+kotlin { explicitApi() }
 
-application {
-    mainClass.set("dev.sanson.spacetimedb.codegen.MainKt")
-}
+application { mainClass.set("dev.sanson.spacetimedb.codegen.MainKt") }
 
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-        }
-    }
-}
+publishing { publications { create<MavenPublication>("maven") { from(components["java"]) } } }
 
 dependencies {
     implementation(libs.kotlinx.serialization.json)

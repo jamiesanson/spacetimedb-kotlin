@@ -3,36 +3,36 @@ package dev.sanson.spacetimedb
 import dev.sanson.spacetimedb.protocol.ClientMessage
 import dev.sanson.spacetimedb.protocol.QuerySetId
 import dev.sanson.spacetimedb.protocol.UnsubscribeFlags
-import kotlinx.coroutines.channels.SendChannel
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlinx.coroutines.channels.SendChannel
 
 /**
  * A handle to an active or pending subscription.
  *
- * Tracks the subscription lifecycle: Sent → Applied → Ended/Error.
- * The [ClientMessage.Subscribe] is sent immediately when the handle is created
- * via [SubscriptionBuilder.subscribe].
+ * Tracks the subscription lifecycle: Sent → Applied → Ended/Error. The [ClientMessage.Subscribe] is
+ * sent immediately when the handle is created via [SubscriptionBuilder.subscribe].
  */
-public class SubscriptionHandle internal constructor(
+public class SubscriptionHandle
+internal constructor(
     internal val querySetId: QuerySetId,
     internal val querySql: List<String>,
     private val sendChannel: SendChannel<ClientMessage>,
     private var onApplied: (() -> Unit)?,
     private var onError: ((String) -> Unit)?,
 ) {
-    @kotlin.concurrent.Volatile
-    private var status: SubscriptionStatus = SubscriptionStatus.Sent
+    @kotlin.concurrent.Volatile private var status: SubscriptionStatus = SubscriptionStatus.Sent
 
-    @kotlin.concurrent.Volatile
-    private var unsubscribeCalled = false
+    @kotlin.concurrent.Volatile private var unsubscribeCalled = false
     private var onEnded: (() -> Unit)? = null
 
     /** True when the subscription is applied and not pending unsubscribe. */
-    public val isActive: Boolean get() = status == SubscriptionStatus.Applied && !unsubscribeCalled
+    public val isActive: Boolean
+        get() = status == SubscriptionStatus.Applied && !unsubscribeCalled
 
     /** True when the subscription has ended (unsubscribed or errored). */
-    public val isEnded: Boolean get() = status == SubscriptionStatus.Ended || status == SubscriptionStatus.Error
+    public val isEnded: Boolean
+        get() = status == SubscriptionStatus.Ended || status == SubscriptionStatus.Error
 
     /**
      * Request unsubscription from this query set.
@@ -46,11 +46,12 @@ public class SubscriptionHandle internal constructor(
         this.onEnded = onEnded
 
         if (status == SubscriptionStatus.Applied) {
-            val msg = ClientMessage.Unsubscribe(
-                requestId = nextRequestId(),
-                querySetId = querySetId,
-                flags = UnsubscribeFlags.Default,
-            )
+            val msg =
+                ClientMessage.Unsubscribe(
+                    requestId = nextRequestId(),
+                    querySetId = querySetId,
+                    flags = UnsubscribeFlags.Default,
+                )
             sendChannel.trySend(msg)
         }
     }
@@ -79,8 +80,8 @@ public class SubscriptionHandle internal constructor(
     }
 
     /**
-     * Called by the message loop when the server reports a subscription error.
-     * Transitions to Error and returns the onError callback with the error message.
+     * Called by the message loop when the server reports a subscription error. Transitions to Error
+     * and returns the onError callback with the error message.
      */
     internal fun notifyError(error: String): (() -> Unit)? {
         status = SubscriptionStatus.Error
@@ -101,14 +102,12 @@ internal enum class SubscriptionStatus {
     Error,
 }
 
-@OptIn(ExperimentalAtomicApi::class)
-private val requestIdCounter = AtomicInt(1)
+@OptIn(ExperimentalAtomicApi::class) private val requestIdCounter = AtomicInt(1)
 
 @OptIn(ExperimentalAtomicApi::class)
 internal fun nextRequestId(): UInt = requestIdCounter.fetchAndAdd(1).toUInt()
 
-@OptIn(ExperimentalAtomicApi::class)
-private val querySetIdCounter = AtomicInt(1)
+@OptIn(ExperimentalAtomicApi::class) private val querySetIdCounter = AtomicInt(1)
 
 @OptIn(ExperimentalAtomicApi::class)
 internal fun nextQuerySetId(): QuerySetId = QuerySetId(querySetIdCounter.fetchAndAdd(1).toUInt())
