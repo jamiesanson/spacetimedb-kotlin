@@ -53,22 +53,22 @@ val conn = DbConnection.builder()
     .onConnect { identity, token, connectionId -> /* ... */ }
     .onDisconnect { error -> /* ... */ }
     .onConnectError { error -> /* ... */ }
-    .build(scope)                     // suspending; needs a CoroutineScope
+    .build(scope)                     // needs a CoroutineScope
 ```
 
 ### Builder methods
 
-| Method | Description |
-|--------|-------------|
-| `withUri(uri: String)` | URI of the SpacetimeDB instance (e.g. `"http://localhost:3000"`) |
-| `withDatabaseName(name: String)` | Name or identity of the database |
-| `withToken(token: String?)` | Auth token from a previous `onConnect` callback. Pass `null` for anonymous. |
-| `withCompression(compression: Compression)` | Preferred compression (`Compression.None`, `Compression.Brotli`, or `Compression.Gzip`). Brotli and Gzip are JVM-only. |
-| `onConnect(callback)` | Called when connection is established. Receives `(identity: Identity, token: String, connectionId: ConnectionId)`. Save the `token` to reconnect as the same identity later. |
-| `onDisconnect(callback)` | Called when connection ends. Receives `(error: SpacetimeError?)` — null for clean disconnect. |
-| `onConnectError(callback)` | Called if connection fails. Receives `(error: SpacetimeError)`. |
-| `withReconnect(config: ReconnectConfig)` | Enable auto-reconnect with exponential backoff on abnormal disconnects. |
-| `build(scope: CoroutineScope)` | Finalize and connect. Suspending function — the connection runs within the given scope. |
+| Method                                               | Description                                                                                                                                                                  |
+|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `withUri(uri: String)`                               | URI of the SpacetimeDB instance (e.g. `"http://localhost:3000"`)                                                                                                             |
+| `withDatabaseName(name: String)`                     | Name or identity of the database                                                                                                                                             |
+| `withToken(token: String?)`                          | Auth token from a previous `onConnect` callback. Pass `null` for anonymous.                                                                                                  |
+| `withCompression(compression: Compression)`          | Preferred compression (`Compression.None`, `Compression.Brotli`, or `Compression.Gzip`). Brotli and Gzip are JVM-only.                                                       |
+| `onConnect(callback)`                                | Called when connection is established. Receives `(identity: Identity, token: String, connectionId: ConnectionId)`. Save the `token` to reconnect as the same identity later. |
+| `onDisconnect(callback)`                             | Called when connection ends. Receives `(error: SpacetimeError?)` — null for clean disconnect.                                                                                |
+| `onConnectError(callback)`                           | Called if connection fails. Receives `(error: SpacetimeError)`.                                                                                                              |
+| `withReconnect(maxAttempts, initialDelay, maxDelay)` | Enable auto-reconnect with exponential backoff on abnormal disconnects. All parameters have defaults (`5`, `1.seconds`, `30.seconds`).                                       |
+| `build(scope: CoroutineScope)`                       | Finalize and connect. The connection runs within the given scope.                                                                                                            |
 
 ## Subscribe to queries
 
@@ -83,21 +83,21 @@ val handle = conn.subscriptionBuilder()
 
 ### `SubscriptionBuilder`
 
-| Method | Description |
-|--------|-------------|
-| `onApplied(callback: () -> Unit)` | Called when the subscription is applied and initial rows are in the cache |
-| `onError(callback: (String) -> Unit)` | Called if the subscription is rejected (e.g. invalid SQL) |
-| `subscribe(vararg queries: String): SubscriptionHandle` | Subscribe to one or more SQL queries |
-| `subscribe(queries: List<String>): SubscriptionHandle` | Subscribe to a list of SQL queries |
+| Method                                                  | Description                                                               |
+|---------------------------------------------------------|---------------------------------------------------------------------------|
+| `onApplied(callback: () -> Unit)`                       | Called when the subscription is applied and initial rows are in the cache |
+| `onError(callback: (String) -> Unit)`                   | Called if the subscription is rejected (e.g. invalid SQL)                 |
+| `subscribe(vararg queries: String): SubscriptionHandle` | Subscribe to one or more SQL queries                                      |
+| `subscribe(queries: List<String>): SubscriptionHandle`  | Subscribe to a list of SQL queries                                        |
 
 See the [SpacetimeDB SQL Reference](https://spacetimedb.com/docs/reference/sql#subscriptions) for supported subscription queries.
 
 ### `SubscriptionHandle`
 
-| Member | Description |
-|--------|-------------|
-| `isActive: Boolean` | `true` if the subscription has been applied and rows are in the cache |
-| `isEnded: Boolean` | `true` if the subscription has ended (unsubscribed or errored) |
+| Member                                       | Description                                                                                                                                                         |
+|----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `isActive: Boolean`                          | `true` if the subscription has been applied and rows are in the cache                                                                                               |
+| `isEnded: Boolean`                           | `true` if the subscription has ended (unsubscribed or errored)                                                                                                      |
 | `unsubscribe(onEnded: (() -> Unit)? = null)` | Terminate this subscription. Matching rows are removed from the cache, triggering `onDelete` callbacks. Optional `onEnded` callback fires when removal is complete. |
 
 ## Access the client cache
@@ -122,36 +122,36 @@ val player = conn.db.player.findById(42u)
 
 All generated table handles implement `Table<Row>` (and `Iterable<Row>`):
 
-| Member | Description |
-|--------|-------------|
-| `count: Int` | Number of subscribed rows in the cache |
-| `iterator(): Iterator<Row>` | Iterate all cached rows |
+| Member                                                    | Description                            |
+|-----------------------------------------------------------|----------------------------------------|
+| `count: Int`                                              | Number of subscribed rows in the cache |
+| `iterator(): Iterator<Row>`                               | Iterate all cached rows                |
 | `onInsert(callback: (Event<*>, Row) -> Unit): CallbackId` | Register a callback for row insertions |
-| `removeOnInsert(id: CallbackId)` | Deregister an insert callback |
-| `onDelete(callback: (Event<*>, Row) -> Unit): CallbackId` | Register a callback for row deletions |
-| `removeOnDelete(id: CallbackId)` | Deregister a delete callback |
+| `removeOnInsert(id: CallbackId)`                          | Deregister an insert callback          |
+| `onDelete(callback: (Event<*>, Row) -> Unit): CallbackId` | Register a callback for row deletions  |
+| `removeOnDelete(id: CallbackId)`                          | Deregister a delete callback           |
 
 ### `TableWithPrimaryKey<Row>` interface
 
 Tables with a `#[primary_key]` column also implement:
 
-| Member | Description |
-|--------|-------------|
+| Member                                                                         | Description                                                            |
+|--------------------------------------------------------------------------------|------------------------------------------------------------------------|
 | `onUpdate(callback: (Event<*>, oldRow: Row, newRow: Row) -> Unit): CallbackId` | Register a callback for row updates (same primary key, different data) |
-| `removeOnUpdate(id: CallbackId)` | Deregister an update callback |
+| `removeOnUpdate(id: CallbackId)`                                               | Deregister an update callback                                          |
 
 ### Row callback events
 
 Row callbacks receive an `Event<*>` as their first argument, which describes _why_ the row changed:
 
-| Event variant | Description |
-|---------------|-------------|
-| `Event.Reducer(event: ReducerEvent)` | Change caused by a reducer we called |
-| `Event.Transaction` | Change caused by another client's transaction |
-| `Event.SubscribeApplied` | Row arrived as part of initial subscription sync |
-| `Event.UnsubscribeApplied` | Row removed due to unsubscription |
-| `Event.SubscribeError(error)` | Row removed due to subscription error |
-| `Event.Disconnected` | Connection lost |
+| Event variant                        | Description                                      |
+|--------------------------------------|--------------------------------------------------|
+| `Event.Reducer(event: ReducerEvent)` | Change caused by a reducer we called             |
+| `Event.Transaction`                  | Change caused by another client's transaction    |
+| `Event.SubscribeApplied`             | Row arrived as part of initial subscription sync |
+| `Event.UnsubscribeApplied`           | Row removed due to unsubscription                |
+| `Event.SubscribeError(error)`        | Row removed due to subscription error            |
+| `Event.Disconnected`                 | Connection lost                                  |
 
 ```kotlin
 conn.db.player.onInsert { event, player ->
@@ -237,7 +237,14 @@ Opaque handle returned by all callback registration methods (`onInsert`, `onUpda
 
 Use `remoteQuery()` to execute a single-shot SQL query and get results back directly, without creating a persistent subscription. Useful for ad-hoc queries, dashboards, and data exploration.
 
+> **Note**: `remoteQuery` and `callProcedure` are available on `SpacetimeDbConnection`, not on the generated `DbConnection`. Use the lower-level builder (`SpacetimeDbConnection.builder()`) or DSL if you need these.
+
 ```kotlin
+val conn = SpacetimeDbConnection(scope) {
+    uri = "http://localhost:3000"
+    databaseName = "my-db"
+}
+
 // Reified — serializer inferred from type parameter
 val topPlayers: List<Player> = conn.remoteQuery("SELECT * FROM player WHERE score > 100")
 
@@ -254,7 +261,7 @@ val players = conn.remoteQuery("SELECT * FROM player", Player.serializer())
 
 ## Procedure calls
 
-Procedures are non-transactional server functions that return values directly, unlike reducers which produce side effects via subscription updates.
+Procedures are non-transactional server functions that return values directly, unlike reducers which produce side effects via subscription updates. Like `remoteQuery`, these are available on `SpacetimeDbConnection`.
 
 ```kotlin
 // Reified — serializer inferred from type parameter
@@ -331,11 +338,11 @@ Configure automatic reconnection with exponential backoff when the WebSocket con
 val conn = DbConnection.builder()
     .withUri("wss://my-server.com")
     .withDatabaseName("my-db")
-    .withReconnect(ReconnectConfig(
+    .withReconnect(
         maxAttempts = 10,
         initialDelay = 1.seconds,
         maxDelay = 30.seconds,
-    ))
+    )
     .onConnect { identity, token, connectionId ->
         println("Connected as $identity")
     }

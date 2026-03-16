@@ -1,8 +1,10 @@
 # SpacetimeDB Kotlin Multiplatform SDK
 
-A Kotlin Multiplatform client SDK for [SpacetimeDB](https://spacetimedb.com), targeting JVM, JS, and Native platforms. Provides the same functionality as the [Rust client SDK](https://spacetimedb.com/docs/sdks/rust) with idiomatic Kotlin APIs (coroutines, `kotlinx.serialization`).
+A Kotlin Multiplatform client SDK for [SpacetimeDB](https://spacetimedb.com), targeting JVM, JS, and Native platforms.
+Provides the same functionality as the [Rust client SDK](https://spacetimedb.com/docs/sdks/rust) with idiomatic Kotlin
+APIs (coroutines, `kotlinx.serialization`).
 
-> **Status**: Work in progress — not yet ready for production use.
+> **Status**: Alpha — API may change between minor versions.
 
 ## Quick Start
 
@@ -42,7 +44,7 @@ pluginManagement {
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("dev.sanson.spacetimedb") version "0.1.0"
+    id("dev.sanson.spacetimedb") version "<latest>"
 }
 
 spacetimedb {
@@ -51,13 +53,16 @@ spacetimedb {
 }
 ```
 
-The plugin builds your module, extracts the schema, and generates typed Kotlin bindings. See [Gradle Plugin docs](docs/gradle-plugin.md) for full configuration.
+The plugin builds your module, extracts the schema, and generates typed Kotlin bindings.
+See [Gradle Plugin docs](docs/gradle-plugin.md) for full configuration.
 
 ### 2. Connect and use
 
 ```kotlin
 import com.example.game.DbConnection
 import com.example.game.Player
+import dev.sanson.spacetimedb.Status
+import dev.sanson.spacetimedb.rowsFlow
 import kotlinx.coroutines.runBlocking
 
 fun main() = runBlocking {
@@ -89,9 +94,6 @@ fun main() = runBlocking {
         println("${newPlayer.name} score: ${oldPlayer.score} → ${newPlayer.score}")
     }
 
-    // One-off queries (single-shot, no subscription)
-    val topPlayers: List<Player> = conn.remoteQuery("SELECT * FROM player WHERE score > 100")
-
     // Observe table state as a Flow
     conn.db.player.rowsFlow()
         .collect { players -> println("${players.size} players online") }
@@ -111,66 +113,24 @@ fun main() = runBlocking {
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
+| Document                               | Description                                                                                                                               |
+|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | [SDK Reference](docs/sdk-reference.md) | Full API reference — `DbConnection`, subscriptions, client cache, callbacks, one-off queries, procedures, Flow extensions, auto-reconnect |
-| [Generated Code](docs/codegen.md) | What the codegen produces — row types, table handles, reducers, `DbConnection`, algebraic types |
-| [Type Mappings](docs/type-mappings.md) | SpacetimeDB ↔ Kotlin type mapping table |
-| [Gradle Plugin](docs/gradle-plugin.md) | Plugin configuration, tasks, `includeBuild` setup |
+| [Generated Code](docs/codegen.md)      | What the codegen produces — row types, table handles, reducers, `DbConnection`, algebraic types                                           |
+| [Type Mappings](docs/type-mappings.md) | SpacetimeDB ↔ Kotlin type mapping table                                                                                                   |
+| [Gradle Plugin](docs/gradle-plugin.md) | Plugin configuration, tasks, `includeBuild` setup                                                                                         |
+| [Contributing](docs/contributing.md)   | Development setup, building, module structure                                                                                             |
 
-## Modules
+### Platform Support
 
-| Module | Coordinates | Description |
-|--------|-------------|-------------|
-| `spacetimedb-bsatn` | `dev.sanson.spacetimedb:spacetimedb-bsatn` | BSATN binary serialization (`kotlinx.serialization` format) |
-| `spacetimedb-core` | `dev.sanson.spacetimedb:spacetimedb-core` | Connection, client cache, subscriptions, protocol, events |
-| `spacetimedb-codegen` | `dev.sanson.spacetimedb:spacetimedb-codegen` | Schema → Kotlin source generation (KotlinPoet) |
-| `spacetimedb-gradle-plugin` | Plugin ID: `dev.sanson.spacetimedb` | Gradle plugin wrapping build + codegen |
-
-## Platform Support
-
-| Feature | JVM | JS (Node/Browser) | Native |
-|---------|-----|--------------------|--------|
-| WebSocket transport | ✅ | ✅ | ✅ |
-| Gzip compression | ✅ | ❌ | ❌ |
-| Brotli compression | ✅ | ❌ | ❌ |
-| Credential persistence | ✅ | Node only¹ | ✅ |
+| Feature                | JVM | JS (Node/Browser) | Native |
+|------------------------|-----|-------------------|--------|
+| WebSocket transport    | ✅   | ✅                 | ✅      |
+| Gzip compression       | ✅   | ❌                 | ❌      |
+| Brotli compression     | ✅   | ❌                 | ❌      |
+| Credential persistence | ✅   | Node only¹        | ✅      |
 
 ¹ Node.js requires passing an Okio `FileSystem` instance. Browser has no filesystem access.
-
-## Dependencies
-
-- [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) — Serialization framework (with custom BSATN format)
-- [Ktor](https://ktor.io/) — WebSocket client
-- [Okio](https://square.github.io/okio/) — Cross-platform file I/O
-- [KotlinPoet](https://square.github.io/kotlinpoet/) — Kotlin source generation (codegen only)
-
-## Building
-
-```bash
-./gradlew check                          # full build + tests
-./gradlew :spacetimedb-codegen:test      # codegen tests only
-./gradlew :spacetimedb-gradle-plugin:test # plugin tests only
-./gradlew publishToMavenLocal            # publish all artifacts to ~/.m2
-```
-
-## Architecture
-
-```
-┌─────────────────────┐     ┌──────────────────────┐
-│  spacetimedb-bsatn  │     │  spacetimedb-codegen  │
-│  (serialization)    │     │  (code generation)    │
-└────────┬────────────┘     └──────────┬────────────┘
-         │                             │
-         ▼                             ▼
-┌─────────────────────┐     ┌──────────────────────────┐
-│  spacetimedb-core   │     │  spacetimedb-gradle-plugin│
-│  (connection, cache)│     │  (build + generate)       │
-└─────────────────────┘     └──────────────────────────┘
-         ▲                             │
-         │                             │
-         └─────── generated code ──────┘
-```
 
 ## License
 
