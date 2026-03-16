@@ -62,6 +62,7 @@ jobs:
 
       - name: "Install SpacetimeDB CLI"
         shell: bash
+        # language=bash
         run: |
           curl -sSf https://install.spacetimedb.com | bash -s -- --yes
           echo "$HOME/.local/bin" >> $GITHUB_PATH

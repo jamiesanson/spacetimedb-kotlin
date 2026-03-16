@@ -2,7 +2,8 @@ name: "Publish Release"
 
 on:
   release:
-    types: [published]
+    types:
+      - published
 
 permissions:
   contents: write
@@ -49,6 +50,7 @@ jobs:
       - name: "Calculate next version"
         id: next
         shell: bash
+        # language=bash
         run: |
           tag="${{ github.event.release.tag_name }}"
           # Strip v prefix
@@ -62,11 +64,13 @@ jobs:
 
       - name: "Update gradle.properties"
         shell: bash
+        # language=bash
         run: |
           sed -i "s/^dev.sanson.spacetimedb.version=.*/dev.sanson.spacetimedb.version=${{ steps.next.outputs.version }}/" gradle.properties
 
       - name: "Commit and push"
         shell: bash
+        # language=bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
