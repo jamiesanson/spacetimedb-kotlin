@@ -40,7 +40,7 @@ pluginManagement {
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("dev.sanson.spacetimedb") version "0.1.0"
+    id("dev.sanson.spacetimedb") version "<latest>"
 }
 
 spacetimedb {
@@ -49,13 +49,15 @@ spacetimedb {
 }
 ```
 
-The plugin builds your module, extracts the schema, and generates typed Kotlin bindings. See [Gradle Plugin docs](docs/gradle-plugin.md) for full configuration.
+The plugin builds your module, extracts the schema, and generates typed Kotlin bindings. See the [Gradle Plugin](/guides/gradle-plugin) docs for full configuration.
 
 ### 2. Connect and use
 
 ```kotlin
 import com.example.game.DbConnection
 import com.example.game.Player
+import dev.sanson.spacetimedb.Status
+import dev.sanson.spacetimedb.rowsFlow
 import kotlinx.coroutines.runBlocking
 
 fun main() = runBlocking {
@@ -86,9 +88,6 @@ fun main() = runBlocking {
     conn.db.player.onUpdate { event, oldPlayer, newPlayer ->
         println("${newPlayer.name} score: ${oldPlayer.score} → ${newPlayer.score}")
     }
-
-    // One-off queries (single-shot, no subscription)
-    val topPlayers: List<Player> = conn.remoteQuery("SELECT * FROM player WHERE score > 100")
 
     // Observe table state as a Flow
     conn.db.player.rowsFlow()

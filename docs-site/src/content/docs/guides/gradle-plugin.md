@@ -22,7 +22,7 @@ pluginManagement {
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("dev.sanson.spacetimedb") version "0.1.0"
+    id("dev.sanson.spacetimedb") version "<latest>"
 }
 
 spacetimedb {
@@ -51,27 +51,6 @@ Generated sources are automatically wired into Kotlin JVM or KMP `commonMain` so
 ## Prerequisites
 
 The `spacetime` CLI must be installed and on your PATH. Install from [spacetimedb.com](https://spacetimedb.com).
-
-## Using as an included build
-
-For monorepos or SDK development, use Gradle's `includeBuild` to resolve the plugin and library from source:
-
-```kotlin
-// settings.gradle.kts
-pluginManagement {
-    includeBuild("path/to/spacetimedb-kotlin") // resolves the plugin
-    repositories { gradlePluginPortal(); mavenCentral() }
-}
-
-// Also needed for library dependency resolution
-includeBuild("path/to/spacetimedb-kotlin")
-```
-
-Both `includeBuild` declarations are required:
-- The one inside `pluginManagement` resolves the plugin ID `dev.sanson.spacetimedb`
-- The top-level one resolves the `spacetimedb-core` library dependency
-
-See the [`example/`](https://github.com/jamiesanson/spacetimedb-kotlin/tree/main/example) directory for a working project using this pattern.
 
 ## KMP projects
 
