@@ -49,7 +49,7 @@ spacetimedb {
 }
 ```
 
-The plugin builds your module, extracts the schema, and generates typed Kotlin bindings. See the [Gradle Plugin](/guides/gradle-plugin) docs for full configuration.
+The plugin builds your module, extracts the schema, and generates typed Kotlin bindings. See the [Gradle Plugin](/spacetimedb-kotlin/guides/gradle-plugin) docs for full configuration.
 
 ### 2. Connect and use
 
