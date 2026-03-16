@@ -1,3 +1,8 @@
+---
+title: Contributing
+description: Development setup, building, and module structure.
+---
+
 ## Dependencies
 
 - [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) — Serialization framework (with custom BSATN format)

@@ -8,38 +8,7 @@ APIs (coroutines, `kotlinx.serialization`).
 
 ## Quick Start
 
-Given a SpacetimeDB module with tables and reducers:
-
-```rust
-#[spacetimedb::table(name = player, public)]
-pub struct Player {
-    #[primary_key]
-    #[auto_inc]
-    pub id: u64,
-    #[unique]
-    pub name: String,
-    pub score: u32,
-}
-
-#[spacetimedb::reducer]
-pub fn add_player(ctx: &ReducerContext, name: String) { /* ... */ }
-
-#[spacetimedb::reducer]
-pub fn set_score(ctx: &ReducerContext, player_id: u64, score: u32) { /* ... */ }
-```
-
-### 1. Add the Gradle plugin
-
-```kotlin
-// settings.gradle.kts
-pluginManagement {
-    repositories {
-        mavenLocal() // during pre-release
-        gradlePluginPortal()
-        mavenCentral()
-    }
-}
-```
+Add the Gradle plugin:
 
 ```kotlin
 // build.gradle.kts
@@ -48,21 +17,15 @@ plugins {
 }
 
 spacetimedb {
-    modulePath.set(file("server"))          // your SpacetimeDB module project
-    packageName.set("com.example.game")     // package for generated code
+    modulePath.set(file("server"))
+    packageName.set("com.example.game")
 }
 ```
 
-The plugin builds your module, extracts the schema, and generates typed Kotlin bindings.
-See [Gradle Plugin docs](docs/gradle-plugin.md) for full configuration.
-
-### 2. Connect and use
+Connect to your database:
 
 ```kotlin
 import com.example.game.DbConnection
-import com.example.game.Player
-import dev.sanson.spacetimedb.Status
-import dev.sanson.spacetimedb.rowsFlow
 import kotlinx.coroutines.runBlocking
 
 fun main() = runBlocking {
@@ -74,61 +37,32 @@ fun main() = runBlocking {
         }
         .build(this)
 
-    // Subscribe to tables — rows sync into the local client cache
     conn.subscriptionBuilder()
         .onApplied { println("Initial data synced") }
         .subscribe("SELECT * FROM player")
 
-    // Query the client cache (local, instant, no network)
-    val alice = conn.db.player.findByName("Alice")
-
-    // Call reducers (sends request to server)
-    conn.reducers.addPlayer("Bob")
-
-    // Observe table changes in real-time
     conn.db.player.onInsert { event, player ->
         println("Player joined: ${player.name}")
     }
 
-    conn.db.player.onUpdate { event, oldPlayer, newPlayer ->
-        println("${newPlayer.name} score: ${oldPlayer.score} → ${newPlayer.score}")
-    }
-
-    // Observe table state as a Flow
-    conn.db.player.rowsFlow()
-        .collect { players -> println("${players.size} players online") }
-
-    // Observe reducer completions
-    conn.reducers.onAddPlayer { reducerEvent ->
-        when (reducerEvent.status) {
-            is Status.Committed -> println("add_player succeeded")
-            is Status.Failed -> println("add_player failed: ${reducerEvent.status.message}")
-            is Status.Panic -> println("add_player panicked: ${reducerEvent.status.message}")
-        }
-    }
-
-    conn.disconnect()
+    conn.reducers.addPlayer("Bob")
 }
 ```
 
+See the [Getting Started](https://jamiesanson.github.io/spacetimedb-kotlin/getting-started/) guide for the full walkthrough.
+
 ## Documentation
 
-| Document                               | Description                                                                                                                               |
-|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| [SDK Reference](docs/sdk-reference.md) | Full API reference — `DbConnection`, subscriptions, client cache, callbacks, one-off queries, procedures, Flow extensions, auto-reconnect |
-| [Generated Code](docs/codegen.md)      | What the codegen produces — row types, table handles, reducers, `DbConnection`, algebraic types                                           |
-| [Type Mappings](docs/type-mappings.md) | SpacetimeDB ↔ Kotlin type mapping table                                                                                                   |
-| [Gradle Plugin](docs/gradle-plugin.md) | Plugin configuration, tasks, `includeBuild` setup                                                                                         |
-| [Contributing](docs/contributing.md)   | Development setup, building, module structure                                                                                             |
+Full documentation will be published soon.
 
-### Platform Support
+## Platform Support
 
-| Feature                | JVM | JS (Node/Browser) | Native |
-|------------------------|-----|-------------------|--------|
-| WebSocket transport    | ✅   | ✅                 | ✅      |
-| Gzip compression       | ✅   | ❌                 | ❌      |
-| Brotli compression     | ✅   | ❌                 | ❌      |
-| Credential persistence | ✅   | Node only¹        | ✅      |
+| Feature | JVM | JS (Node/Browser) | Native |
+|---------|-----|--------------------|--------|
+| WebSocket transport | ✅ | ✅ | ✅ |
+| Gzip compression | ✅ | ❌ | ❌ |
+| Brotli compression | ✅ | ❌ | ❌ |
+| Credential persistence | ✅ | Node only¹ | ✅ |
 
 ¹ Node.js requires passing an Okio `FileSystem` instance. Browser has no filesystem access.
 
