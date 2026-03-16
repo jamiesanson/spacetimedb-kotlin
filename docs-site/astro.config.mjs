@@ -7,13 +7,12 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'SpacetimeDB Kotlin SDK',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/nicksanson/spacetimedb-kotlin' }],
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/jamiesanson/spacetimedb-kotlin' }],
 			sidebar: [
 				{ label: 'Getting Started', slug: 'getting-started' },
 				{
 					label: 'Guides',
 					items: [
-						{ label: 'SDK Reference', slug: 'guides/sdk-reference' },
 						{ label: 'Generated Code', slug: 'guides/codegen' },
 						{ label: 'Gradle Plugin', slug: 'guides/gradle-plugin' },
 					],
@@ -22,7 +21,7 @@ export default defineConfig({
 					label: 'Reference',
 					items: [
 						{ label: 'Type Mappings', slug: 'reference/type-mappings' },
-						{ label: 'API Docs (Dokka)', link: '/api/' },
+						{ label: 'API Reference (Dokka)', slug: 'reference/api' },
 					],
 				},
 				{ label: 'Contributing', slug: 'contributing' },

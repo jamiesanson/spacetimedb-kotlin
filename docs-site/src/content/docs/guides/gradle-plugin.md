@@ -71,7 +71,7 @@ Both `includeBuild` declarations are required:
 - The one inside `pluginManagement` resolves the plugin ID `dev.sanson.spacetimedb`
 - The top-level one resolves the `spacetimedb-core` library dependency
 
-See the [`example/`](https://github.com/nicksanson/spacetimedb-kotlin/tree/main/example) directory for a working project using this pattern.
+See the [`example/`](https://github.com/jamiesanson/spacetimedb-kotlin/tree/main/example) directory for a working project using this pattern.
 
 ## KMP projects
 
