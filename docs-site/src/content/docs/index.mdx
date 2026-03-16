@@ -1,0 +1,36 @@
+---
+title: SpacetimeDB Kotlin SDK
+description: A Kotlin Multiplatform client SDK for SpacetimeDB, targeting JVM, JS, and Native platforms.
+template: splash
+hero:
+  tagline: Idiomatic Kotlin APIs for SpacetimeDB — coroutines, kotlinx.serialization, and Kotlin Multiplatform.
+  actions:
+    - text: Get Started
+      link: /getting-started
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/nicksanson/spacetimedb-kotlin
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="SDK Reference" icon="open-book">
+    Full API docs — connections, subscriptions, client cache, callbacks, Flow extensions, and auto-reconnect.
+    [Read the reference →](/guides/sdk-reference)
+  </Card>
+  <Card title="Generated Code" icon="puzzle">
+    What the codegen produces — row types, table handles, reducers, and the `DbConnection` entry point.
+    [See codegen docs →](/guides/codegen)
+  </Card>
+  <Card title="Gradle Plugin" icon="setting">
+    Configure `dev.sanson.spacetimedb` to build your module and generate typed Kotlin bindings.
+    [Plugin setup →](/guides/gradle-plugin)
+  </Card>
+  <Card title="Type Mappings" icon="list-format">
+    SpacetimeDB ↔ Kotlin type mapping table for primitives, collections, and algebraic types.
+    [View mappings →](/reference/type-mappings)
+  </Card>
+</CardGrid>
