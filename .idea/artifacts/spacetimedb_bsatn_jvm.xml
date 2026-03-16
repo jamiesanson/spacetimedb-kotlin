@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="spacetimedb-bsatn-jvm">
-    <output-path>$PROJECT_DIR$/spacetimedb-bsatn/build/libs</output-path>
-    <root id="archive" name="spacetimedb-bsatn-jvm.jar">
-      <element id="module-output" name="spacetimedb-kotlin.spacetimedb-bsatn.jvmMain" />
-    </root>
-  </artifact>
-</component>

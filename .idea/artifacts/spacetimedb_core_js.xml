@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="spacetimedb-core-js">
-    <output-path>$PROJECT_DIR$/spacetimedb-core/build/libs</output-path>
-    <root id="archive" name="spacetimedb-core-js.jar">
-      <element id="module-output" name="spacetimedb-kotlin.spacetimedb-core.jsMain" />
-    </root>
-  </artifact>
-</component>
