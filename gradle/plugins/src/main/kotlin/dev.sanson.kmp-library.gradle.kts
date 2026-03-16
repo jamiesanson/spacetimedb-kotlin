@@ -43,6 +43,7 @@ kotlin {
     explicitApi()
 
     compilerOptions {
+        allWarningsAsErrors.set(true)
         optIn.add("kotlin.time.ExperimentalTime")
     }
 

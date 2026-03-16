@@ -42,7 +42,7 @@ class BsatnUuidTest {
         val uuidBytes = Bsatn.encodeToByteArray(UuidSerializer, uuid)
 
         // Equivalent U128: lo = LSB and hi = MSB
-        val u128 = U128(lo = 0x090a0b0c0d0e0f10u.toULong(), hi = 0x0102030405060708u.toULong())
+        val u128 = U128(lo = 0x090a0b0c0d0e0f10u, hi = 0x0102030405060708u)
         val u128Bytes = Bsatn.encodeToByteArray(U128.serializer(), u128)
 
         assertContentEquals(u128Bytes, uuidBytes)

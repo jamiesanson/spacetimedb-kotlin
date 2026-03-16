@@ -14,6 +14,12 @@ java {
     withSourcesJar()
 }
 
+kotlin {
+    compilerOptions {
+        allWarningsAsErrors.set(true)
+    }
+}
+
 publishing {
     repositories {
         val ghToken = providers.environmentVariable("GITHUB_TOKEN")
