@@ -4,6 +4,8 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
+	site: 'https://jamiesanson.github.io',
+	base: '/spacetimedb-kotlin',
 	redirects: {
 		'/api': '/api/index.html',
 		'/api/': '/api/index.html',
