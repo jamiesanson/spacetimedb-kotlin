@@ -44,4 +44,19 @@ public interface SpacetimeDbExtension {
      * on `PATH`.
      */
     public val spacetimePath: Property<String>
+
+    /** Database/module name used by the `publishSpacetimeModule` task (e.g. `"my_game"`). */
+    public val databaseName: Property<String>
+
+    /**
+     * Extra CLI options for `publishSpacetimeModule` (e.g. `listOf("--delete-data=on-conflict",
+     * "--yes")`).
+     */
+    public val publishOptions: ListProperty<String>
+
+    /**
+     * Optional `--server` target for `publishSpacetimeModule` (e.g. `"local"` or a URL). Uses the
+     * CLI's default server when unset.
+     */
+    public val server: Property<String>
 }

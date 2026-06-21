@@ -53,7 +53,13 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
         logger.lifecycle("SpacetimeDB: building module at ${moduleDir.path}")
 
         // Step 1: Build the module
-        val buildArgs = mutableListOf(resolveSpacetime(), "build", "-p", moduleDir.absolutePath)
+        val buildArgs =
+            mutableListOf(
+                SpacetimeCli.resolve(spacetimeCli.orNull),
+                "build",
+                "-p",
+                moduleDir.absolutePath,
+            )
         buildArgs.addAll(buildOptions.getOrElse(emptyList()))
 
         execOperations.exec { spec -> spec.commandLine(buildArgs) }.assertNormalExitValue()
@@ -103,24 +109,6 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
                 "No .wasm file found in $releaseDir or $debugDir. " +
                     "Ensure 'spacetime build' completed successfully."
             )
-    }
-
-    private fun resolveSpacetime(): String {
-        // 1. Explicit configuration wins.
-        spacetimeCli.orNull
-            ?.takeIf { it.isNotBlank() }
-            ?.let {
-                return it
-            }
-
-        // 2. Default install location. The installer only adds ~/.local/bin to
-        //    interactive shells, so the Gradle daemon's PATH often lacks it.
-        val home = System.getProperty("user.home")
-        val localBin = File("$home/.local/bin/spacetime")
-        if (localBin.isFile && localBin.canExecute()) return localBin.absolutePath
-
-        // 3. Fallback: hope it's on PATH.
-        return "spacetime"
     }
 
     private fun resolveStandalone(): String {
