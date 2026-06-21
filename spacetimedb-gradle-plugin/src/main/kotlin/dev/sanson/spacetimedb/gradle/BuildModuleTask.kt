@@ -7,8 +7,10 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -35,6 +37,12 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
     /** Extra CLI options for `spacetime build`. */
     @get:Input public abstract val buildOptions: ListProperty<String>
 
+    /**
+     * Explicit path to the `spacetime` CLI. When unset, the task auto-resolves
+     * `~/.local/bin/spacetime` and finally falls back to `spacetime` on `PATH`.
+     */
+    @get:Input @get:Optional public abstract val spacetimeCli: Property<String>
+
     /** The output schema JSON file. */
     @get:OutputFile public abstract val schemaFile: RegularFileProperty
 
@@ -45,7 +53,13 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
         logger.lifecycle("SpacetimeDB: building module at ${moduleDir.path}")
 
         // Step 1: Build the module
-        val buildArgs = mutableListOf("spacetime", "build", "-p", moduleDir.absolutePath)
+        val buildArgs =
+            mutableListOf(
+                SpacetimeCli.resolve(spacetimeCli.orNull),
+                "build",
+                "-p",
+                moduleDir.absolutePath,
+            )
         buildArgs.addAll(buildOptions.getOrElse(emptyList()))
 
         execOperations.exec { spec -> spec.commandLine(buildArgs) }.assertNormalExitValue()

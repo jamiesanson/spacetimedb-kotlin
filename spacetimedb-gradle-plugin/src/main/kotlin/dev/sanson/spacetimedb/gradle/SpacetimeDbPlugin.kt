@@ -40,8 +40,23 @@ public class SpacetimeDbPlugin : Plugin<Project> {
             project.tasks.register("buildSpacetimeModule", BuildModuleTask::class.java) { task ->
                 task.modulePath.set(extension.modulePath)
                 task.buildOptions.set(extension.buildOptions)
+                task.spacetimeCli.set(extension.spacetimePath)
                 task.schemaFile.set(schemaFile)
             }
+
+        // Publish the module to a server (`spacetime publish` builds from source itself)
+        project.tasks.register("publishSpacetimeModule", PublishModuleTask::class.java) { task ->
+            task.group = "spacetimedb"
+            task.description = "Publish the SpacetimeDB module to a server"
+            task.modulePath.set(extension.modulePath)
+            task.databaseName.set(extension.databaseName)
+            task.deleteData.set(extension.deleteData)
+            task.publishNonInteractive.set(extension.publishNonInteractive)
+            task.allowBreakingClients.set(extension.allowBreakingClients)
+            task.server.set(extension.server)
+            task.publishOptions.set(extension.publishOptions)
+            task.spacetimeCli.set(extension.spacetimePath)
+        }
 
         // Generate Kotlin sources from schema
         val generateTask =
