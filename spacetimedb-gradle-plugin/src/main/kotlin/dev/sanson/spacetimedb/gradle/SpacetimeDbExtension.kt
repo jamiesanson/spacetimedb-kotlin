@@ -32,4 +32,16 @@ public interface SpacetimeDbExtension {
 
     /** Extra CLI options passed to `spacetime build` (e.g. `listOf("--debug")`). */
     public val buildOptions: ListProperty<String>
+
+    /**
+     * Path to the `spacetime` CLI executable.
+     *
+     * Useful when the Gradle daemon's `PATH` doesn't include the CLI — the installer only adds
+     * `~/.local/bin` to interactive shells (`.zshrc`), so builds launched from IDEs or reused
+     * daemons may fail with "A problem occurred starting process 'command 'spacetime''".
+     *
+     * If unset, the plugin looks for `~/.local/bin/spacetime` and finally falls back to `spacetime`
+     * on `PATH`.
+     */
+    public val spacetimePath: Property<String>
 }

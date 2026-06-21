@@ -40,6 +40,7 @@ public class SpacetimeDbPlugin : Plugin<Project> {
             project.tasks.register("buildSpacetimeModule", BuildModuleTask::class.java) { task ->
                 task.modulePath.set(extension.modulePath)
                 task.buildOptions.set(extension.buildOptions)
+                task.spacetimeCli.set(extension.spacetimePath)
                 task.schemaFile.set(schemaFile)
             }
 

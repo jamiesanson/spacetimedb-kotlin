@@ -7,8 +7,10 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -35,6 +37,12 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
     /** Extra CLI options for `spacetime build`. */
     @get:Input public abstract val buildOptions: ListProperty<String>
 
+    /**
+     * Explicit path to the `spacetime` CLI. When unset, the task auto-resolves
+     * `~/.local/bin/spacetime` and finally falls back to `spacetime` on `PATH`.
+     */
+    @get:Input @get:Optional public abstract val spacetimeCli: Property<String>
+
     /** The output schema JSON file. */
     @get:OutputFile public abstract val schemaFile: RegularFileProperty
 
@@ -45,7 +53,7 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
         logger.lifecycle("SpacetimeDB: building module at ${moduleDir.path}")
 
         // Step 1: Build the module
-        val buildArgs = mutableListOf("spacetime", "build", "-p", moduleDir.absolutePath)
+        val buildArgs = mutableListOf(resolveSpacetime(), "build", "-p", moduleDir.absolutePath)
         buildArgs.addAll(buildOptions.getOrElse(emptyList()))
 
         execOperations.exec { spec -> spec.commandLine(buildArgs) }.assertNormalExitValue()
@@ -95,6 +103,24 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
                 "No .wasm file found in $releaseDir or $debugDir. " +
                     "Ensure 'spacetime build' completed successfully."
             )
+    }
+
+    private fun resolveSpacetime(): String {
+        // 1. Explicit configuration wins.
+        spacetimeCli.orNull
+            ?.takeIf { it.isNotBlank() }
+            ?.let {
+                return it
+            }
+
+        // 2. Default install location. The installer only adds ~/.local/bin to
+        //    interactive shells, so the Gradle daemon's PATH often lacks it.
+        val home = System.getProperty("user.home")
+        val localBin = File("$home/.local/bin/spacetime")
+        if (localBin.isFile && localBin.canExecute()) return localBin.absolutePath
+
+        // 3. Fallback: hope it's on PATH.
+        return "spacetime"
     }
 
     private fun resolveStandalone(): String {
