@@ -50,8 +50,11 @@ public class SpacetimeDbPlugin : Plugin<Project> {
             task.description = "Publish the SpacetimeDB module to a server"
             task.modulePath.set(extension.modulePath)
             task.databaseName.set(extension.databaseName)
-            task.publishOptions.set(extension.publishOptions)
+            task.deleteData.set(extension.deleteData)
+            task.publishNonInteractive.set(extension.publishNonInteractive)
+            task.allowBreakingClients.set(extension.allowBreakingClients)
             task.server.set(extension.server)
+            task.publishOptions.set(extension.publishOptions)
             task.spacetimeCli.set(extension.spacetimePath)
         }
 

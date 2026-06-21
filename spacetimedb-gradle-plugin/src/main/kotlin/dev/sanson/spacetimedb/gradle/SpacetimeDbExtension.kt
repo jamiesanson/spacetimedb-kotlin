@@ -49,14 +49,30 @@ public interface SpacetimeDbExtension {
     public val databaseName: Property<String>
 
     /**
-     * Extra CLI options for `publishSpacetimeModule` (e.g. `listOf("--delete-data=on-conflict",
-     * "--yes")`).
+     * When to destroy existing data on publish (`--delete-data`). Omitted when unset.
+     *
+     * @see DeleteDataMode
      */
-    public val publishOptions: ListProperty<String>
+    public val deleteData: Property<DeleteDataMode>
+
+    /** Run publish non-interactively, answering "yes" to prompts (`--yes`). Defaults to `false`. */
+    public val publishNonInteractive: Property<Boolean>
+
+    /**
+     * Allow publishing schema changes that break existing clients (`--break-clients`). Defaults to
+     * `false`.
+     */
+    public val allowBreakingClients: Property<Boolean>
 
     /**
      * Optional `--server` target for `publishSpacetimeModule` (e.g. `"local"` or a URL). Uses the
      * CLI's default server when unset.
      */
     public val server: Property<String>
+
+    /**
+     * Escape hatch for additional raw `spacetime publish` arguments not covered by the typed
+     * options above.
+     */
+    public val publishOptions: ListProperty<String>
 }

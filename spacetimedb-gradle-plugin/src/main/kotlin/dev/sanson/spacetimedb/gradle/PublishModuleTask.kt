@@ -31,13 +31,22 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
     /** The database/module name to publish as. */
     @get:Input public abstract val databaseName: Property<String>
 
-    /** Extra CLI options for `spacetime publish` (e.g. `listOf("--delete-data=on-conflict")`). */
-    @get:Input public abstract val publishOptions: ListProperty<String>
+    /** When to destroy existing data on publish (`--delete-data`). Omitted when unset. */
+    @get:Input @get:Optional public abstract val deleteData: Property<DeleteDataMode>
+
+    /** Run publish non-interactively (`--yes`). */
+    @get:Input @get:Optional public abstract val publishNonInteractive: Property<Boolean>
+
+    /** Allow publishing changes that break existing clients (`--break-clients`). */
+    @get:Input @get:Optional public abstract val allowBreakingClients: Property<Boolean>
 
     /**
      * Optional `--server` to publish to (e.g. `"local"` or a URL). Uses the CLI default if unset.
      */
     @get:Input @get:Optional public abstract val server: Property<String>
+
+    /** Extra raw CLI options for `spacetime publish` not covered by the typed options. */
+    @get:Input public abstract val publishOptions: ListProperty<String>
 
     /**
      * Explicit path to the `spacetime` CLI. When unset, the task auto-resolves
@@ -53,9 +62,12 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
         logger.lifecycle("SpacetimeDB: publishing '$name' from ${moduleDir.path}")
 
         val args = mutableListOf(SpacetimeCli.resolve(spacetimeCli.orNull), "publish")
+        deleteData.orNull?.let { args += "--delete-data=${it.cliValue}" }
+        if (publishNonInteractive.getOrElse(false)) args += "--yes"
+        if (allowBreakingClients.getOrElse(false)) args += "--break-clients"
         server.orNull?.takeIf { it.isNotBlank() }?.let { args += listOf("--server", it) }
-        args += name
         args += publishOptions.getOrElse(emptyList())
+        args += name
 
         execOperations
             .exec { spec ->
